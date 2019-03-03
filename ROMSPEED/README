@@ -1,0 +1,66 @@
+     Benutzung von ROMSPEED V3.11
+
+TT und Falcon030 kînnen schneller auf das RAM zugreifen, als auf den Inhalt
+der ROMS. Kopiert man das ROM ins RAM und sorgt durch geeignete Programmierung
+der PMMU des 68030 dafÅr, dass der Prozessor die RAM-Kopie des Betriebssystems
+anstatt der ROMs anspricht, ist dies mit einem Geschwindigkeitsvorteil bei der
+AusfÅhrung von Systemroutinen verbunden. Bei einem TT mit Fast-RAM kann der
+Geschwindigkeitszuwachs bis zu 30% ausmachen, beim Falcon ist der Effekt kaum
+noch spÅrbar und liegt bei gut 5%. TTs ohne Fast-RAM profitieren nicht von
+ROMSPEED.
+
+Es ist nun aber nicht so, dass alle Programme auf dem Atari durch ROMSPEED um
+die angegebenen Werte schneller werden. Die Beschleunigung bezieht sich
+ausschlieûlich auf die ehemaligen ROM-Routinen, also auf Aufrufe des GEMDOS,
+BIOS, XBIOS, VDI oder AES. Kommt residente Software zum Einsatz, die diese
+Systembestandteile ganz oder teilweise durch neue Routinen ersetzt (z.B. NVDI)
+fÑllt der Geschwindigkeitsgewinn geringer aus. Unter MagiC macht die
+Verwendung von ROMSPEED keinen Sinn, da hier das gesamte Betriebssystem
+ohnehin schon im RAM liegt. FÅr MultiTOS gilt das gleiche.
+
+Wer WINX benutzen will, kann in Verbindung mit ROMSPEED auf GEMRAM verzichten.
+ROMSPEED wird von WINX erkannt und WINX patcht in diesem Fall direkt die
+ROM-Kopie, die von ROMSPEED im RAM angelegt wurde. ROMSPEED muss zu diesem
+Zweck natÅrlich vor WINX gestartet worden sein.
+
+ROMSPEED wird normalerweise (aber nicht notwendigerweise) aus dem AUTO-Ordner
+heraus gestartet. Man sollte nicht Åbersehen, dass ROMSPEED einige hundert
+KByte an RAM benîtigt, je nach TOS-Version.
+
+ROMSPEED und der Quelltext sind Freeware und dÅrfen zusammen mit diesem Text
+weitergegeben werden.
+
+     Uwe Seimet, 11. Oktober 2012
+
+-----
+
+     How to use ROMSPEED V3.11
+
+On the TT and Falcon030 the MC68030 can access RAM faster than ROM. After
+copying all ROM contents into RAM and reprogramming the 68030 PMMU the
+processor will access RAM instead of ROM. This means a speed gain of up to 30%
+on a TT with Fast RAM and of about 5% on a Falcon030. TTs without Fast RAM
+won't profit from ROMSPEED.
+
+These numbers don't mean the all programs running while ROMSPEED is resident
+will speed up this much. A gain of speed can only be observed during system
+calls, i.e. when the 68030 is working within GEMDOS, BIOS, XBIOS, VDI or AES.
+If you use software that replaces parts of these operating system structures
+(e.g. NVDI) your machine won't be that much faster. When using MagiC the use
+of ROMSPEED doesn't make any sense because the whole operating system is
+located completely in RAM right from the start. A similar situation applies
+to MultiTOS.
+
+Those working with WINX don't need GEMRAM anymore when using ROMSPEED. WINX
+recognizes the presence of ROMSPEED and will patch the operating system
+copy created by ROMSPEED. For that purpose ROMSPEED has to be started before
+WINX, of course.
+
+Normally (but not necessarily) ROMSPEED is started from within the AUTO
+folder. Keep in mind that ROMSPEED requires several hundred KByte of RAM,
+depending on the TOS version.
+
+ROMSPEED and its sources are freeware, they may be distributed as long as this
+text is included.
+
+     Uwe Seimet, October 11th, 2012
