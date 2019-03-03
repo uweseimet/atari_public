@@ -1,0 +1,27 @@
+XHDI_MON records all calls of the XHDI Interface. This way XHDI_MON helps
+with debugging software using this software interface.
+XHDI_MON requires TOS 1.02 or newer.
+
+Started without options, all data are displayed using the SYS_MON software
+by Karsten Isakovic, which has to be started before XHDI_MON.
+
+Started with the option "--con" the console is used as output device.
+With "--aux" the serial port is used, with "--prt" the parallel port is used.
+When using these options SYS_MON is not required.
+
+-----
+
+XHDI_MON schneidet alle Aufrufe des XHDI-Interfaces mit. So erleichtert
+XHDI_MON das Debuggen von Software, die dieses Software-Interface benutzt.
+XHDI_MON setzt TOS 1.02 oder neuer voraus.
+
+Ohne Optionen gestartet erfolgt die Ausgabe Åber das Programm SYS_MON von
+Karsten Isakovic, das vor XHDI_MON gestartet werden muss.
+
+Wird XHDI_MON mit der Option "--con" gestartet erfolgt die Ausgabe der
+Daten Åber die Konsole. Mit "--aux" gestartet wird die serielle Schnittstelle
+benutzt, mit "--prt" die parallele Schnittstelle. Bei Verwendung dieser
+Optionen ist SYS_MON nicht erforderlich.
+
+
+  Uwe Seimet, January 15th, 2017 (Uwe.Seimet@seimet.de)

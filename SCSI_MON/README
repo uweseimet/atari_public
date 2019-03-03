@@ -1,0 +1,47 @@
+SCSI_MON helps with debugging software using the SCSI Driver implemented
+by CBHD and HDDRIVER and the PCI SCSI driver for the Milan. (HDDRIVER
+also provides a SCSI Driver for IDE, ATAPI and SATA devices.) SCSI_MON
+requires TOS 1.02 or newer.
+
+SCSI_MON records all SCSI Driver calls of programs started after
+SCSI_MON. Started without options, all data are displayed using the
+SYS_MON software by Karsten Isakovic, which has to be started before
+SCSI_MON.
+Started with the option "--con" the console is used as output device.
+With "--aux" the serial port and with "--prt" the parallel port is used.
+When using these options SYS_MON is not required.
+
+If a SCSI Driver with target interface is installed (HDDRIVER 7.8 or
+newer) and SCSI_MON is started after any other software using the target
+interface, SCSI_MON additionally records the SCSI commands sent to the
+computer SCSI_MON is running on. Note that in this case the SYS_MON screen
+must not be active while SCSI commands are being received by the target.
+Otherwise SYS_MON won't display these commands.
+
+-----
+
+SCSI_MON erleichtert das Debuggen von Software, die den von CBHD und
+HDDRIVER implementierten SCSI-Treiber sowie den PCI SCSI-Treiber fÅr den
+Milan benutzt. (HDDRIVER besitzt einen SCSI-Treiber auch fÅr IDE-, ATAPI-
+und SATA-GerÑte.) SCSI_MON setzt TOS 1.02 oder neuer voraus.
+
+SCSI_MON schneidet alle Aufrufe des SCSI-Treibers von Programmen, die
+nach SCSI_MON gestartet wurden, mit. Ohne Optionen gestartet erfolgt die
+Ausgabe Åber das Programm SYS_MON von Karsten Isakovic, das vor SCSI_MON
+gestartet werden muss.
+Wird SCSI_MON mit der Option "--con" gestartet, erfolgt die Ausgabe der
+Daten auf der Konsole. Mit der Option "--aux" gestartet, erfolgt die
+Ausgabe Åber die serielle Schnittstelle, mit "--prt" wird die parallele
+Schnittstelle benutzt. Bei Verwendung dieser Optionen ist SYS_MON nicht
+erforderlich.
+
+Falls ein SCSI-Treiber mit Target-Interface installiert ist (HDDRIVER ab
+Version 7.8) und SCSI_MON als letztes Programm gestartet wird, das das
+Target-Interface nutzt, schneidet SCSI_MON zusÑtzlich alle SCSI-Kommandos
+mit, die an den Computer geschickt werden, auf dem SCSI_MON lÑuft. Es ist
+zu beachten, dass bei Verwendung von SYS_MON der SYS_MON-Bildschirm
+wÑhrend der Zeit, in der SCSI-Kommandos vom Target empfangen werden, nicht
+aktiv sein darf. Andernfalls zeigt SCSI_MON diese Kommandos nicht an.
+
+
+  Uwe Seimet, January 15th, 2017 (Uwe.Seimet@seimet.de)
