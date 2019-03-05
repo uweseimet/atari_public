@@ -4,7 +4,7 @@ NF_SCSI - SCSI Driver for Hatari and ARAnyM
 This is a beta version of the SCSI Driver for Hatari and ARAnyM. The SCSI
 Driver standard is an open software interface for the Atari and was
 initiated by Steffen Engel.
-Please refer to http://hddriver.seimet.de/en/downloads.html for further
+Please refer to https://www.hddriver.net/en/downloads.html for further
 information.
 
 --
@@ -78,4 +78,4 @@ Please refer to the source code (Hatari or ARAnyM, as well as the TOS stub)
 for details.
 
 
-  Uwe.Seimet@seimet.de, 2016-03-27
+  Uwe.Seimet@seimet.de, 2019-03-05
