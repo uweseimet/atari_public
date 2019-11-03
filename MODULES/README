@@ -1,0 +1,39 @@
+HDDRIVER Driver Modules
+-----------------------
+
+Future versions of HDDRIVER will support starting programs, so-called
+HDDRIVER driver modules, during the TOS boot sequence before the HDDRIVER.SYS
+driver file. Typical candidates for HDDRIVER modules are SCSI Driver modules,
+which provide access to non-standard bus interfaces. HDDRIVER scans all
+available buses for devices, so that any mass storage device supported by a
+SCSI Driver that was launched before by HDDRIVER is fully managed by
+HDDRIVER, as if support for this device was built-in. Features like XHDI
+support or booting the AUTO folder or ACCs from a partition on this device
+will automatically be provided by HDDRIVER.
+
+Since driver modules are executed before GEMDOS has fully been initialized
+not all GEMDOS functionality is available during execution. In particular
+filesystem access is not possible because no drives are present yet.
+
+A driver module resembles a program that is usually located in the AUTO
+folder. Programs in the AUTO folder, though, are started after the hard disk
+driver, HDDRIVER driver modules are started before. The filenames of driver
+modules must follow the naming convention "HDDRMODn.SYS" with n being a digit
+from 0-9. n determines the execution order. During the boot process (if
+HDDRIVER was configured accordingly) driver modules are executed until no
+file for n was found. Only then HDDRIVER.SYS is executed.
+
+Depending on the functionality it offers it is possible to run the same
+binary from the AUTO folder or as driver module. MODSTART.S is a piece of
+Pure C initialization code that enables a program to be executed by TOS and
+as driver module. Please see the comments in the source code for details.
+In particular MODSTART modifies the memory management of the program, so
+that it is suitable to be executed during the boot process.
+
+It is sufficient to just add MODSTART.S (or the corresponding MODSTART.O
+object file) as the first item to the Pure C project file you are building
+your program with. The MODSTART startup code automatically detects whether
+the resulting binary was started by TOS or as a HDDRIVER driver module.
+
+
+  Uwe.Seimet@seimet.de, 2019-11-03

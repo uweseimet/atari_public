@@ -29,7 +29,8 @@ version 1.01. It consists of three software components:
    uses Hatari's or ARAnyM's NatFeats interface to call the host driver. The
    stub is independent of the host platform. By renaming NF_SCSI.PRG to
    HDDRMOD0.SYS it can be used as HDDRIVER module, which is automatically
-   executed when booting with future versions of HDDRIVER.
+   executed before HDDRIVER.SYS when booting with future versions of
+   HDDRIVER.
 
 In order to install the SCSI Driver either launch NF_SCSI.PRG, e.g. from the
 AUTO folder of an emulated GEMDOS drive, or place the NF_SCSI driver as
