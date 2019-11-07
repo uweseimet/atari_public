@@ -1,9 +1,8 @@
 NF_SCSI - SCSI Driver for Hatari and ARAnyM
 -------------------------------------------
 
-This is a beta version of the SCSI Driver for Hatari and ARAnyM. The SCSI
-Driver standard is an open software interface for the Atari and was
-initiated by Steffen Engel.
+This is the SCSI Driver for Hatari and ARAnyM. The SCSI Driver standard is
+an open software interface for the Atari and was initiated by Steffen Engel.
 Please refer to https://www.hddriver.net/en/downloads.html for further
 information.
 
@@ -28,24 +27,22 @@ version 1.01. It consists of three software components:
 2. SCSI Driver stub for TOS, NF_SCSI.PRG. This component runs under TOS and
    uses Hatari's or ARAnyM's NatFeats interface to call the host driver. The
    stub is independent of the host platform. By renaming NF_SCSI.PRG to
-   HDDRMOD0.SYS it can be used as HDDRIVER module, which is automatically
-   executed before HDDRIVER.SYS when booting with future versions of
-   HDDRIVER.
+   HDDRMOD0.SYS it can be launched as HDDRIVER module, which is
+   automatically executed before HDDRIVER.SYS when booting with future
+   versions of HDDRIVER.
 
 In order to install the SCSI Driver either launch NF_SCSI.PRG, e.g. from the
 AUTO folder of an emulated GEMDOS drive, or place the NF_SCSI driver as
 HDDRMOD0.SYS in the root directory of the boot drive and configure HDDRIVER
 to execute driver modules.
-NF_SCSI implements an new SCSI Driver bus with bus ID 31. Optionally, when
-using NF_SCSI.PRG, a different bus ID can be passed as an argument when
-launching NF_SCSI.
+NF_SCSI implements a new SCSI Driver bus with bus ID 31. Optionally a
+different bus ID can be passed as an argument when launching NF_SCSI.
 
-The SCSI Driver provides low level device access for Atari application
-software that supports the SCSI Driver, like HDDRUTIL, DISKUS, ExtenDOS or
-GEMAR. In order to get direct access to mass storage devices on filesystem
-level an Atari hard disk driver with SCSI Driver support has to be run. There
-are two hard disk drivers with SCSI Driver support: HDDRIVER and CBHD. The
-SCSI Driver for Hatari and ARAnyM has successfully been tested with
+The SCSI Driver provides low level device access for software that is aware
+SCSI Drivers, like HDDRIVER, HDDRUTIL, DISKUS, ExtenDOS or GEMAR. In order
+to get direct access to mass storage devices on filesystem level an Atari
+hard disk driver with SCSI Driver support has to be run, e.g. HDDRIVER.
+The SCSI Driver for Hatari and ARAnyM has successfully been tested with
 HDDRIVER 9 and newer.
 
 HDDRIVER automatically provides XHDI functionality for all mass storage
@@ -84,4 +81,4 @@ Please refer to the source code (Hatari or ARAnyM, as well as the TOS stub)
 for details.
 
 
-  Uwe.Seimet@seimet.de, 2019-11-03
+  Uwe.Seimet@seimet.de, 2019-11-07
