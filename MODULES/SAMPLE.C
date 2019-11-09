@@ -23,7 +23,7 @@ main()
 
 	Cconin();
 
-	/* A module has to terminate with Pterm*() */
+	/* A non-resident module has to terminate with Pterm*() */
 	if(isHddriverModule()) {
 		Pterm0();
 	}

@@ -12,6 +12,7 @@
 #include <string.h>
 #include <tos.h>
 #include <scsidrv/scsidefs.h>
+#include "../modules/modstart.h"
 #include "util.h"
 
 
@@ -92,6 +93,7 @@ enum SCSIDRV_OPERATIONS
 };
 
 
+int terminate(void);
 void installHandler(void);
 LONG inout(tpSCSICmd, UWORD);
 LONG cookieptr(void);
@@ -109,20 +111,20 @@ main(WORD argc, const char *argv[])
 
 	if(getCookie('USSC', &ussc)) {
 		printf("\nSCSI Driver for Hatari and ARAnyM already installed\n");
-		return -1;
+		return terminate();
 	}
 
 	if(!nfDetect()) {
 		printf("\nNative features not supported,\n"
 			"SCSI Driver for Hatari and ARAnyM not installed\n");
-		return -1;
+		return terminate();
 	}
 
 	id = nfId("NF_SCSIDRV");
 	if(!id) {
 		printf("\nNative SCSI driver feature not supported,\n"
 			"SCSI Driver for Hatari and ARAnyM not installed\n");
-		return -1;
+		return terminate();
 	}
 
 	interfaceVersion = (UWORD)nfCall(id | SCSI_INTERFACE_VERSION);
@@ -132,7 +134,7 @@ main(WORD argc, const char *argv[])
 			"SCSI Driver for Hatari and ARAnyM not installed\n",
 			interfaceVersion >> 8, interfaceVersion & 0xff,
 			INTERFACE_VERSION >> 8, INTERFACE_VERSION & 0xff);
-		return -1;
+		return terminate();
 	}
 
 	if(argc > 1) {
@@ -140,7 +142,7 @@ main(WORD argc, const char *argv[])
 		if(drvBusNo > 31) {
 			printf("\nIllegal bus ID %d, maximum is 31\n"
 			"SCSI Driver for Hatari and ARAnyM not installed\n", drvBusNo);
-			return -1;
+			return terminate();
 		}
 	}
 
@@ -168,6 +170,17 @@ main(WORD argc, const char *argv[])
 	Ptermres(_PgmSize, 0);
 
 	return 0;
+}
+
+
+int
+terminate()
+{
+	if(isHddriverModule()) {
+		Pterm(-1);
+	}
+
+	return -1;
 }
 
 

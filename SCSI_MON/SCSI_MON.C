@@ -1,7 +1,7 @@
 /****************************/
-/* SCSI_MON 1.32            */
+/* SCSI_MON 1.33 Beta       */
 /*                          */
-/* (C) 1999-2017 Uwe Seimet */
+/* (C) 1999-2019 Uwe Seimet */
 /****************************/
 
 
@@ -10,6 +10,7 @@
 #include <string.h>
 #include <tos.h>
 #include <scsidrv/scsidefs.h>
+#include "../modules/modstart.h"
 
 
 #define ERROR -1
@@ -107,6 +108,7 @@ extern void auxout(WORD);
 extern void prtout(WORD);
 
 
+int terminate(const char *);
 void installHandler(void);
 void prres(tpSCSICmd, LONG);
 void prerr(LONG);
@@ -117,23 +119,25 @@ void sysprintf(const char *);
 static int getcookie(long, ULONG *p);
 
 
-void
+int
 main(WORD argc, const char *argv[])
 {
+	if(isHddriverModule()) {
+		aux = true;
+	}
+
 	if(argc > 1) {
 		con = !strcmp(argv[1], "--con");
 		aux = !strcmp(argv[1], "--aux");
 		prt = !strcmp(argv[1], "--prt");
 
 		if(!con && !aux && !prt) {
-			printf("\nIllegal output channel argument, SCSI_MON not installed");
-			return;
+			return terminate("\nIllegal output channel argument, SCSI_MON not installed");
 		}
 	}
 
 	if(!getcookie('SCSI', (ULONG *)&scsiCall)) {
-		printf("\nSCSI Driver not found, SCSI_MON not installed");
-		return;
+		return terminate("\nSCSI Driver not found, SCSI_MON not installed");
 	}
 
 	memcpy(&oldScsiCall, scsiCall, 38);
@@ -142,10 +146,25 @@ main(WORD argc, const char *argv[])
 
 	memset(handlerInfo, 0, sizeof(handlerInfo));
 
-	printf("\n\x1b\x70SCSI_MON V1.32\x1b\x71");
-	printf("\n½ 1999-2017 Uwe Seimet\n");
+	printf("\n\x1b\x70SCSI_MON V1.33 Beta\x1b\x71");
+	printf("\n½ 1999-2019 Uwe Seimet\n");
 
 	Ptermres(_PgmSize, 0);
+
+	return 0;
+}
+
+
+int
+terminate(const char *errorMessage)
+{
+	printf(errorMessage);
+
+	if(isHddriverModule()) {
+		Pterm(-1);
+	}
+
+	return -1;
 }
 
 
