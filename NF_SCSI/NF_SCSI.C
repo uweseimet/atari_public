@@ -1,10 +1,10 @@
 /***********************************************/
-/* SCSI Driver for Hatari and ARAnyM 1.01 Beta */
+/* SCSI Driver for Hatari and ARAnyM 1.10 Beta */
 /*                                             */
 /* (C) 2016-2019 Uwe Seimet                    */
 /***********************************************/
 
-#define VERSION "1.01"
+#define VERSION "1.10"
 
 
 #include <stdio.h>

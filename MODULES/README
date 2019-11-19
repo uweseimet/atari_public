@@ -34,31 +34,51 @@ after the last module.
 If there are any issues with loading a module, e.g. errors when accessing
 the boot partition, any remaining modules are skipped and HDDRIVER.SYS is
 executed next.
+Modules are always run in supervisor mode.
 
 
-C Bindings
-----------
+C Modules
+---------
 
 Depending on its functionality it may be useful to be able to launch the
 same binary either from the AUTO folder or as an HDDRIVER module.
-MODSTART.S is a piece of Pure C initialization code that enables a
-program to be executed by TOS and also as a module. Please see the comments
-in the source code for details. In particular MODSTART tweaks the memory
-management of a program, so that it can properly be executed during the
-boot process.
+MODSTART.S is a piece of Pure C initialization code that enables a program
+to be executed by TOS and also as a module. Please see the comments in the
+source code for details. In particular MODSTART tweaks the memory management
+of a program, so that it can properly be executed during the boot process.
 It is sufficient to just add MODSTART as the first item (e.g. before
 PCSTART) to the Pure C project file you are building your program with.
 The MODSTART startup code automatically detects whether the binary was
 started by TOS or as an HDDRIVER module.
+Modules implemented in C (using MODSTART) must terminate with Pterm0(),
+Pterm() or Ptermres(). Their main() method must not be terminated just by a
+C return statement. Modules cannot return any result.
 In case a program needs to know at runtime whether it was started as a
 module isHddriverModule() declared in HDDRMOD.H can be called.
+
+
+Assembler Modules
+-----------------
+
+Modules implemented in assembler are launched by calling their start
+address + 4. They have to free any unused memory and must terminate with
+RTS. They must not execute any Pterm*() call.
+The simplest possible module in assembler (effectively doing nothing) is:
+
+	nop             ;the module entry point is the start address + 4
+	nop
+	pea (a2)        ;A2 points to the module start address
+	move #73,-(sp)  ;MFREE
+	trap #1
+	addq.l #6,sp
+	rts
 
 
 Sample Module
 -------------
 
-SAMPLE.C implements a simple HDDRIVER module, which is aware of whether
-it was started as a regular program or as a module.
+SAMPLE.C implements a simple HDDRIVER module, which is aware of whether	it
+was started as a regular program or as a module.
 
 
 Module Restrictions
@@ -66,18 +86,13 @@ Module Restrictions
 
 - Modules do not have access to mass storage devices because HDDRIVER has
   not been initialized yet at the time of module execution.
-- Modules implemented in C (using MODSTART) must terminate with Pterm0(),
-  Pterm() or Ptermres(). Their main() method must not be terminated just
-  by a C return statement. Modules cannot return any result.
-- Modules implemented in assembler (not using MODSTART) have to free any
-  unused memory and must terminate with RTS. They must not execute any
-  Pterm*() call.
 - MODSTART.S and SAMPLE.C should be studied in order to learn more about
   HDDRIVER modules.
 
 Modules are not meant to be replacements for programs that can simply be
-run from within the AUTO folder. They should only be used when it is
-required to execute code as early as possible during the boot process.
+launched from within the AUTO folder. They should only be used when it is
+required to execute code as early as possible during the boot process,
+i.e. before HDDRIVER.SYS.
 
 
-  Uwe.Seimet@seimet.de, 2019-11-09
+  Uwe.Seimet@seimet.de, 2019-11-19

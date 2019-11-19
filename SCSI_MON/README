@@ -10,7 +10,9 @@ SCSI_MON.
 When started with the option "--con" the console is used as output device.
 With "--aux" the serial port and with "--prt" the parallel port is used.
 When passing one of these options SYS_MON is not required.
-When started as HDDRIVER module "--aux" is the default setting.
+When started as HDDRIVER module "--aux" is the default setting. Typically
+the SCSI_MON module is started after the SCSI Driver modules, so that it
+logs all SCSI Driver calls.
 
 If a SCSI Driver with target interface is installed, e.g. HDDRIVER, and
 SCSI_MON is started after any other software using the target interface,
@@ -36,6 +38,8 @@ Ausgabe Åber die serielle Schnittstelle, mit "--prt" wird die parallele
 Schnittstelle benutzt. Bei Verwendung dieser Optionen ist SYS_MON nicht
 erforderlich.
 Beim Start als HDDRIVER-Modul ist "--aux" die Default-Einstellung.
+Typischerweise wird das SCSI_MON-Modul nach den SCSI-Treiber-Modulen
+gestartet, so dass es alle SCSI-Treiber-Aufrufe protokolliert.
 
 Falls ein SCSI-Treiber mit Target-Interface installiert ist (HDDRIVER ab
 Version 7.8) und SCSI_MON als letztes Programm gestartet wird, das das
@@ -46,4 +50,4 @@ wÑhrend der Zeit, in der SCSI-Kommandos vom Target empfangen werden, nicht
 aktiv sein darf. Andernfalls zeigt SCSI_MON diese Kommandos nicht an.
 
 
-  Uwe.Seimet@seimet.de, 2019-11-09
+  Uwe.Seimet@seimet.de, 2019-11-19

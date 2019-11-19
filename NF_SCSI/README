@@ -25,12 +25,14 @@ version 1.01. It consists of three software components:
    stub for TOS on other platforms than Linux, this is the code that has to
    be ported.
 2. SCSI Driver stub for TOS, NF_SCSI.PRG. This component runs under TOS and
-   uses Hatari's or ARAnyM's NatFeats interface to call the host driver. The
-   stub is independent of the host platform. By renaming NF_SCSI.PRG to
-   HDDRMOD0.SYS it can be launched as HDDRIVER module, which is
-   automatically executed before HDDRIVER.SYS when booting with future
-   versions of HDDRIVER.
+   uses the NatFeats interface to call the host driver. The stub is
+   independent of the host platform.
 
+By renaming NF_SCSI.PRG to HDDRMODn.SYS it can be launched as HDDRIVER
+module, which is automatically executed before HDDRIVER.SYS when booting
+with future versions of HDDRIVER. See the HDDRIVER module README for
+details.
+   
 In order to install the SCSI Driver either launch NF_SCSI.PRG, e.g. from the
 AUTO folder of an emulated GEMDOS drive, or place the NF_SCSI driver as
 HDDRMOD0.SYS in the root directory of the boot drive and configure HDDRIVER
@@ -81,4 +83,4 @@ Please refer to the source code (Hatari or ARAnyM, as well as the TOS stub)
 for details.
 
 
-  Uwe.Seimet@seimet.de, 2019-11-07
+  Uwe.Seimet@seimet.de, 2019-11-19
