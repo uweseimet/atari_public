@@ -1,8 +1,8 @@
-/***********************************************/
-/* SCSI Driver for Hatari and ARAnyM 1.10 Beta */
-/*                                             */
-/* (C) 2016-2019 Uwe Seimet                    */
-/***********************************************/
+/******************************************/
+/* SCSI Driver for Hatari and ARAnyM 1.10 */
+/*                                        */
+/* (C) 2016-2020 Uwe Seimet               */
+/******************************************/
 
 #define VERSION "1.10"
 
@@ -164,8 +164,8 @@ main(WORD argc, const char *argv[])
 	if(oldstack) Super((void *)oldstack);
 
 	printf("\n\x1b\x70SCSI Driver for Hatari and ARAnyM V" VERSION
-		" Beta \x1b\x71\n");
-	printf("½ 2016-2019 Uwe Seimet\n");
+		"\x1b\x71\n");
+	printf("½ 2016-2020 Uwe Seimet\n");
 
 	Ptermres(_PgmSize, 0);
 

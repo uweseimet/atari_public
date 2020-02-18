@@ -1,7 +1,7 @@
 /****************************/
-/* SCSI_MON 1.40 Beta       */
+/* SCSI_MON 1.40            */
 /*                          */
-/* (C) 1999-2019 Uwe Seimet */
+/* (C) 1999-2020 Uwe Seimet */
 /****************************/
 
 
@@ -146,8 +146,8 @@ main(WORD argc, const char *argv[])
 
 	memset(handlerInfo, 0, sizeof(handlerInfo));
 
-	printf("\n\x1b\x70SCSI_MON V1.40 Beta\x1b\x71");
-	printf("\n½ 1999-2019 Uwe Seimet\n");
+	printf("\n\x1b\x70SCSI_MON V1.40\x1b\x71");
+	printf("\n½ 1999-2020 Uwe Seimet\n");
 
 	Ptermres(_PgmSize, 0);
 

@@ -1,21 +1,21 @@
 SCSI_MON helps with debugging software using the SCSI Driver implemented
 by CBHD and HDDRIVER and the PCI SCSI driver for the Milan. (HDDRIVER
-also provides a SCSI Driver for IDE, ATAPI and SATA devices.) SCSI_MON
-requires TOS 1.02 or newer.
+also provides an integrated SCSI Driver for IDE, ATAPI and SATA devices.)
+SCSI_MON requires TOS 1.02 or newer.
 
-SCSI_MON records all SCSI Driver calls of programs started after
-SCSI_MON. When started without an option all data are displayed using
-the SYS_MON software by Karsten Isakovic, which has to be started before
+SCSI_MON records all SCSI Driver calls of programs launched after
+SCSI_MON. When launched without an option all data are displayed using
+the SYS_MON software by Karsten Isakovic, which has to be launched before
 SCSI_MON.
-When started with the option "--con" the console is used as output device.
+When launched with the option "--con" the console is used as output device.
 With "--aux" the serial port and with "--prt" the parallel port is used.
 When passing one of these options SYS_MON is not required.
-When started as HDDRIVER module "--aux" is the default setting. Typically
-the SCSI_MON module is started after the SCSI Driver modules, so that it
+When launched as HDDRIVER module "--aux" is the default setting. Typically
+the SCSI_MON module is launched after the SCSI Driver modules, so that it
 logs all SCSI Driver calls.
 
 If a SCSI Driver with target interface is installed, e.g. HDDRIVER, and
-SCSI_MON is started after any other software using the target interface,
+SCSI_MON is launched after any other software using the target interface,
 SCSI_MON additionally records the SCSI commands sent to the computer
 SCSI_MON is running on. Note that in this case the SYS_MON screen must not
 be active while SCSI commands are being received by the target. Otherwise
@@ -25,8 +25,8 @@ SYS_MON does not display these commands.
 
 SCSI_MON erleichtert das Debuggen von Software, die den von CBHD und
 HDDRIVER implementierten SCSI-Treiber sowie den PCI SCSI-Treiber fÅr den
-Milan benutzt. (HDDRIVER besitzt einen SCSI-Treiber auch fÅr IDE-, ATAPI-
-und SATA-GerÑte.) SCSI_MON setzt TOS 1.02 oder neuer voraus.
+Milan benutzt. (HDDRIVER besitzt einen integrierten SCSI-Treiber auch fÅr
+IDE-, ATAPI- und SATA-GerÑte.) SCSI_MON setzt TOS 1.02 oder neuer voraus.
 
 SCSI_MON schneidet alle Aufrufe des SCSI-Treibers von Programmen mit, die
 nach SCSI_MON gestartet wurden. Ohne Optionen gestartet erfolgt die Ausgabe
@@ -50,4 +50,4 @@ wÑhrend der Zeit, in der SCSI-Kommandos vom Target empfangen werden, nicht
 aktiv sein darf. Andernfalls zeigt SCSI_MON diese Kommandos nicht an.
 
 
-  Uwe.Seimet@seimet.de, 2019-11-19
+  Uwe.Seimet@seimet.de, 2020-02-18

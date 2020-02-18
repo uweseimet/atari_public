@@ -3,8 +3,6 @@ NF_SCSI - SCSI Driver for Hatari and ARAnyM
 
 This is the SCSI Driver for Hatari and ARAnyM. The SCSI Driver standard is
 an open software interface for the Atari and was initiated by Steffen Engel.
-Please refer to https://www.hddriver.net/en/downloads.html for further
-information.
 
 --
 
@@ -20,23 +18,21 @@ The SCSI Driver for Hatari and ARAnyM implements the SCSI Driver interface
 version 1.01. It consists of three software components:
 
 1. Native SCSI Driver host implementation, which for Linux is provided by
-   Hatari and ARAnyM with their latest development versions. It maps SCSI
-   Driver calls to  Linux SG driver calls. In order to run the SCSI Driver
-   stub for TOS on other platforms than Linux, this is the code that has to
-   be ported.
+   Hatari and ARAnyM. It maps SCSI Driver calls to  Linux SG driver calls.
+   In order to run the SCSI Driver stub for TOS on other platforms than
+   Linux, this is the code that has to be ported.
 2. SCSI Driver stub for TOS, NF_SCSI.PRG. This component runs under TOS and
    uses the NatFeats interface to call the host driver. The stub is
    independent of the host platform.
 
 By renaming NF_SCSI.PRG to HDDRMODn.SYS it can be launched as HDDRIVER
-module, which is automatically executed before HDDRIVER.SYS when booting
-with future versions of HDDRIVER. See the HDDRIVER module README for
-details.
+module, which is automatically executed by HDDRIVER 11 before HDDRIVER.SYS
+when booting with future versions of HDDRIVER.
    
 In order to install the SCSI Driver either launch NF_SCSI.PRG, e.g. from the
 AUTO folder of an emulated GEMDOS drive, or place the NF_SCSI driver as
 HDDRMOD0.SYS in the root directory of the boot drive and configure HDDRIVER
-to execute driver modules.
+11 to execute driver modules.
 NF_SCSI implements a new SCSI Driver bus with bus ID 31. Optionally a
 different bus ID can be passed as an argument when launching NF_SCSI.
 
@@ -44,8 +40,6 @@ The SCSI Driver provides low level device access for software that is aware
 SCSI Drivers, like HDDRIVER, HDDRUTIL, DISKUS, ExtenDOS or GEMAR. In order
 to get direct access to mass storage devices on filesystem level an Atari
 hard disk driver with SCSI Driver support has to be run, e.g. HDDRIVER.
-The SCSI Driver for Hatari and ARAnyM has successfully been tested with
-HDDRIVER 9 and newer.
 
 HDDRIVER automatically provides XHDI functionality for all mass storage
 devices managed by SCSI Drivers that were launched before HDDRIVER.
@@ -58,10 +52,10 @@ implementation consists of these calls (NatFeats sub-ids):
 1. SCSI_INTERFACE_VERSION
 
 Returns the driver interface version number. (Note that this is not the same
-as the SCSI Driver version.) Only if the host implementation and the TOS stub
-interface version match, the stub can be installed. The format of the version
-string is MAJOR.MINOR, coded as a 16 bit value. 0x0105, for instance, means
-version 1.05.
+as the SCSI Driver version.) Only when the host implementation and the TOS
+stub interface version match the stub can be installed. The format of the
+version string is MAJOR.MINOR, coded as a 16 bit value. 0x0105, for instance,
+means version 1.05.
 
 2. SCSI_INTERFACE_FEATURES
 
@@ -76,11 +70,11 @@ The host implementations of the corresponding SCSI Driver calls.
 
 The host implementation of the SCSI Driver's In() and Out() calls. Except for
 the data flow direction flag both calls are identical, so that they can be
-mapped to the same interface all.
+mapped to the same interface call.
 
 All SCSI Driver calls not listed above are implemented by the TOS stub.
 Please refer to the source code (Hatari or ARAnyM, as well as the TOS stub)
 for details.
 
 
-  Uwe.Seimet@seimet.de, 2019-11-19
+  Uwe.Seimet@seimet.de, 2020-02-18

@@ -1,7 +1,7 @@
 /****************************/
-/* SCSI_MON 1.40 Beta       */
+/* SCSI_MON 1.40            */
 /*                          */
-/* (C) 1999-2019 Uwe Seimet */
+/* (C) 1999-2020 Uwe Seimet */
 /****************************/
 
 	export conout, auxout, prtout
