@@ -1,7 +1,7 @@
 /**************************/
-/* Sample HDDRIVER module */
+/* HDDRIVER sample module */
 /*                        */
-/* (C) 2019 Uwe Seimet    */
+/* (C) 2020 Uwe Seimet    */
 /**************************/
 
 #include <tos.h>

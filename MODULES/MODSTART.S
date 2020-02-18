@@ -1,9 +1,9 @@
 /*********************************************************/
-/* HDDRIVER module startup code for Pure C 1.00 Beta     */
+/* HDDRIVER module startup code for Pure C 1.00          */
 /*                                                       */
 /* To be added before PCSTART in the Pure C project file */
 /*                                                       */
-/* (C) 2019 Uwe Seimet                                   */
+/* (C) 2020 Uwe Seimet                                   */
 /*********************************************************/
 
 	export isHddriverModule		;to be used by module-aware modules
