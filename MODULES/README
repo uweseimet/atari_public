@@ -83,8 +83,9 @@ was started as a regular program or as a module.
 Module Restrictions
 -------------------
 
-- Modules do not have access to mass storage devices because HDDRIVER has
-  not been initialized yet at the time of module execution.
+- Modules do not have regular access to filesystems on mass storage
+  devices, because HDDRIVER has not been initialized yet at the time of
+  module execution.
 - MODSTART.S and SAMPLE.C should be studied in order to learn more about
   HDDRIVER modules.
 
