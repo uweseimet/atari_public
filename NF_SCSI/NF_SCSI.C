@@ -1,10 +1,10 @@
 /******************************************/
-/* SCSI Driver for Hatari and ARAnyM 1.10 */
+/* SCSI Driver for Hatari and ARAnyM 1.11 */
 /*                                        */
 /* (C) 2016-2020 Uwe Seimet               */
 /******************************************/
 
-#define VERSION "1.10"
+#define VERSION "1.11"
 
 
 #include <stdio.h>
@@ -283,7 +283,7 @@ InquireBus(WORD what, WORD busno, tDevInfo *info)
 
 		nextId[0] = (UWORD)++result;
 
-		return 0;
+		return nextId[0] > 8 ? -1 : 0;
 	}
 
 	return result;
