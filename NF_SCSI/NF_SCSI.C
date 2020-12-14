@@ -1,10 +1,10 @@
 /******************************************/
-/* SCSI Driver for Hatari and ARAnyM 1.11 */
+/* SCSI Driver for Hatari and ARAnyM 1.20 */
 /*                                        */
 /* (C) 2016-2020 Uwe Seimet               */
 /******************************************/
 
-#define VERSION "1.11"
+#define VERSION "1.20"
 
 
 #include <stdio.h>
@@ -28,7 +28,6 @@ typedef int bool;
 
 #define SCSI_MAX_HANDLES 32
 
-
 LONG cdecl In(tpSCSICmd);
 LONG cdecl Out(tpSCSICmd);
 LONG cdecl InquireSCSI(WORD, tBusInfo *);
@@ -41,10 +40,11 @@ LONG cdecl Error(tHandle, WORD, WORD);
 
 
 /* Bus characteristics */
-UWORD drvBusNo = 31;
-char drvBusName[20];
+
+UWORD firstBusNo = 30;
 UWORD drvBusFeatures;
 ULONG drvBusTransferLen;
+static const char *BUS_NAME = "Linux SCSI (Bus %c)";
 
 
 LONG id;
@@ -59,6 +59,7 @@ UsSc usscCookie = {
 
 typedef struct {
 	UWORD features;
+	ULONG transferLen;
 	bool valid;
 } DrvHandle;
 
@@ -80,8 +81,7 @@ tScsiCall myScsiCall = {
 };
 
 
-enum SCSIDRV_OPERATIONS
-{
+enum SCSIDRV_OPERATIONS {
 	SCSI_INTERFACE_VERSION,
 	SCSI_INTERFACE_FEATURES,
 	SCSI_INQUIRE_BUS,
@@ -105,12 +105,16 @@ main(WORD argc, const char *argv[])
 {
 	ULONG ussc;
 	UWORD interfaceVersion;
+	char drvBusName[20];
 	LONG oldstack = 0;
 
-	if(!Super((void *)1L)) oldstack = Super(0L);
+	if(!Super((void *)1L)) {
+		oldstack = Super(0L);
+	}
 
 	if(getCookie('USSC', &ussc)) {
-		printf("\nSCSI Driver for Hatari and ARAnyM already installed\n");
+		printf("\nSCSI Driver for Hatari and ARAnyM "
+			"already installed\n");
 		return terminate();
 	}
 
@@ -138,17 +142,19 @@ main(WORD argc, const char *argv[])
 	}
 
 	if(argc > 1) {
-		drvBusNo = atoi(argv[1]);
-		if(drvBusNo > 31) {
-			printf("\nIllegal bus ID %d, maximum is 31\n"
-			"SCSI Driver for Hatari and ARAnyM not installed\n", drvBusNo);
+		firstBusNo = atoi(argv[1]);
+		if(firstBusNo > 30) {
+			printf("\nIllegal first bus ID %d, maximum is 30\n"
+			"SCSI Driver for Hatari and ARAnyM not installed\n",
+				firstBusNo);
 			return terminate();
 		}
 	}
 
+	/* The bus name returned is ignored on purpose, because this name
+	   might be too long to add the "(Bus x)" suffix. */
 	nfCall(id | SCSI_INTERFACE_FEATURES, drvBusName, &drvBusFeatures,
 		&drvBusTransferLen);
-
 
 	if(!getCookie('SCSI', &scsiCall)) {
 		setCookie('SCSI', (ULONG)&myScsiCall);
@@ -161,7 +167,9 @@ main(WORD argc, const char *argv[])
 
 	setCookie('USSC', (ULONG)&usscCookie);
 
-	if(oldstack) Super((void *)oldstack);
+	if(oldstack) {
+		Super((void *)oldstack);
+	}
 
 	printf("\n\x1b\x70SCSI Driver for Hatari and ARAnyM V" VERSION
 		"\x1b\x71\n");
@@ -188,9 +196,8 @@ void
 installHandler()
 {
 	tBusInfo busInfo;
-	LONG result;
 
-	result = scsiCall->InquireSCSI(cInqFirst, &busInfo);
+	LONG result = scsiCall->InquireSCSI(cInqFirst, &busInfo);
 	while(!result) {
 		result = scsiCall->InquireSCSI(cInqNext, &busInfo);
 	}
@@ -218,7 +225,8 @@ inout(tpSCSICmd parms, UWORD dir)
 
 	if(h < &handles[0] || h >= &handles[SCSI_MAX_HANDLES]) {
 		if(dir) {
-			return oldScsiCall.Out ? oldScsiCall.Out(parms) : ENHNDL;
+			return oldScsiCall.Out ? oldScsiCall.Out(parms) :
+				ENHNDL;
 		}
 		else {
 			return oldScsiCall.In ? oldScsiCall.In(parms) : ENHNDL;
@@ -229,7 +237,7 @@ inout(tpSCSICmd parms, UWORD dir)
 		return ENHNDL;
 	}
 
-	if(parms->TransferLen > drvBusTransferLen) {
+	if(parms->TransferLen > h->transferLen) {
 		return DATATOOLONG;
 	}
 
@@ -246,16 +254,18 @@ InquireSCSI(WORD what, tBusInfo *info)
 		memset(&info->Private, 0, (UWORD)sizeof(info->Private));
 	}
 
-	if(info->Private.BusIds & (1L << drvBusNo)) {
+	if((info->Private.BusIds & (1L << firstBusNo)) &&
+		(info->Private.BusIds & (1L << (firstBusNo + 1)))) {
 		return oldScsiCall.InquireSCSI ?
 			oldScsiCall.InquireSCSI(what, info) : EUNDEV;
 	}
-
-	info->Private.BusIds |= (1L << drvBusNo);
-	info->BusNo = drvBusNo;
-	strncpy(info->BusName, drvBusName, 20);
+	
+	info->BusNo = !(info->Private.BusIds & (1L << firstBusNo)) ?
+		firstBusNo : firstBusNo + 1;
+	info->Private.BusIds |= 1L << info->BusNo;
 	info->Features = drvBusFeatures;
 	info->MaxLen = drvBusTransferLen;
+	sprintf(info->BusName, BUS_NAME, info->BusNo - firstBusNo + 'A');
 
 	return 0;
 }
@@ -267,23 +277,23 @@ InquireBus(WORD what, WORD busno, tDevInfo *info)
 	LONG result;
 	UWORD *nextId = (UWORD *)info->Private;
 
-	if(busno != drvBusNo) {
+	if(busno < firstBusNo || busno > firstBusNo + 1) {
 		return oldScsiCall.InquireBus ?
 			oldScsiCall.InquireBus(what, busno, info) : EUNDEV;
 	}
 
 	if(!what) {
-		nextId[0] = 0;
+		nextId[0] = (busno - firstBusNo) * 8;
 	}
 
 	result = nfCall(id | SCSI_INQUIRE_BUS, (LONG)nextId[0]);
 	if(result >= 0) {
 		info->SCSIId.hi = 0;
-		info->SCSIId.lo = result;
+		info->SCSIId.lo = result - (busno - firstBusNo) * 8;
 
 		nextId[0] = (UWORD)++result;
 
-		return nextId[0] > 8 ? -1 : 0;
+		return info->SCSIId.lo > 7 ? -1 : 0;
 	}
 
 	return result;
@@ -293,16 +303,18 @@ InquireBus(WORD what, WORD busno, tDevInfo *info)
 LONG cdecl
 CheckDev(WORD busno, const DLONG *scsiid, char *name, UWORD *features)
 {
-	if(busno != drvBusNo) {
+	if(busno < firstBusNo || busno > firstBusNo + 1) {
 		return oldScsiCall.CheckDev ?
-			oldScsiCall.CheckDev(busno, scsiid, name, features) : EUNDEV;
+			oldScsiCall.CheckDev(busno, scsiid, name, features) :
+				EUNDEV;
 	}
 
-	if(scsiid->hi || nfCall(id | SCSI_CHECK_DEV, scsiid->lo)) {
+	if(scsiid->hi || nfCall(id | SCSI_CHECK_DEV,
+		(busno - firstBusNo) * 8 + scsiid->lo)) {
 		return EUNDEV;
 	}
 
-	strncpy(name, drvBusName, 20);
+	sprintf(name, BUS_NAME, busno - firstBusNo + 'A');
 	*features = drvBusFeatures;
 		
 	return 0;
@@ -312,11 +324,12 @@ CheckDev(WORD busno, const DLONG *scsiid, char *name, UWORD *features)
 LONG cdecl
 RescanBus(WORD busno)
 {
-	if(busno != drvBusNo) {
-		return oldScsiCall.RescanBus ? oldScsiCall.RescanBus(busno) : EUNDEV;
+	if(busno < firstBusNo || busno > firstBusNo + 1) {
+		return oldScsiCall.RescanBus ? oldScsiCall.RescanBus(busno) :
+			EUNDEV;
 	}
 
-	/* Nothing to do */
+	/* Nothing to do for the Linux bus */
 	return 0;
 }
 
@@ -326,7 +339,7 @@ Open(WORD busno, const DLONG *scsiid, ULONG *maxlen)
 {
 	int i;
 
-	if(busno != drvBusNo) {
+	if(busno < firstBusNo || busno > firstBusNo + 1) {
 		return oldScsiCall.Open ?
 			oldScsiCall.Open(busno, scsiid, maxlen) : EUNDEV;
 	}
@@ -345,8 +358,10 @@ Open(WORD busno, const DLONG *scsiid, ULONG *maxlen)
 		return ENHNDL;
 	}
 
-	if(!nfCall(id | SCSI_OPEN, (LONG)i, scsiid->lo)) {
+	if(!nfCall(id | SCSI_OPEN, (LONG)i,
+		(busno - firstBusNo) * 8 + scsiid->lo)) {
 		handles[i].features = drvBusFeatures;
+		handles[i].transferLen = drvBusTransferLen;
 		handles[i].valid = true;
 
 		*maxlen = drvBusTransferLen;
