@@ -1,7 +1,7 @@
 /****************************/
-/* SCSI Driver Test 1.35    */
+/* SCSI Driver Test 1.36    */
 /*                          */
-/* (C) 2014-2018 Uwe Seimet */
+/* (C) 2014-2021 Uwe Seimet */
 /****************************/
 
 
@@ -83,6 +83,7 @@ bool testRequestSense(void);
 bool testReadCapacity(ULONG *);
 bool testRead(ULONG, UBYTE *, UBYTE *, UBYTE *);
 bool testReportLuns(void);
+bool testGetConfiguration(void);
 bool testSendDiagnostic(void);
 bool checkRoot(UBYTE *, UBYTE *, ULONG);
 void initBuffer(UBYTE *, ULONG);
@@ -127,8 +128,8 @@ main(WORD argc, const char *argv[])
 		return -1;
 	}
 
-	print("SCSI Driver test V1.35\n");
-	print("½ 2014-2018 Uwe Seimet\n\n");
+	print("SCSI Driver test V1.36\n");
+	print("½ 2014-2021 Uwe Seimet\n\n");
 
 	print("Found SCSI Driver version %d.%02d\n\n", scsiCall->Version >> 8,
 		scsiCall->Version & 0xff);
@@ -210,6 +211,7 @@ main(WORD argc, const char *argv[])
 /*				hasError |= !testError(deviceInfos[i].busNo, deviceInfos[i].id);*/
 
 				hasError |= !testReportLuns();
+				hasError |= !testGetConfiguration();
 /*				hasError |= !testSendDiagnostic(); */
 			}
 
@@ -1114,7 +1116,7 @@ testReportLuns()
 
 		print("    Number of LUNs: %lu\n", buffer[0] / 8);
 
-		print("      List of LUNs: ");
+		print("          LUN list: ");
 
 		for(i = 0; i < buffer[0] / 8 && i < sizeof(buffer) - 8; i++) {
 			if(i) {
@@ -1129,6 +1131,71 @@ testReportLuns()
 	else if(status == 2 && senseData.senseKey == 0x05 &&
 		senseData.addSenseCode == 0x20) {
 		print("    REPORT LUNS is not supported\n");
+	}
+	else if(status == 2 && senseData.senseKey == 0x02 &&
+		senseData.addSenseCode == 0x3a) {
+		print("    No medium inserted\n");
+	}
+	else {
+		print("    ERROR: Call was not properly rejected\n");
+		print("      Expected: Sense Key $05 ($%02X), ASC $20 ($%02X)\n",
+			senseData.senseKey, senseData.addSenseCode);
+
+		return false;
+	}
+	
+	return true;
+}
+
+
+bool
+testGetConfiguration()
+{
+	BYTE GetConfiguration[] = { 0x46, 2, 0, 0, 0, 0, 0, 0, 254, 0 };
+
+	LONG status;
+	UBYTE profileData[254];
+
+	if(!(*cmd.Handle & cAllCmds)) {
+		return true;
+	}
+
+	print("  GET CONFIGURATION\n");
+
+
+	cmd.Cmd = (void *)&GetConfiguration;
+	cmd.CmdLen = (UWORD)sizeof(GetConfiguration);
+	cmd.Buffer = &profileData;
+	cmd.TransferLen = sizeof(profileData);
+
+	memset(&senseData, 0, sizeof(SENSE_DATA));
+
+	status = scsiCall->In(&cmd);
+	if(!status) {
+		UWORD i;
+		UWORD profileListLen = profileData[11] >> 2;
+		UWORD *profiles = (UWORD *)&profileData[12];
+
+		print("     Number of supported profiles: %u\n", profileListLen);
+
+		print("                  Current profile: $%04X\n",
+			((UWORD *)&profileData[6])[0]);
+
+		print("           Supported profile list: ");
+
+		for(i = 0; i < profileListLen; i++) {
+			if(i) {
+				print(", ");
+			}
+
+			print("$%04X", profiles[2 * i]);
+		}
+
+		print("\n");
+	}
+	else if(status == 2 && senseData.senseKey == 0x05 &&
+		senseData.addSenseCode == 0x20) {
+		print("    GET CONFIGURATION is not supported\n");
 	}
 	else if(status == 2 && senseData.senseKey == 0x02 &&
 		senseData.addSenseCode == 0x3a) {
