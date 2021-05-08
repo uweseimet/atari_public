@@ -13,9 +13,11 @@ Applications making use of the SCSI Driver interface may not work correctly
 with SCSI Drivers where some of the tests executed by SDRVTEST fail.
 SDRVTEST saves the test results in a file SDRVTEST.LOG in the current
 directory and also displays the results on the screen.
-
 A comma-separated list of bus IDs to be checked can be passed as an argument.
 Without an argument all available buses are checked.
+
+MCHGTEST, ERRTEST and SERRTEST test other SCSI Driver features, related to
+error handling and media changes. Please refer to the sources for details.
 
 --
 
@@ -36,9 +38,13 @@ nicht korrekt mit SCSI-Treibern zusammen, bei denen die von SDRVTEST
 durchgefÅhrten Tests fehlschlagen.
 SDRVTEST sichert die Testergebnisse in einer Datei SDRVTEST.LOG im aktuellen
 Verzeichnis und zeigt die Ergebnisse auch auf dem Bildschirm an.
-
 Es kann eine komma-separierte Liste von zu prÅfenden Bus-IDs als Argument
 Åbergeben werden. Ohne Argument werden alle verfÅgbaren Busse getestet.
 
 
-  Uwe.Seimet@seimet.de, 2021-04-11
+MCHGTEST, ERRTEST and SERRTEST testen weitere SCSI-Treiber-Features, die sich
+auf Fehlerbehandlung und Medienwechsel beziehen. Bitte entnehmen Sie Details
+den Quelltexten.
+
+
+  Uwe.Seimet@seimet.de, 2021-05-08
