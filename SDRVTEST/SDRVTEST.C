@@ -1,5 +1,5 @@
 /****************************/
-/* SCSI Driver Test 1.36    */
+/* SCSI Driver Test 1.37    */
 /*                          */
 /* (C) 2014-2021 Uwe Seimet */
 /****************************/
@@ -128,7 +128,7 @@ main(WORD argc, const char *argv[])
 		return -1;
 	}
 
-	print("SCSI Driver test V1.36\n");
+	print("SCSI Driver test V1.37\n");
 	print("½ 2014-2021 Uwe Seimet\n\n");
 
 	print("Found SCSI Driver version %d.%02d\n\n", scsiCall->Version >> 8,
@@ -471,6 +471,27 @@ testInquiry()
 	}
 
 	Inquiry.lun = 0;
+
+	print("    Checking byte count of 10\n");
+
+	cmd.TransferLen = 10;
+
+	memset(&inquiryData, 0x44, sizeof(INQUIRY_DATA));
+
+	status = scsiCall->In(&cmd);
+	if(status) {
+		print("    ERROR: Call failed: %ld\n", status);
+
+		hasError = true;
+	}
+	else {
+		BYTE *data = (BYTE *)&inquiryData;
+		if(data[10] != 0x44 || data[11] != 0x44) {
+			print("    ERROR: More than 10 bytes were returned\n");
+
+			hasError = true;
+		}
+	}
 
 	return deviceType;
 }
