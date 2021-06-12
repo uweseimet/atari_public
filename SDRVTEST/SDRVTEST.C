@@ -1,5 +1,5 @@
 /****************************/
-/* SCSI Driver Test 1.37    */
+/* SCSI Driver Test 1.38    */
 /*                          */
 /* (C) 2014-2021 Uwe Seimet */
 /****************************/
@@ -49,6 +49,21 @@ const char *DEVICE_TYPES[] = {
 
 
 typedef struct {
+  unsigned int bootpref;
+  char reserved1[4];
+  unsigned char language;
+  unsigned char keyboard;
+  unsigned char datetime;
+  char separator;
+  unsigned char bootdelay;
+  char reserved2[3];
+  unsigned int vmode;
+  unsigned char scsiid;
+  char reserved_for_us;
+} NVM;
+
+
+typedef struct {
 	UWORD busNo;
 	UWORD id;
 	ULONG maxLen;
@@ -66,6 +81,10 @@ typedef struct {
 typedef int bool;
 #define true TRUE
 #define false FALSE
+
+
+#define NVMSIZE 18
+#define NVMSIZE_MILAN 224
 
 
 #define EUNDEV -15L
@@ -90,7 +109,7 @@ void initBuffer(UBYTE *, ULONG);
 char * DULongToString(const D_ULONG *);
 void print(const char *, ...);
 bool getCookie(LONG, ULONG *);
-
+bool getNvm(NVM *nvm);
 
 DEVICEINFO deviceInfos[32];
 FILE *out;
@@ -108,6 +127,7 @@ main(WORD argc, const char *argv[])
 	tHandle handle;
 	LONG oldstack = 0;
 	UWORD devCount;
+	NVM nvm;
 	int i;
 
 	getCookie('SCSI', (ULONG *)&scsiCall);
@@ -128,10 +148,19 @@ main(WORD argc, const char *argv[])
 		return -1;
 	}
 
-	print("SCSI Driver test V1.37\n");
+	print("SCSI Driver test V1.38\n");
 	print("½ 2014-2021 Uwe Seimet\n\n");
 
-	print("Found SCSI Driver version %d.%02d\n\n", scsiCall->Version >> 8,
+	if(getNvm(&nvm)) {
+		print("SCSI initiator ID in NVRAM is %d\n", nvm.scsiid & 0x07);
+		print("SCSI initiator identification is %s ", nvm.scsiid & 0x80 ?
+			"enabled" : "disabled");		
+	}
+	else {
+		print("SCSI initiator ID is not available");
+	}
+
+	print("\n\nFound SCSI Driver version %d.%02d\n\n", scsiCall->Version >> 8,
 		scsiCall->Version & 0xff);
 
 	cmd.Flags = 0;
@@ -1357,5 +1386,20 @@ getCookie(LONG cookie, ULONG *p_value)
 			cookiejar = &(cookiejar[2]);
 	} while(cookiejar[-2]);
 
+	return false;
+}
+
+
+bool
+getNvm(NVM *nvm)
+{
+	ULONG cookie;
+
+	if(getCookie('_MCH', &cookie) && cookie >= 0x00020000L) {
+		int nvmSize = getCookie('_MIL', NULL) ? NVMSIZE_MILAN : NVMSIZE;
+
+		return !NVMaccess(0, 0, nvmSize, nvm);
+	}
+	
 	return false;
 }
