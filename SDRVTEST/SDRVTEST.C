@@ -1,5 +1,5 @@
 /****************************/
-/* SCSI Driver Test 1.38    */
+/* SCSI Driver Test 1.39    */
 /*                          */
 /* (C) 2014-2021 Uwe Seimet */
 /****************************/
@@ -148,7 +148,7 @@ main(WORD argc, const char *argv[])
 		return -1;
 	}
 
-	print("SCSI Driver test V1.38\n");
+	print("SCSI Driver test V1.39\n");
 	print("½ 2014-2021 Uwe Seimet\n\n");
 
 	if(getNvm(&nvm)) {
