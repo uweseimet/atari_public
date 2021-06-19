@@ -503,7 +503,8 @@ testInquiry()
 
 	print("    Checking byte count of 10\n");
 
-	cmd.TransferLen = 10;
+	Inquiry.length = 10;
+	cmd.TransferLen = Inquiry.length;
 
 	memset(&inquiryData, 0x44, sizeof(INQUIRY_DATA));
 
