@@ -1,7 +1,7 @@
 /*
-   Sample implementation of a proprietary SCSI command with SCSI
-   opcode 0xc8. With this command other compures can read data from
-   the main memory of a TT or Falcon.
+   Sample implementation of a custom SCSI command with opcode 0xc8.
+   With this command other computers can read data from the main
+   memory of a TT or Falcon.
    The 12 byte command block looks like this:
 
    Byte  Meaning
@@ -23,7 +23,7 @@
    implementations of TSel() and TCmd().
    The code can be compiled without modifications using Pure C.
 
-   (C) 2000-2019 Uwe Seimet
+   (C) 2000-2021 Uwe Seimet
 */
 
 
@@ -32,6 +32,7 @@
 
 /* From Steffen Engel's SCSI Driver bindings */
 #include <scsidrv/scsidefs.h>
+
 
 tpScsiCall scsiCall;
 
@@ -71,14 +72,16 @@ int
 installHandler()
 {
 	tBusInfo busInfo;
-	LONG result;
 	int installed = FALSE;
 
-	result = scsiCall->InquireSCSI(cInqFirst, &busInfo);
+	long result = scsiCall->InquireSCSI(cInqFirst, &busInfo);
 	while(!result) {
-		if(busInfo.Features & cTarget)
-			if(!scsiCall->Install(busInfo.BusNo, &targetHandler))
+		if(busInfo.Features & cTarget) {
+			if(!scsiCall->Install(busInfo.BusNo, &targetHandler)) {
 				installed = TRUE;
+			}
+		}
+
 		result = scsiCall->InquireSCSI(cInqNext, &busInfo);
 	}
 
@@ -131,13 +134,13 @@ TCmd(WORD bus, BYTE *cmd)
 	BYTE *adr;
 	ULONG len;
 
-/* Check for the proprietary SCSI opcode 0xc8 */
+/* Check for the custom SCSI opcode 0xc8 */
 	UBYTE *c = (UBYTE *)cmd;
 	if(c[0] != 0xc8) {
 		return FALSE;
 	}
 
-/* Preset SCSI status for REQUEST SENSE to OK */
+/* Initialize SCSI status for REQUEST SENSE to OK */
 	memset(scsiCall->ReqData, 0, sizeof(tReqData));
 
 /* Get memory address from SCSI command block bytes 2-5 */
@@ -148,7 +151,7 @@ TCmd(WORD bus, BYTE *cmd)
 	len = ((LONG)c[6] << 24) + ((LONG)c[7] << 16) +
 		((LONG)c[8] << 8) + (LONG)c[9];
 
-/* Send data and finally status and message byte */
+/* Send data and then the status and message bytes */
 	if(!scsiCall->SendData(bus, adr, len)) {
 		scsiCall->SendStatus(bus, 0);
 		scsiCall->SendMsg(bus, 0);
