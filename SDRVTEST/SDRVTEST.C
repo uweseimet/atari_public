@@ -1,5 +1,5 @@
 /****************************/
-/* SCSI Driver Test 1.39    */
+/* SCSI Driver Test 1.40    */
 /*                          */
 /* (C) 2014-2021 Uwe Seimet */
 /****************************/
@@ -35,15 +35,15 @@ const char *DEVICE_TYPES[] = {
 	"Automation/Drive Interface",
 	"Security Manager",
 	"Host Managed Zoned Block",
-	"Unknown Device Type",
-	"Unknown Device Type",
-	"Unknown Device Type",
-	"Unknown Device Type",
-	"Unknown Device Type",
-	"Unknown Device Type",
-	"Unknown Device Type",
-	"Unknown Device Type",
-	"Unknown Device Type",
+	"Reserved Device Type",
+	"Reserved Device Type",
+	"Reserved Device Type",
+	"Reserved Device Type",
+	"Reserved Device Type",
+	"Reserved Device Type",
+	"Reserved Device Type",
+	"Reserved Device Type",
+	"Reserved Device Type",
 	"Well Known Logical Unit"
 };
 
@@ -97,10 +97,9 @@ void testCheckDev(UWORD, UWORD);
 void testUnitReady(void);
 UWORD testInquiry(void);
 void testOpenClose(UWORD, UWORD, ULONG);
-bool testError(UWORD, UWORD);
-bool testRequestSense(void);
-bool testReadCapacity(ULONG *);
-bool testRead(ULONG, UBYTE *, UBYTE *, UBYTE *);
+void testRequestSense(void);
+void testReadCapacity(ULONG *);
+bool testRead(UWORD, ULONG, UBYTE *, UBYTE *, UBYTE *);
 bool testReportLuns(void);
 bool testGetConfiguration(void);
 bool testSendDiagnostic(void);
@@ -108,12 +107,14 @@ bool checkRoot(UBYTE *, UBYTE *, ULONG);
 void initBuffer(UBYTE *, ULONG);
 char * DULongToString(const D_ULONG *);
 void print(const char *, ...);
+void printError(LONG);
+void printSenseData(SENSE_DATA *);
+void printExpectedSenseData(SENSE_DATA *, UWORD, UWORD);
 bool getCookie(LONG, ULONG *);
 bool getNvm(NVM *nvm);
 
 DEVICEINFO deviceInfos[32];
 FILE *out;
-bool hasError = false;
 tpScsiCall scsiCall;
 tSCSICmd cmd;
 SENSE_DATA senseData;
@@ -148,7 +149,7 @@ main(WORD argc, const char *argv[])
 		return -1;
 	}
 
-	print("SCSI Driver test V1.39\n");
+	print("SCSI Driver test V1.40\n");
 	print("½ 2014-2021 Uwe Seimet\n\n");
 
 	if(getNvm(&nvm)) {
@@ -174,8 +175,8 @@ main(WORD argc, const char *argv[])
 	devCount = findDevices(argc > 1 ? argv[1] : NULL);
 
 	for(i = 0; i < devCount; i++) {
-		print("\nTesting bus '%s', device ID %d\n",
-			deviceInfos[i].deviceBusName, deviceInfos[i].id);
+		print("\nTesting device ID %d on bus %d '%s'\n",
+			deviceInfos[i].id, deviceInfos[i].busNo, deviceInfos[i].deviceBusName);
 
 		testCheckDev(deviceInfos[i].busNo, deviceInfos[i].id);
 		testOpenClose(deviceInfos[i].busNo, deviceInfos[i].id, deviceInfos[i].maxLen);
@@ -187,8 +188,6 @@ main(WORD argc, const char *argv[])
 			&maxLen);
 		if(((LONG)handle >> 24) == 0xff) {
 			print("    ERROR: No handle\n");
-
-			hasError = true;
 		}
 		else {
 			UWORD deviceType;
@@ -199,7 +198,7 @@ main(WORD argc, const char *argv[])
 
 			deviceType = testInquiry();
 
-			hasError |= !testRequestSense();
+			testRequestSense();
 
 			if(deviceType != 0x1f) {
 				switch(deviceType) {
@@ -209,7 +208,7 @@ main(WORD argc, const char *argv[])
 						{
 							ULONG blockSize;
 
-							hasError |= !testReadCapacity(&blockSize);
+							testReadCapacity(&blockSize);
 							if(blockSize) {
 								UBYTE *ptr1, *ptr2, *ptr3;
 
@@ -223,7 +222,7 @@ main(WORD argc, const char *argv[])
 									return -1;
 								}
 
-								hasError |= !testRead(blockSize, ptr1, ptr2, ptr3 + 1);
+								testRead(deviceInfos[i].busNo, blockSize, ptr1, ptr2, ptr3 + 1);
 
 								free(ptr3);
 								free(ptr2);
@@ -236,24 +235,12 @@ main(WORD argc, const char *argv[])
 						break;
 				}
 
-/* This only works if no logfile is written to the tested drives */
-/*				hasError |= !testError(deviceInfos[i].busNo, deviceInfos[i].id);*/
-
-				hasError |= !testReportLuns();
-				hasError |= !testGetConfiguration();
-/*				hasError |= !testSendDiagnostic(); */
+				testReportLuns();
+				testGetConfiguration();
+				testSendDiagnostic();
 			}
 
 			scsiCall->Close(handle);
-		}
-
-		if(hasError) {
-			print("ERROR\n");
-
-			hasError = false;
-		}
-		else {
-			print("OK\n");
 		}
 	}
 
@@ -276,7 +263,7 @@ findDevices(const char *busNos)
 	LONG busResult;
 	UWORD devCount = 0;
 
-	print("Buses:\n");
+	print("Available buses:\n");
 
 	busResult = scsiCall->InquireSCSI(cInqFirst, &busInfo);
 	while(!busResult) {
@@ -342,27 +329,26 @@ testCheckDev(UWORD busNo, UWORD id)
 
 	print("  CheckDev()\n");
 
-	print("    Checking with illegal bus ID\n");
 
-	scsiId.hi = 0;
-	scsiId.lo = 0;
-	result = scsiCall->CheckDev(32, &scsiId, name, &features);
-	if(result != EUNDEV) {
-		print("    ERROR: Illegal bus ID 32 was accepted\n");
-
-		hasError = true;
-	}
-				
-	print("    Checking with legal bus ID\n");
+	print("    Testing with valid bus ID %d\n", busNo);
 
 	scsiId.hi = 0;
 	scsiId.lo = id;
 	result = scsiCall->CheckDev(busNo, &scsiId, name, &features);
 	if(result < 0) {
-		print("    ERROR: Legal bus ID was rejected with error code %ld\n", result);
-
-		hasError = true;
+		print("    ERROR: Valid bus ID %d was rejected with error code %ld\n",
+			busNo, result);
 	}
+
+	print("    Testing with invalid bus ID 32\n");
+
+	scsiId.hi = 0;
+	scsiId.lo = 0;
+	result = scsiCall->CheckDev(32, &scsiId, name, &features);
+	if(result != EUNDEV) {
+		print("    ERROR: Invalid bus ID 32 was accepted\n");
+	}
+
 }
 
 
@@ -389,9 +375,8 @@ testUnitReady()
 			print("    Medium not present\n");
 		}
 		else {
-			print("    ERROR: Call failed: %ld\n", status);
-			print("      SenseKey $%02X, ASC $%02X\n",
-				senseData.senseKey, senseData.addSenseCode);
+			printError(status);
+			printSenseData(&senseData);
 		}
 	}
 }
@@ -413,7 +398,7 @@ testInquiry()
 	print("  INQUIRY\n");
 
 
-	print("    Calling with legal data\n");
+	print("    Calling with valid data\n");
 
 	cmd.Cmd = (void *)&Inquiry;
 	cmd.CmdLen = 6;
@@ -424,14 +409,14 @@ testInquiry()
 
 	status = scsiCall->In(&cmd);
 	if(status) {
-		print("    ERROR: Call failed: %ld\n", status);
+		printError(status);
 
 		return 0;
 	}
 
 	deviceType = inquiryData.deviceType;
 	if(inquiryData.deviceType == 0x1f) {
-		print("    ERROR: Illegal device type\n");
+		print("    ERROR: Unknown or no device type\n");
 
 		return 0;
 	}
@@ -476,8 +461,6 @@ testInquiry()
 	print("      Additional length: $%02X\n", inquiryData.additionalLength);
 	if(inquiryData.additionalLength < 0x1f) {
 		print("      ERROR: Additional length must be at least $1F\n");
-
-		hasError = true;
 	}
 
 	print("    Calling with non-existing LUN 7\n");
@@ -488,20 +471,19 @@ testInquiry()
 
 	status = scsiCall->In(&cmd);
 	if(status) {
-		print("    ERROR: Call failed: %ld\n", status);
-
-		hasError = true;
+		printError(status);
 	}
 	else if(inquiryData.peripheralQualifier != 0x03 ||
 		inquiryData.deviceType != 0x1f) {
-		print("    ERROR: Call was not properly rejected\n");
-
-		hasError = true;
+		print("      ERROR: Call was not properly rejected\n");
+		print("        Expected: Peripheral Qualifier $03  (got $%02X),"
+			" Device Type $1F (got $%02X)\n",
+			inquiryData.peripheralQualifier, inquiryData.deviceType);
 	}
 
 	Inquiry.lun = 0;
 
-	print("    Checking byte count of 10\n");
+	print("    Testing with requested byte count of 10\n");
 
 	Inquiry.length = 10;
 	cmd.TransferLen = Inquiry.length;
@@ -510,16 +492,12 @@ testInquiry()
 
 	status = scsiCall->In(&cmd);
 	if(status) {
-		print("    ERROR: Call failed: %ld\n", status);
-
-		hasError = true;
+		printError(status);
 	}
 	else {
 		BYTE *data = (BYTE *)&inquiryData;
 		if(data[10] != 0x44 || data[11] != 0x44) {
-			print("    ERROR: More than 10 bytes were returned\n");
-
-			hasError = true;
+			print("    ERROR: More than 10 requested bytes were returned\n");
 		}
 	}
 
@@ -527,7 +505,7 @@ testInquiry()
 }
 
 
-bool
+void
 testRequestSense()
 {
 	BYTE RequestSense[] = { 0x03, 0, 0, 0, sizeof(SENSE_DATA), 0 };
@@ -547,21 +525,18 @@ testRequestSense()
 
 	status = scsiCall->In(&cmd);
 	if(status) {
-		print("    ERROR: Call failed: %ld\n", status);
-
-		hasError = true;
+		printError(status);
 	}
 	else {
 		print("      Additional sense length: $%02X\n",
 			localSenseData.addSenseLength);
 		if(localSenseData.addSenseLength < 0x0a) {
 			print("      ERROR: Additional sense length must be at least $0A\n");
-
-			hasError = true;
 		}
 	}
 
 
+/* Non-existing LUNs are a special case */
 	print("    Calling REQUEST SENSE for non-existing LUN 7\n");
 
 	RequestSense[1] = 7 << 5;
@@ -570,19 +545,12 @@ testRequestSense()
 
 	status = scsiCall->In(&cmd);
 	if(status) {
-		print("    ERROR: Call failed: %ld\n", status);
-
-		hasError = true;
+		printError(status);
 	}
 
-	/* Even though GOOD is returned Sense Key and ASC must be set */
-	if(localSenseData.senseKey != 0x05 ||
-		localSenseData.addSenseCode != 0x25) {
-		print("    ERROR: Call was not properly rejected\n");
-		print("      Expected: SenseKey $05 ($%02X), ASC $25 ($%02X)\n",
-			localSenseData.senseKey, localSenseData.addSenseCode);
-
-		hasError = true;
+/* Even though GOOD is returned Sense Key and ASC must be set */
+	if(localSenseData.senseKey != 0x05 || localSenseData.addSenseCode != 0x25) {
+		printExpectedSenseData(&localSenseData, 0x05, 0x25);
 	}
 
 	RequestSense[1] = 0;
@@ -597,12 +565,8 @@ testRequestSense()
 
 	status = scsiCall->In(&cmd);
 	if(status) {
-		print("    ERROR: Call failed: %ld\n", status);
-
-		hasError = true;
+		printError(status);
 	}
-
-	return true;
 }
 
 
@@ -610,7 +574,8 @@ void
 testOpenClose(UWORD busNo, UWORD id, ULONG maxLen)
 {
 	DLONG scsiId;
-	tHandle handle[256];
+	tHandle handles[256];
+	tHandle handle;
 	ULONG len;
 	LONG result;
 	int i;
@@ -620,21 +585,19 @@ testOpenClose(UWORD busNo, UWORD id, ULONG maxLen)
 	scsiId.hi = 0;
 	scsiId.lo = id;
 
+/* Determine the available handle count */
 	for(i = 0; i < 256; i++) {
-		handle[i] = (tHandle)scsiCall->Open(busNo, &scsiId, &len);
+		handle = (tHandle)scsiCall->Open(busNo, &scsiId, &len);
 
 		if(len != maxLen) {
 			print("    ERROR: Transfer length mismatch: $%lX\n", len);
 
-			hasError = true;
-
-			Cconin();
-
 			break;
 		}
 
-		result = (LONG)handle[i];
+		result = (LONG)handle;
 
+		handles[i] = (tHandle)-1;
 		switch((WORD)result) {
 			case ENHNDL:
 				break;
@@ -648,103 +611,34 @@ testOpenClose(UWORD busNo, UWORD id, ULONG maxLen)
 				break;
 
 			default:
+				handles[i] = handle;
 				break;
 		}
 
 		if(result < 0) {
-			print("    Available handles: %d\n", i);
+			if(i != 256) {
+				print("    Available handles for bus %d: %d\n", busNo, i);
+			}
+			else {
+				print("    At least 256 handles are supported for bus %d\n", busNo);
+			}
 
 			break;
 		}
 	}
 
-	if(i == 256) {
-		print("    At least 256 handles are supported\n");
-	}
-
 	while(--i >= 0) {
-		result = scsiCall->Close(handle[i]);
-		if(result != 0) {
-			print("    ERROR: Couldn't close handle %d\n", i);
-
-			hasError = true;
+		if(handles[i] != (tHandle)-1) { 		
+			result = scsiCall->Close(handles[i]);
+			if(result != 0) {
+				print("    ERROR: Couldn't close handle %ld\n", handles[i]);
+			}
 		}
 	}
 }
 
 
-bool
-testError(UWORD busNo, UWORD id)
-{
-	DLONG scsiId;
-	tHandle handle1, handle2;
-	LONG status1, status2;
-	ULONG maxLen;
-
-	print("  Error()\n");
-
-	scsiId.hi = 0;
-	scsiId.lo = id;
-
-	handle1 = (tHandle)scsiCall->Open(busNo, &scsiId, &maxLen);
-	if(handle1 <= 0) {
-		goto error;
-	}
-
-	handle2 = (tHandle)scsiCall->Open(busNo, &scsiId, &maxLen);
-	if(handle2 <= 0) {
-		goto error;
-	}
-
-	status1 = scsiCall->Error(handle1, cErrRead, 1);
-	if(status1 != 0) {
-		print("    ERROR: cErrMediach status 1 before change: %ld\n", status1);
-
-		goto error;
-	}
-
-	status2 = scsiCall->Error(handle2, cErrRead, 1);
-	if(status2 != 0) {
-		print("    ERROR: cErrMediach status 2 before change: %ld\n", status2);
-
-		goto error;
-	}
-
-	status1 = scsiCall->Error(handle1, cErrWrite, 1);
-	if(status1 != 0) {
-		print("    ERROR: cErrMediach status 1 after change: %ld\n", status1);
-
-		goto error;
-	}
-
-	status2 = scsiCall->Error(handle2, cErrRead, 1);
-	if(status2 != 1) {
-		print("    ERROR: cErrMediach status 2 after change, first call: %ld\n", status2);
-
-		goto error;
-	}
-
-	status2 = scsiCall->Error(handle2, cErrRead, 1);
-	if(status2 != 0) {
-		print("    ERROR: cErrMediach status 2 after change, second call: %ld\n", status2);
-
-		goto error;
-	}
-
-	scsiCall->Close(handle1);
-	scsiCall->Close(handle2);
-
-	return true;
- 
-error:
-	scsiCall->Close(handle1);
-	scsiCall->Close(handle2);
-
-	return false;
-}
-
-
-bool
+void
 testReadCapacity(ULONG *blockSize)
 {
 	BYTE ReadCapacity10[] = {
@@ -772,7 +666,7 @@ testReadCapacity(ULONG *blockSize)
 	*blockSize = 512;
 
 	if(!(*cmd.Handle & cAllCmds)) {
-		return true;
+		return;
 	}
 
 	*blockSize = 0;
@@ -793,12 +687,12 @@ testReadCapacity(ULONG *blockSize)
 		senseData.addSenseCode == 0x3a) {
 		print("    Medium not present\n");
 
-		return true;
+		return;
 	}
 	else if(status) {
-		print("    ERROR: Call failed: %ld\n", status);
+		printError(status);
 
-		return false;
+		return;
 	}
 
 	maxBlock64.hi = 0;
@@ -809,7 +703,7 @@ testReadCapacity(ULONG *blockSize)
 	if(!maxBlock64.lo) {
 		print("    ERROR: Wrong maximum block number '0'\n");
 
-		return false;
+		return;
 	}
 
 	*blockSize = capacity10[1];
@@ -829,7 +723,7 @@ testReadCapacity(ULONG *blockSize)
 
 	status = scsiCall->In(&cmd);
 	if(status) {
-		print("      READ CAPACITY (16) is not supported\n");
+		print("      READ CAPACITY (16) is not supported by device\n");
 	}
 	else {
 		UWORD ratio;
@@ -848,7 +742,7 @@ testReadCapacity(ULONG *blockSize)
 		if(!maxBlock64.hi && !maxBlock64.lo) {
 			print("      ERROR: Illegal maximum block number '0'\n");
 
-			return false;
+			return;
 		}
 
 		sprintf(maxBlockString, "%s", DULongToString(&maxBlock64));
@@ -899,11 +793,10 @@ testReadCapacity(ULONG *blockSize)
 
 	status = scsiCall->In(&cmd);
 	if(status) {
-		print("    ERROR: Call failed: %ld\n", status);
-		print("      SenseKey $%02X, ASC $%02X\n",
-			senseData.senseKey, senseData.addSenseCode);
+		printError(status);
+		printSenseData(&senseData);
 
-		return false;
+		return;
 	}
 
 
@@ -941,19 +834,13 @@ testReadCapacity(ULONG *blockSize)
 	status = scsiCall->In(&cmd);
 	if(status != 2 || senseData.senseKey != 0x05 ||
 		senseData.addSenseCode != 0x21) {
-		print("    ERROR: Call was not properly rejected\n");
-		print("      Expected: SenseKey $05 ($%02X), ASC $21 ($%02X)\n",
-			senseData.senseKey, senseData.addSenseCode);
-
-		return false;
+		printExpectedSenseData(&senseData, 0x05, 0x21);
 	}
-
-	return true;
 }
 
 
 bool
-testRead(ULONG blockSize, UBYTE *ptr1, UBYTE* ptr2, UBYTE* ptr3)
+testRead(UWORD busNo, ULONG blockSize, UBYTE *ptr1, UBYTE* ptr2, UBYTE* ptr3)
 {
 	BYTE Read6[] = { 0x08, 0, 0, 0, 1, 0 };
 	BYTE Read10[] = { 0x28, 0, 0, 0, 0, 0, 0, 0, 1, 0 };
@@ -979,7 +866,7 @@ testRead(ULONG blockSize, UBYTE *ptr1, UBYTE* ptr2, UBYTE* ptr3)
 
 	status = scsiCall->In(&cmd);
 	if(status) {
-		print("      READ (6) is not supported\n");
+		print("      READ (6) is not supported by device\n");
 
 		hasRW6 = false;
 	}
@@ -998,13 +885,13 @@ testRead(ULONG blockSize, UBYTE *ptr1, UBYTE* ptr2, UBYTE* ptr3)
 
 		status = scsiCall->In(&cmd);
 		if(status) {
-			print("    ERROR: Call failed: %ld\n", status);
+			printError(status);
 
-			return false;
+			return true;
 		}
 
 		if(ptrRoot) {
-			hasError = checkRoot(ptrRoot, ptr2, blockSize);
+			checkRoot(ptrRoot, ptr2, blockSize);
 		}
 		else {
 			ptrRoot = ptr2;
@@ -1021,10 +908,10 @@ testRead(ULONG blockSize, UBYTE *ptr1, UBYTE* ptr2, UBYTE* ptr3)
 
 		status = scsiCall->In(&cmd);
 		if(status) {
-			print("      READ (12) is not supported\n");
+			print("      READ (12) is not supported by device\n");
 		}
 		else {
-			hasError = checkRoot(ptrRoot, ptr3, blockSize);
+			checkRoot(ptrRoot, ptr3, blockSize);
 		}
 
 
@@ -1038,30 +925,30 @@ testRead(ULONG blockSize, UBYTE *ptr1, UBYTE* ptr2, UBYTE* ptr3)
 
 		status = scsiCall->In(&cmd);
 		if(status) {
-			print("      READ (16) is not supported\n");
+			print("      READ (16) is not supported by device\n");
 		}
 		else {
-			hasError = checkRoot(ptrRoot, ptr3, blockSize);
+			checkRoot(ptrRoot, ptr3, blockSize);
 
-			/* This is beyond the IDE LBA48 limit */
-			print("    Trying to read block 281474976710656 with READ (16)\n");
+			if(busNo == 2) {
+				/* This is beyond the IDE LBA48 limit */
+				print("    Trying to read IDE block 281474976710656 with READ (16)\n");
 
-			cmd.Cmd = (void *)&Read16;
-			cmd.CmdLen = (UWORD)sizeof(Read16);
-			cmd.Buffer = ptr3;
-			cmd.TransferLen = blockSize;
-			initBuffer(ptr3, blockSize);
+				cmd.Cmd = (void *)&Read16;
+				cmd.CmdLen = (UWORD)sizeof(Read16);
+				cmd.Buffer = ptr3;
+				cmd.TransferLen = blockSize;
+				initBuffer(ptr3, blockSize);
 
-			Read16[3] = 1;
+				Read16[3] = 1;
 
-			status = scsiCall->In(&cmd);
-			if(!status) {
-				print("    ERROR: Block 281474976710656 is not supposed to be readable\n");
+				status = scsiCall->In(&cmd);
+				if(!status) {
+					print("    ERROR: IDE block 281474976710656 is not supposed to be readable\n");
 
-				hasError = true;
+					Read16[3] = 0;
+				}
 			}
-
-			Read16[3] = 0;
 		}
 	}
 
@@ -1087,9 +974,7 @@ testRead(ULONG blockSize, UBYTE *ptr1, UBYTE* ptr2, UBYTE* ptr3)
 
 	status = scsiCall->In(&cmd);
 	if(status) {
-		print("    ERROR: Call failed: %ld\n", status);
-
-		hasError = true;
+		printError(status);
 	}
 
 	for(i = 0; i < blockSize; i++) {
@@ -1100,12 +985,10 @@ testRead(ULONG blockSize, UBYTE *ptr1, UBYTE* ptr2, UBYTE* ptr3)
 
 	if(i != blockSize) {
 		print("    ERROR: Block contents differ at offset %d\n", i);
-
-		hasError = true;
 	}
 
 
-	print("    Reading block 0 from non-existing LUN 7\n");
+	print("    Trying to read block 0 from non-existing LUN 7\n");
 
 	Read6[1] = 7 << 5;
 	Read10[1] = 7 << 5;
@@ -1128,14 +1011,12 @@ testRead(ULONG blockSize, UBYTE *ptr1, UBYTE* ptr2, UBYTE* ptr3)
 	status = scsiCall->In(&cmd);
 	if(status != 2 || senseData.senseKey != 0x05 ||
 		senseData.addSenseCode != 0x25) {
-		print("    ERROR: Call was not properly rejected\n");
-		print("      Expected: SenseKey $05 ($%02X), ASC $25 ($%02X)\n",
-			senseData.senseKey, senseData.addSenseCode);
+		printExpectedSenseData(&senseData, 0x05, 0x25);
 
-		return false;
+		return true;
 	}
 
-	return true;
+	return false;
 }
 
 
@@ -1181,16 +1062,14 @@ testReportLuns()
 	}
 	else if(status == 2 && senseData.senseKey == 0x05 &&
 		senseData.addSenseCode == 0x20) {
-		print("    REPORT LUNS is not supported\n");
+		print("    REPORT LUNS is not supported by device\n");
 	}
 	else if(status == 2 && senseData.senseKey == 0x02 &&
 		senseData.addSenseCode == 0x3a) {
 		print("    No medium inserted\n");
 	}
 	else {
-		print("    ERROR: Call was not properly rejected\n");
-		print("      Expected: Sense Key $05 ($%02X), ASC $20 ($%02X)\n",
-			senseData.senseKey, senseData.addSenseCode);
+		printExpectedSenseData(&senseData, 0x05, 0x20);
 
 		return false;
 	}
@@ -1246,16 +1125,14 @@ testGetConfiguration()
 	}
 	else if(status == 2 && senseData.senseKey == 0x05 &&
 		senseData.addSenseCode == 0x20) {
-		print("    GET CONFIGURATION is not supported\n");
+		print("    GET CONFIGURATION is not supported by device\n");
 	}
 	else if(status == 2 && senseData.senseKey == 0x02 &&
 		senseData.addSenseCode == 0x3a) {
 		print("    No medium inserted\n");
 	}
 	else {
-		print("    ERROR: Call was not properly rejected\n");
-		print("      Expected: Sense Key $05 ($%02X), ASC $20 ($%02X)\n",
-			senseData.senseKey, senseData.addSenseCode);
+		printExpectedSenseData(&senseData, 0x05, 0x20);
 
 		return false;
 	}
@@ -1274,7 +1151,7 @@ testSendDiagnostic()
 	print("  SEND DIAGNOSTIC\n");
 
 
-	print("    Default self test\n");
+	print("    Running default self test\n");
 
 	cmd.Cmd = (void *)&SendDiagnostic;
 	cmd.CmdLen = (UWORD)sizeof(SendDiagnostic);
@@ -1286,12 +1163,10 @@ testSendDiagnostic()
 	status = scsiCall->In(&cmd);
 	if(status == 2 && senseData.senseKey == 0x05 &&
 		senseData.addSenseCode == 0x20) {
-		print("      SEND DIAGNOSTIC is not supported\n");
+		print("      SEND DIAGNOSTIC is not supported by device\n");
 	}
 	else if(status) {
-		print("      ERROR: Call was not properly rejected\n");
-		print("        Expected: Sense Key $05 ($%02X), ASC $20 ($%02X)\n",
-			senseData.senseKey, senseData.addSenseCode);
+		printExpectedSenseData(&senseData, 0x05, 0x20);
 
 		return false;
 	}
@@ -1361,6 +1236,31 @@ print(const char *msg, ...)
 	va_end(args);
 	printf(s);
 	fprintf(out, s);
+}
+
+
+void
+printError(LONG status)
+{
+	print("      ERROR: Call failed with status %ld\n", status);
+}
+
+
+void
+printSenseData(SENSE_DATA *senseData)
+{
+		print("      Sense Key $%02X, ASC $%02X\n",
+			senseData->senseKey, senseData->addSenseCode);
+}
+
+
+void
+printExpectedSenseData(SENSE_DATA *senseData, UWORD senseKey, UWORD addSenseCode)
+{
+		print("      ERROR: Call was not properly rejected\n");
+		print("        Expected: Sense Key $%02X (got $%02X),"
+			" ASC $%02X (got $%02X)\n",
+			senseKey, senseData->senseKey, addSenseCode, senseData->addSenseCode);
 }
 
 

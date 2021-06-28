@@ -5,10 +5,10 @@ The device does not necessarily have to be a SCSI device, but can be any
 kind of device supported by a SCSI driver. HDDRIVER, for instance, provides
 a SCSI xdriver not only for SCSI devices but also for ACSI, IDE, ATAPI and
 SATA devices.
-Any error reported by SDRVTEST means that most likely something is either
-wrong with the way the device handles SCSI commands, or with the SCSI Driver
-managing this bus. If an optional SCSI command is not supported by a device
-or SCSI Driver this is not considered an error.
+Any error reported by SDRVTEST ("ERROR" is displayed) means that most likely
+something is either wrong with how the device handles SCSI commands, or with
+the SCSI Driver managing the respective bus. If an optional SCSI command is
+not supported this is not considered an error.
 Applications making use of the SCSI Driver interface may not work correctly
 with SCSI Drivers where some of the tests executed by SDRVTEST fail.
 SDRVTEST saves the test results in a file SDRVTEST.LOG in the current
@@ -28,10 +28,10 @@ Das GerÑt muss nicht unbedingt ein SCSI-GerÑt sein, sondern es kann sich um
 ein beliebiges GerÑt handeln, das von einem SCSI-Treiber unterstÅtzt wird.
 HDDRIVER beispielsweise stellt SCSI-Treiber nicht nur fÅr SCSI- sondern auch
 fÅr ACSI-, IDE-, ATAPI- und SATA-GerÑte bereit.
-Jeder von SDRVTEST gemeldete Fehler bedeutet mit hoher Wahrscheinlichkeit,
-dass entweder das GerÑt nicht korrekt mit SCSI-Kommandos umgeht, oder dass
-etwas mit der SCSI-Treiber-Implementierung fÅr diesen Bus nicht stimmt.	Falls
-ein optionales SCSI-Kommando von einem GerÑt oder SCSI-Treiber nicht
+Jeder von SDRVTEST gemeldete Fehler ("ERROR" wird angezeigt) bedeutet mit
+hoher Wahrscheinlichkeit, dass entweder das GerÑt nicht korrekt mit
+SCSI-Kommandos umgeht, oder dass etwas mit der SCSI-Treiber-Implementierung
+fÅr diesen Bus nicht stimmt. Falls ein optionales SCSI-Kommando nicht
 unterstÅtzt wird, wird dies nicht als Fehler angesehen.
 Anwendungen, die das SCSI-Treiber-Interface benutzen, arbeiten mîglicherweise
 nicht korrekt mit SCSI-Treibern zusammen, bei denen die von SDRVTEST
@@ -47,4 +47,4 @@ auf Fehlerbehandlung und Medienwechsel beziehen. Bitte entnehmen Sie Details
 den Quelltexten.
 
 
-  Uwe.Seimet@seimet.de, 2021-06-19
+  Uwe.Seimet@seimet.de, 2021-06-28
