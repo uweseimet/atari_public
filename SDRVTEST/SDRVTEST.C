@@ -1,5 +1,5 @@
 /****************************/
-/* SCSI Driver Test 1.40    */
+/* SCSI Driver Test 1.41    */
 /*                          */
 /* (C) 2014-2021 Uwe Seimet */
 /****************************/
@@ -149,7 +149,7 @@ main(WORD argc, const char *argv[])
 		return -1;
 	}
 
-	print("SCSI Driver test V1.40\n");
+	print("SCSI Driver test V1.41\n");
 	print("½ 2014-2021 Uwe Seimet\n\n");
 
 	if(getNvm(&nvm)) {
@@ -237,7 +237,10 @@ main(WORD argc, const char *argv[])
 
 				testReportLuns();
 				testGetConfiguration();
+				/*
+				Commented out because this might take long
 				testSendDiagnostic();
+				*/
 			}
 
 			scsiCall->Close(handle);
