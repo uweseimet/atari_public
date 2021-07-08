@@ -102,7 +102,6 @@ void testReadCapacity(ULONG *);
 bool testRead(UWORD, ULONG, UBYTE *, UBYTE *, UBYTE *);
 bool testReportLuns(void);
 bool testGetConfiguration(void);
-bool testSendDiagnostic(void);
 bool checkRoot(UBYTE *, UBYTE *, ULONG);
 void initBuffer(UBYTE *, ULONG);
 char * DULongToString(const D_ULONG *);
@@ -237,10 +236,6 @@ main(WORD argc, const char *argv[])
 
 				testReportLuns();
 				testGetConfiguration();
-				/*
-				Commented out because this might take long
-				testSendDiagnostic();
-				*/
 			}
 
 			scsiCall->Close(handle);
@@ -1140,40 +1135,6 @@ testGetConfiguration()
 		return false;
 	}
 	
-	return true;
-}
-
-
-bool
-testSendDiagnostic()
-{
-	BYTE SendDiagnostic[6] = { 0x1d, 0x04, 0, 0, 0, 0 };
-
-	LONG status;
-
-	print("  SEND DIAGNOSTIC\n");
-
-
-	print("    Running default self test\n");
-
-	cmd.Cmd = (void *)&SendDiagnostic;
-	cmd.CmdLen = (UWORD)sizeof(SendDiagnostic);
-	cmd.Buffer = NULL;
-	cmd.TransferLen = 0;
-
-	memset(&senseData, 0, sizeof(SENSE_DATA));
-
-	status = scsiCall->In(&cmd);
-	if(status == 2 && senseData.senseKey == 0x05 &&
-		senseData.addSenseCode == 0x20) {
-		print("      SEND DIAGNOSTIC is not supported by device\n");
-	}
-	else if(status) {
-		printExpectedSenseData(&senseData, 0x05, 0x20);
-
-		return false;
-	}
-
 	return true;
 }
 
