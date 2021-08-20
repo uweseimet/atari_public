@@ -1,5 +1,5 @@
 /****************************/
-/* SCSI Driver Test 1.40    */
+/* SCSI Driver Test 1.41    */
 /*                          */
 /* (C) 2014-2021 Uwe Seimet */
 /****************************/
@@ -102,7 +102,6 @@ void testReadCapacity(ULONG *);
 bool testRead(UWORD, ULONG, UBYTE *, UBYTE *, UBYTE *);
 bool testReportLuns(void);
 bool testGetConfiguration(void);
-bool testSendDiagnostic(void);
 bool checkRoot(UBYTE *, UBYTE *, ULONG);
 void initBuffer(UBYTE *, ULONG);
 char * DULongToString(const D_ULONG *);
@@ -149,7 +148,7 @@ main(WORD argc, const char *argv[])
 		return -1;
 	}
 
-	print("SCSI Driver test V1.40\n");
+	print("SCSI Driver test V1.41\n");
 	print("½ 2014-2021 Uwe Seimet\n\n");
 
 	if(getNvm(&nvm)) {
@@ -237,7 +236,6 @@ main(WORD argc, const char *argv[])
 
 				testReportLuns();
 				testGetConfiguration();
-				testSendDiagnostic();
 			}
 
 			scsiCall->Close(handle);
@@ -427,6 +425,8 @@ testInquiry()
 	revision[4] = 0;
 	print("      Device type: %s\n",
 		DEVICE_TYPES[inquiryData.deviceType & 0x1f]);
+	print("      Removable media support: %s\n",
+		inquiryData.RMB ? "Yes" : "No");
 	print("      Device name: '%s'\n", name);
 	print("      Firmware revision: '%s'\n", revision);
 
@@ -750,10 +750,9 @@ testReadCapacity(ULONG *blockSize)
 
 		print("      Maximum block number hi: %lu, maximum block number lo: %lu\n",
 			maxBlock64.hi, maxBlock64.lo);
-		print("      Maximum block number: %s\n", maxBlockString);
 		print("      Block size: %lu\n", capacity16[2]);
 		if(!ratio) {
-			print("      Logical sectors per physical sector: Unknown\n");
+			print("      Logical sectors per physical sector: Unknown (1 or more)\n");
 		}
 		else {
 			print("      Logical sectors per physical sector: %d\n",
@@ -1137,40 +1136,6 @@ testGetConfiguration()
 		return false;
 	}
 	
-	return true;
-}
-
-
-bool
-testSendDiagnostic()
-{
-	BYTE SendDiagnostic[6] = { 0x1d, 0x04, 0, 0, 0, 0 };
-
-	LONG status;
-
-	print("  SEND DIAGNOSTIC\n");
-
-
-	print("    Running default self test\n");
-
-	cmd.Cmd = (void *)&SendDiagnostic;
-	cmd.CmdLen = (UWORD)sizeof(SendDiagnostic);
-	cmd.Buffer = NULL;
-	cmd.TransferLen = 0;
-
-	memset(&senseData, 0, sizeof(SENSE_DATA));
-
-	status = scsiCall->In(&cmd);
-	if(status == 2 && senseData.senseKey == 0x05 &&
-		senseData.addSenseCode == 0x20) {
-		print("      SEND DIAGNOSTIC is not supported by device\n");
-	}
-	else if(status) {
-		printExpectedSenseData(&senseData, 0x05, 0x20);
-
-		return false;
-	}
-
 	return true;
 }
 
