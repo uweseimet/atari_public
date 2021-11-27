@@ -1,5 +1,5 @@
 /****************************/
-/* SCSI Driver Test 1.41    */
+/* SCSI Driver Test 1.50    */
 /*                          */
 /* (C) 2014-2021 Uwe Seimet */
 /****************************/
@@ -100,6 +100,7 @@ void testOpenClose(UWORD, UWORD, ULONG);
 void testRequestSense(void);
 void testReadCapacity(ULONG *);
 bool testRead(UWORD, ULONG, UBYTE *, UBYTE *, UBYTE *);
+bool testReadLong(void);
 bool testReportLuns(void);
 bool testGetConfiguration(void);
 bool checkRoot(UBYTE *, UBYTE *, ULONG);
@@ -107,7 +108,7 @@ void initBuffer(UBYTE *, ULONG);
 char * DULongToString(const D_ULONG *);
 void print(const char *, ...);
 void printError(LONG);
-void printSenseData(SENSE_DATA *);
+void printSenseData(void);
 void printExpectedSenseData(SENSE_DATA *, UWORD, UWORD);
 bool getCookie(LONG, ULONG *);
 bool getNvm(NVM *nvm);
@@ -148,7 +149,7 @@ main(WORD argc, const char *argv[])
 		return -1;
 	}
 
-	print("SCSI Driver test V1.41\n");
+	print("SCSI Driver test V1.50\n");
 	print("½ 2014-2021 Uwe Seimet\n\n");
 
 	if(getNvm(&nvm)) {
@@ -226,6 +227,8 @@ main(WORD argc, const char *argv[])
 								free(ptr3);
 								free(ptr2);
 								free(ptr1);
+
+								testReadLong();
 							}
 						}
 						break;
@@ -374,8 +377,9 @@ testUnitReady()
 		}
 		else {
 			printError(status);
-			printSenseData(&senseData);
 		}
+
+		printSenseData();
 	}
 }
 
@@ -724,6 +728,7 @@ testReadCapacity(ULONG *blockSize)
 	status = scsiCall->In(&cmd);
 	if(status) {
 		print("      READ CAPACITY (16) is not supported by device\n");
+		printSenseData();
 	}
 	else {
 		UWORD ratio;
@@ -793,7 +798,7 @@ testReadCapacity(ULONG *blockSize)
 	status = scsiCall->In(&cmd);
 	if(status) {
 		printError(status);
-		printSenseData(&senseData);
+		printSenseData();
 
 		return;
 	}
@@ -866,6 +871,7 @@ testRead(UWORD busNo, ULONG blockSize, UBYTE *ptr1, UBYTE* ptr2, UBYTE* ptr3)
 	status = scsiCall->In(&cmd);
 	if(status) {
 		print("      READ (6) is not supported by device\n");
+		printSenseData();
 
 		hasRW6 = false;
 	}
@@ -908,6 +914,7 @@ testRead(UWORD busNo, ULONG blockSize, UBYTE *ptr1, UBYTE* ptr2, UBYTE* ptr3)
 		status = scsiCall->In(&cmd);
 		if(status) {
 			print("      READ (12) is not supported by device\n");
+			printSenseData();
 		}
 		else {
 			checkRoot(ptrRoot, ptr3, blockSize);
@@ -925,6 +932,7 @@ testRead(UWORD busNo, ULONG blockSize, UBYTE *ptr1, UBYTE* ptr2, UBYTE* ptr3)
 		status = scsiCall->In(&cmd);
 		if(status) {
 			print("      READ (16) is not supported by device\n");
+			printSenseData();
 		}
 		else {
 			checkRoot(ptrRoot, ptr3, blockSize);
@@ -1020,6 +1028,117 @@ testRead(UWORD busNo, ULONG blockSize, UBYTE *ptr1, UBYTE* ptr2, UBYTE* ptr3)
 
 
 bool
+testReadLong()
+{
+	BYTE ReadLong10[] = {
+		0x3e, 0, 0, 0, 0, 0, 0, 0, 0, 0
+	};
+	BYTE ReadLong16[] = {
+		0x9e, 0x11, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+	};
+
+	LONG status;
+	UBYTE buffer[512];
+
+	if(!(*cmd.Handle & cAllCmds)) {
+		return true;
+	}
+
+	print("  READ LONG\n");
+
+
+	print("    Reading 0 logical bytes for sector 0 with READ LONG (10)\n");
+
+	cmd.Cmd = (void *)&ReadLong10;
+	cmd.CmdLen = (UWORD)sizeof(ReadLong10);
+	cmd.Buffer = NULL;
+	cmd.TransferLen = 0;
+
+	memset(&senseData, 0, sizeof(SENSE_DATA));
+
+	status = scsiCall->In(&cmd);
+	if(status) {
+		print("      READ LONG (10) is not supported by device\n");
+		printSenseData();
+	}
+	else {
+		print("    Reading 1 logical byte for sector 0 with READ LONG (10)\n");
+
+		cmd.Buffer = &buffer;
+		cmd.TransferLen = 1;
+		ReadLong10[8] = 1;
+
+		memset(&senseData, 0, sizeof(SENSE_DATA));
+
+		status = scsiCall->In(&cmd);
+		if(status) {
+			print("      Request has been rejected\n");
+		}
+
+		print("    Reading 512 logical bytes for sector 0 with READ LONG (10)\n");
+
+		cmd.Buffer = &buffer;
+		cmd.TransferLen = 512;
+		ReadLong10[7] = 2;
+		ReadLong10[8] = 0;
+
+		memset(&senseData, 0, sizeof(SENSE_DATA));
+
+		status = scsiCall->In(&cmd);
+		if(status) {
+			print("      Request has been rejected\n");
+		}
+	}
+
+
+	print("    Reading 0 logical bytes for sector 0 with READ LONG (16)\n");
+
+	cmd.Cmd = (void *)&ReadLong16;
+	cmd.CmdLen = (UWORD)sizeof(ReadLong16);
+	cmd.Buffer = NULL;
+	cmd.TransferLen = 0;
+
+	memset(&senseData, 0, sizeof(SENSE_DATA));
+
+	status = scsiCall->In(&cmd);
+	if(status) {
+		print("      READ LONG (16) is not supported by device\n");
+		printSenseData();
+	}
+	else {
+		print("    Reading 1 logical byte for sector 0 with READ LONG (16)\n");
+
+		cmd.Buffer = &buffer;
+		cmd.TransferLen = 1;
+		ReadLong16[13] = 1;
+
+		memset(&senseData, 0, sizeof(SENSE_DATA));
+
+		status = scsiCall->In(&cmd);
+		if(status) {
+			print("     Request has been rejected\n");
+		}
+
+		print("    Reading 512 logical bytes for sector 0 with READ LONG (16)\n");
+
+		cmd.Buffer = &buffer;
+		cmd.TransferLen = 512;
+		ReadLong16[12] = 2;
+		ReadLong16[13] = 0;
+
+		memset(&senseData, 0, sizeof(SENSE_DATA));
+
+		status = scsiCall->In(&cmd);
+		if(status) {
+			print("      Request has been rejected\n");
+		}
+	}
+
+	return true;
+}
+
+
+bool
 testReportLuns()
 {
 	BYTE ReportLuns[] = { 0xa0, 0, 0, 0, 0, 0, 0, 0, 0, 128, 0, 0 };
@@ -1062,6 +1181,7 @@ testReportLuns()
 	else if(status == 2 && senseData.senseKey == 0x05 &&
 		senseData.addSenseCode == 0x20) {
 		print("    REPORT LUNS is not supported by device\n");
+		printSenseData();
 	}
 	else if(status == 2 && senseData.senseKey == 0x02 &&
 		senseData.addSenseCode == 0x3a) {
@@ -1072,7 +1192,7 @@ testReportLuns()
 
 		return false;
 	}
-	
+
 	return true;
 }
 
@@ -1125,6 +1245,7 @@ testGetConfiguration()
 	else if(status == 2 && senseData.senseKey == 0x05 &&
 		senseData.addSenseCode == 0x20) {
 		print("    GET CONFIGURATION is not supported by device\n");
+		printSenseData();
 	}
 	else if(status == 2 && senseData.senseKey == 0x02 &&
 		senseData.addSenseCode == 0x3a) {
@@ -1212,10 +1333,10 @@ printError(LONG status)
 
 
 void
-printSenseData(SENSE_DATA *senseData)
+printSenseData()
 {
 		print("      Sense Key $%02X, ASC $%02X\n",
-			senseData->senseKey, senseData->addSenseCode);
+			senseData.senseKey, senseData.addSenseCode);
 }
 
 

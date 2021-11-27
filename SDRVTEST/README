@@ -1,10 +1,9 @@
-SDRVTEST is a small tool for testing whether a device or a SCSI Driver
-implementation handles certain SCSI commands in compliance with the SCSI
-specification (http://www.t10.org).
+SDRVTEST is a tool for testing whether a device or a SCSI Driver
+implementation handles certain SCSI commands in compliance with the current
+SCSI specification (http://www.t10.org).
 The device does not necessarily have to be a SCSI device, but can be any
-kind of device supported by a SCSI driver. HDDRIVER, for instance, provides
-a SCSI xdriver not only for SCSI devices but also for ACSI, IDE, ATAPI and
-SATA devices.
+kind of device supported by a SCSI Driver. HDDRIVER provides SCSI Drivers not
+only for SCSI devices but also for ACSI, IDE, ATAPI and SATA devices.
 Any error reported by SDRVTEST ("ERROR" is displayed) means that most likely
 something is either wrong with how the device handles SCSI commands, or with
 the SCSI Driver managing the respective bus. If an optional SCSI command is
@@ -14,20 +13,20 @@ with SCSI Drivers where some of the tests executed by SDRVTEST fail.
 SDRVTEST saves the test results in a file SDRVTEST.LOG in the current
 directory and also displays the results on the screen.
 A comma-separated list of bus IDs to be checked can be passed as an argument.
-Without an argument all available buses are checked.
+Without an argument all available buses are tested.
 
 MCHGTEST, ERRTEST and SERRTEST test other SCSI Driver features, related to
 error handling and media changes. Please refer to the sources for details.
 
 --
 
-SDRVTEST ist ein kleines Hilfsprogramm, mit dem sich testen lÑsst, ob ein
-GerÑt oder eine SCSI-Treiber-Implementierung gewisse SCSI-Kommandos in
-öbereinstimmung mit der SCSI-Spezifikation (http://www.t10.org) ausfÅhrt.
+SDRVTEST ist ein Hilfsprogramm, mit dem sich testen lÑsst, ob ein GerÑt oder
+eine SCSI-Treiber-Implementierung gewisse SCSI-Kommandos in öbereinstimmung
+mit der aktuellen SCSI-Spezifikation (http://www.t10.org) ausfÅhrt.
 Das GerÑt muss nicht unbedingt ein SCSI-GerÑt sein, sondern es kann sich um
 ein beliebiges GerÑt handeln, das von einem SCSI-Treiber unterstÅtzt wird.
-HDDRIVER beispielsweise stellt SCSI-Treiber nicht nur fÅr SCSI- sondern auch
-fÅr ACSI-, IDE-, ATAPI- und SATA-GerÑte bereit.
+HDDRIVER stellt SCSI-Treiber nicht nur fÅr SCSI- sondern auch fÅr ACSI-,
+IDE-, ATAPI- und SATA-GerÑte bereit.
 Jeder von SDRVTEST gemeldete Fehler ("ERROR" wird angezeigt) bedeutet mit
 hoher Wahrscheinlichkeit, dass entweder das GerÑt nicht korrekt mit
 SCSI-Kommandos umgeht, oder dass etwas mit der SCSI-Treiber-Implementierung
@@ -47,4 +46,4 @@ auf Fehlerbehandlung und Medienwechsel beziehen. Bitte entnehmen Sie Details
 den Quelltexten.
 
 
-  Uwe.Seimet@seimet.de, 2021-08-20
+  Uwe.Seimet@seimet.de, 2021-11-27
