@@ -8,20 +8,20 @@ Any error reported by SDRVTEST ("ERROR" is displayed) means that most likely
 something is either wrong with how the device handles SCSI commands, or with
 the SCSI Driver managing the respective bus. If an optional SCSI command is
 not supported this is not considered an error.
-Applications making use of the SCSI Driver interface may not work correctly
-with SCSI Drivers where some of the tests executed by SDRVTEST fail.
+Applications may not work correctly with devices or SCSI Drivers for which
+the executed tests fail.
 SDRVTEST saves the test results in a file SDRVTEST.LOG in the current
 directory and also displays the results on the screen.
-A comma-separated list of bus IDs to be checked can be passed as an argument.
-Without an argument all available buses are tested.
+NOTE: Currently only LUN 0 is tested.
 
 MCHGTEST, ERRTEST and SERRTEST test other SCSI Driver features, related to
 error handling and media changes. Please refer to the sources for details.
+Excepot for writing the SDRVTEST log file the tests do not write any data.
 
 --
 
-SDRVTEST ist ein Hilfsprogramm, mit dem sich testen lÑsst, ob ein GerÑt oder
-eine SCSI-Treiber-Implementierung gewisse SCSI-Kommandos in öbereinstimmung
+SDRVTEST ist ein Tool, mit dem sich testen lÑsst, ob ein GerÑt oder eine
+SCSI-Treiber-Implementierung gewisse SCSI-Kommandos in öbereinstimmung
 mit der aktuellen SCSI-Spezifikation (http://www.t10.org) ausfÅhrt.
 Das GerÑt muss nicht unbedingt ein SCSI-GerÑt sein, sondern es kann sich um
 ein beliebiges GerÑt handeln, das von einem SCSI-Treiber unterstÅtzt wird.
@@ -32,18 +32,16 @@ hoher Wahrscheinlichkeit, dass entweder das GerÑt nicht korrekt mit
 SCSI-Kommandos umgeht, oder dass etwas mit der SCSI-Treiber-Implementierung
 fÅr diesen Bus nicht stimmt. Falls ein optionales SCSI-Kommando nicht
 unterstÅtzt wird, wird dies nicht als Fehler angesehen.
-Anwendungen, die das SCSI-Treiber-Interface benutzen, arbeiten mîglicherweise
-nicht korrekt mit SCSI-Treibern zusammen, bei denen die von SDRVTEST
-durchgefÅhrten Tests fehlschlagen.
+Anwendungen funktionieren mîglicherweise nicht korrekt mit GerÑten oder
+SCSI-Treibern, bei denen die durchgefÅhrten Tests fehlschlagen.
 SDRVTEST sichert die Testergebnisse in einer Datei SDRVTEST.LOG im aktuellen
 Verzeichnis und zeigt die Ergebnisse auch auf dem Bildschirm an.
-Es kann eine komma-separierte Liste von zu prÅfenden Bus-IDs als Argument
-Åbergeben werden. Ohne Argument werden alle verfÅgbaren Busse getestet.
-
+HINWEIS: Zur Zeit wird nur LUN 0 getestet.
 
 MCHGTEST, ERRTEST and SERRTEST testen weitere SCSI-Treiber-Features, die sich
 auf Fehlerbehandlung und Medienwechsel beziehen. Bitte entnehmen Sie Details
 den Quelltexten.
+Bis auf das Schreiben des SDRVTEST-Logfiles schreiben die Tests keine Daten.
 
 
-  Uwe.Seimet@seimet.de, 2021-11-27
+  Uwe.Seimet@seimet.de, 2022-03-09

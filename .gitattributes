@@ -1,0 +1,6 @@
+*.H text eol=crlf
+*.C text eol=crlf
+*.S text eol=crlf
+*.PRJ text eol=crlf
+README text eol=crlf
+LIESMICH text eol=crlf
