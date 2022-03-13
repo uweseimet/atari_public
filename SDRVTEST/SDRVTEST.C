@@ -1426,54 +1426,38 @@ printFeatures(UWORD features)
 	print("  Supported SCSI Driver features:\n");
 
 	if(features & cArbit) {
-		print("    Arbitration");
+		print("    Arbitration\n");
 		hasFeature = true;
 	}
 
 	if(features & cAllCmds) {
-		if(hasFeature) {
-			print("\n");
-		}
-		print("    All SCSI commands");
+		print("    All SCSI commands\n");
 		hasFeature = true;
 	}
 
 	if(features & cTargCtrl) {
-		if(hasFeature) {
-			print("\n");
-		}
-		print("    Target control");
+		print("    Target control\n");
 		hasFeature = true;
 	}
 
 	if(features & cTarget) {
-		if(hasFeature) {
-			print("\n");
-		}
-		print("    Target installation");
+		print("    Target installation\n");
 		hasFeature = true;
 	}
 
 	if(features & cCanDisconnect) {
-		if(hasFeature) {
-			print("\n");
-		}
-		print("    Disconnects");
+		print("    Disconnects\n");
 		hasFeature = true;
+	}
 
 	if(features & cScatterGather) {
-	}
-		if(hasFeature) {
-			print("\n");
-		}
-		print("    Scatter gather");
+		print("    Scatter gather\n");
+		hasFeature = true;
 	}
 
 	if(!hasFeature) {
-		print("    -");
+		print("    -\n");
 	}
-
-	print("\n");
 }
 
 
