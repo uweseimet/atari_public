@@ -1,5 +1,5 @@
 /****************************/
-/* SCSI Driver Test 1.60    */
+/* SCSI Driver Test 1.61    */
 /*                          */
 /* (C) 2014-2022 Uwe Seimet */
 /****************************/
@@ -105,6 +105,7 @@ void testReadLong(void);
 void testModeSense(void);
 void testReportLuns(void);
 void testGetConfiguration(void);
+void printPages(UBYTE *, int, int, int,int);
 bool checkRoot(UBYTE *, UBYTE *, ULONG);
 void initBuffer(UBYTE *, ULONG);
 char * DULongToString(const D_ULONG *);
@@ -152,7 +153,7 @@ main()
 		return -1;
 	}
 
-	print("SCSI Driver test V1.60\n");
+	print("SCSI Driver test V1.61\n");
 	print("½ 2014-2022 Uwe Seimet\n\n");
 
 	if(getNvm(&nvm)) {
@@ -1200,6 +1201,10 @@ testModeSense()
 	};
 
 	UBYTE buf[4096];
+	int page3Offset = 0;
+	int page4Offset = 0;
+	int page5Offset = 0;
+	int page8Offset = 0;
 	int size;
 	int i;
 
@@ -1225,17 +1230,42 @@ testModeSense()
 
 		i = 4;
 		while(i < size) {
+			int page = buf[i] & 0x3f;
+
 			if(i > 4) {
 				print(", ");
 			}
+			print("%d", page);
 
-			print("%d", buf[i] & 0x3f);
+			switch(page) {
+				case 3:
+					page3Offset = i;
+					break;
+
+				case 4:
+					page4Offset = i;
+					break;
+
+				case 5:
+					page5Offset = i;
+					break;
+
+				case 8:
+					page8Offset = i;
+					break;
+
+				default:
+					break;
+			}
 
 			i += buf[i + 1] + 2;
 		}
 
 		print("\n");
 	}
+
+	printPages(buf, page3Offset, page4Offset,
+		page5Offset, page8Offset);
 
 	if(!(*cmd.Handle & cAllCmds)) {
 		return;
@@ -1373,6 +1403,150 @@ testGetConfiguration()
 	}
 	else {
 		printExpectedSenseData(&senseData, 0x05, 0x20);
+	}
+}
+
+
+void
+printPages(UBYTE *buf, int page3Offset, int page4Offset,
+	int page5Offset, int page8Offset)
+{
+	if(page3Offset) {
+		print("        Page 3: Format device page (current, %s)\n",
+			buf[page3Offset] & 0x80 ? "savable" : "not savable");
+
+		if(buf[page3Offset + 1] < 22) {
+			print("        ERROR: Page size is %d bytes, which is less than 22\n",
+				buf[page3Offset + 1]);
+		}
+
+		print("          Tracks per zone: %d\n",
+			(buf[page3Offset + 2] << 8) + buf[page3Offset + 3]);
+		print("          Alternate sectors per zone: %d\n",
+			(buf[page3Offset + 4] << 8) + buf[page3Offset + 5]);
+		print("          Alternate tracks per zone: %d\n",
+			(buf[page3Offset + 6] << 8) + buf[page3Offset + 7]);
+		print("          Alternate trackes per logical unit: %d\n",
+			(buf[page3Offset + 8] << 8) + buf[page3Offset + 9]);
+		print("          Sectors per track: %d\n",
+			(buf[page3Offset + 10] << 8) + buf[page3Offset + 11]);
+		print("          Data bytes per physical sector: %d\n",
+			(buf[page3Offset + 12] << 8) + buf[page3Offset + 13]);
+		print("          Interleave: %d\n",
+			(buf[page3Offset + 14] << 8) + buf[page3Offset + 15]);
+		print("          Track skew factor: %d\n",
+			(buf[page3Offset + 16] << 8) + buf[page3Offset + 17]);
+		print("          Cylinder skew factor: %d\n",
+			(buf[page3Offset + 18] << 8) + buf[page3Offset + 19]);
+		print("          Soft sector formatting (SSEC): %d\n",
+			(buf[page3Offset + 20] & 0x80) >> 7);
+		print("          Hard sector formatting (HSEC): %d\n", 
+			(buf[page3Offset + 20] & 0x40) >> 6);
+		print("          Removable (RMB): %d\n", 
+			(buf[page3Offset + 20] & 0x20) >> 5);
+		print("          Surface (SURF): %d\n", 
+			(buf[page3Offset + 20] & 0x10) >> 4);
+	}
+
+	if(page4Offset) {
+		print("        Page 4: Rigid disk drive geometry page (current, %s)\n",
+			buf[page4Offset] & 0x80 ? "savable" : "not savable");
+
+		if(buf[page4Offset + 1] < 22) {
+			print("        ERROR: Page size is %d bytes, which is less than 22\n",
+				buf[page4Offset + 1]);
+		}
+
+		print("          Number of cylinders: %d\n",
+			(buf[page4Offset + 2] << 16) + (buf[page4Offset + 3] << 8)
+				+ buf[page4Offset + 4]);
+		print("          Number of heads: %d\n", buf[page4Offset + 5]);
+		print("          Starting cylinder-write precompensation: %d\n",
+			(buf[page4Offset + 6] << 16) + (buf[page4Offset + 7] << 8)
+				+ buf[page4Offset + 8]);
+		print("          Starting cylinder-reduced write current: %d\n",
+			(buf[page4Offset + 9] << 16) + (buf[page4Offset + 10] << 8)
+				+ buf[page4Offset + 11]);
+		print("          Drive step rate: %d\n",
+			(buf[page4Offset + 12] << 8) + buf[page4Offset + 13]);
+		print("          Landing zone cylinder %d\n",
+			(buf[page4Offset + 14] << 16) + (buf[page4Offset + 15] << 8)
+				+ buf[page4Offset + 16]);
+		print("          Rotational offset: %d\n", buf[page4Offset + 18]);
+		print("          Medium rotation rate: %d\n",
+			(buf[page4Offset + 20] << 8) + buf[page4Offset + 21]);
+	}
+
+	if(page5Offset) {
+		print("        Page 5: Flexible disk page (current, %s)\n",
+			buf[page5Offset] & 0x80 ? "savable" : "not savable");
+
+		if(buf[page5Offset + 1] < 30) {
+			print("        ERROR: Page size is %d bytes, which is less than 30\n",
+				buf[page5Offset + 1]);
+		}
+
+		print("            Transfer rate: %d\n",
+			(buf[page5Offset + 2] << 8) + buf[page5Offset + 3]);
+		print("            Number of heads: %d\n", buf[page5Offset + 4]);
+		print("            Sectors per track: %d\n", buf[page5Offset + 5]);
+		print("            Data bytes per sector: %d\n",
+			(buf[page5Offset + 6] << 8) + buf[page5Offset + 7]);
+		print("            Number of cylinders: %d\n",
+			(buf[page5Offset + 8] << 8) + buf[page5Offset + 9]);
+		print("            Starting cylinder-write precompensation: %d\n",
+			(buf[page5Offset + 10] << 8) + buf[page5Offset + 11]);
+		print("            Starting cylinder-reduced write-current: %d\n",
+			(buf[page5Offset + 12] << 8) + buf[page5Offset + 13]);
+		print("            Drive step rate: %d/100 us\n",
+			(buf[page5Offset + 14] << 8) + buf[page5Offset + 15]);
+		print("            Drive step pulse with: %d ms\n", buf[page5Offset + 16]);
+		print("            Head settle delay: %d/100 us\n",
+			(buf[page5Offset + 17] << 8) + buf[page5Offset + 18]);
+		print("            Motor on delay: %d/10 seconds\n", buf[page5Offset + 19]);
+		print("            Motor off delay: %d/10 seconds\n", buf[page5Offset + 20]);
+		print("            True ready (TRDY): %d\n",
+			(buf[page5Offset + 21] & 0x80) >> 7);
+		print("            Start sector number (SSN): %d\n",
+			(buf[page5Offset + 21] & 0x40) >> 6);
+		print("            Motor on (MO): %d\n",
+			(buf[page5Offset + 21] & 0x20) >> 5);
+		print("            Step pulse per cylinder (SPC): %d\n",
+			(buf[page5Offset + 22] & 0x0f) >> 4);
+		print("            Write compensation: %d\n", buf[page5Offset + 23]);
+		print("            Head load delay: %d\n", buf[page5Offset + 24]);
+		print("            Head unload delay: %d\n", buf[page5Offset + 25]);
+		print("            Medium rotation rate: %d per minute\n",
+			(buf[page5Offset + 28] << 8) + buf[page5Offset + 29]);
+	}
+
+	if(page8Offset) {
+		print("        Page 8: Caching page (current, %s)\n",
+			buf[page8Offset] & 0x80 ? "savable" : "not savable");
+
+		if(buf[page8Offset + 1] < 10) {
+			print("        ERROR: Page size is %d bytes, which is less than 10\n",
+				buf[page8Offset + 1]);
+		}
+
+		print("          Read cache disable (RCD): %d\n",
+			buf[page8Offset + 2] & 0x01);
+		print("          Write cache enable (WCE): %d\n",
+			(buf[page8Offset + 2] & 0x04) >> 2);
+		print("          Multiplication factor (MF): %d\n",
+			(buf[page8Offset + 2] & 0x02) >> 1);
+		print("          Write retention priority: %d\n",
+			buf[page8Offset + 3] & 0x0f);
+		print("          Demand read retention priority: %d\n",
+			(buf[page8Offset + 3] & 0xf0) >> 4);
+		print("          Disable pre-fetch transfer length: %d\n",
+			(buf[page8Offset + 4] << 8) + buf[page8Offset + 5]);
+		print("          Minimum pre-fetch: %d\n",
+			(buf[page8Offset + 6] << 8) + buf[page8Offset + 7]);
+		print("          Maxium pre-fetch: %d\n",
+			(buf[page8Offset + 8] << 8) + buf[page8Offset + 9]);
+		print("          Maximum pre-fetch ceiling: %d\n",
+			(buf[page8Offset + 10] << 8) + buf[page8Offset + 11]);
 	}
 }
 
