@@ -1,5 +1,5 @@
 /****************************/
-/* SCSI Driver Test 1.61    */
+/* SCSI Driver Test 1.70    */
 /*                          */
 /* (C) 2014-2022 Uwe Seimet */
 /****************************/
@@ -67,6 +67,7 @@ typedef struct {
 	UWORD busNo;
 	UWORD id;
 	ULONG maxLen;
+	UWORD features;
 	char busName[20];
 	char deviceBusName[20];
 } DEVICEINFO;
@@ -105,6 +106,7 @@ void testReadLong(void);
 void testModeSense(void);
 void testReportLuns(void);
 void testGetConfiguration(void);
+void printFeatures(UWORD);
 void printPages(UBYTE *, int, int, int,int);
 bool checkRoot(UBYTE *, UBYTE *, ULONG);
 void initBuffer(UBYTE *, ULONG);
@@ -153,7 +155,7 @@ main()
 		return -1;
 	}
 
-	print("SCSI Driver test V1.61\n");
+	print("SCSI Driver test V1.70\n");
 	print("½ 2014-2022 Uwe Seimet\n\n");
 
 	if(getNvm(&nvm)) {
@@ -181,6 +183,8 @@ main()
 	for(i = 0; i < devCount; i++) {
 		print("\nTesting device ID %d on bus %d '%s'\n",
 			deviceInfos[i].id, deviceInfos[i].busNo, deviceInfos[i].deviceBusName);
+
+		printFeatures(deviceInfos[i].features);
 
 		testCheckDev(deviceInfos[i].busNo, deviceInfos[i].id);
 		testOpenClose(deviceInfos[i].busNo, deviceInfos[i].id, deviceInfos[i].maxLen);
@@ -278,7 +282,7 @@ findDevices()
 	LONG busResult;
 	UWORD devCount = 0;
 
-	print("Available buses:\n");
+	print("\nAvailable buses:\n");
 
 	busResult = scsiCall->InquireSCSI(cInqFirst, &busInfo);
 	while(!busResult) {
@@ -296,6 +300,7 @@ findDevices()
 			deviceInfos[devCount].busNo = busInfo.BusNo;
 			deviceInfos[devCount].id = (UWORD)devInfo.SCSIId.lo;
 			deviceInfos[devCount].maxLen = busInfo.MaxLen;
+			deviceInfos[devCount].features = busInfo.Features;
 			strcpy(deviceInfos[devCount].busName, busInfo.BusName);	
 			strcpy(deviceInfos[devCount].deviceBusName, deviceBusName);	
 			devCount++;
@@ -303,8 +308,14 @@ findDevices()
 			result = scsiCall->InquireBus(cInqNext, busInfo.BusNo, &devInfo);
 		}
 
-		print("  ID: %d, Name: '%s', Maximum transfer length: %lu ($%lX)\n",
-			busInfo.BusNo, busInfo.BusName, busInfo.MaxLen, busInfo.MaxLen);
+		print("  ID: %d\n", busInfo.BusNo);
+		print("  Name: '%s'\n", busInfo.BusName);
+		print("  Maximum transfer length: %lu ($%lX)\n", busInfo.MaxLen,
+			busInfo.MaxLen);
+
+		printFeatures(busInfo.Features);
+
+		print("\n");
 
 		busResult = scsiCall->InquireSCSI(cInqNext, &busInfo);
 	}
@@ -1404,6 +1415,65 @@ testGetConfiguration()
 	else {
 		printExpectedSenseData(&senseData, 0x05, 0x20);
 	}
+}
+
+
+void
+printFeatures(UWORD features)
+{
+	bool hasFeature = false;
+
+	print("  Supported SCSI Driver features:\n");
+
+	if(features & cArbit) {
+		print("    Arbitration");
+		hasFeature = true;
+	}
+
+	if(features & cAllCmds) {
+		if(hasFeature) {
+			print("\n");
+		}
+		print("    All SCSI commands");
+		hasFeature = true;
+	}
+
+	if(features & cTargCtrl) {
+		if(hasFeature) {
+			print("\n");
+		}
+		print("    Target control");
+		hasFeature = true;
+	}
+
+	if(features & cTarget) {
+		if(hasFeature) {
+			print("\n");
+		}
+		print("    Target installation");
+		hasFeature = true;
+	}
+
+	if(features & cCanDisconnect) {
+		if(hasFeature) {
+			print("\n");
+		}
+		print("    Disconnects");
+		hasFeature = true;
+
+	if(features & cScatterGather) {
+	}
+		if(hasFeature) {
+			print("\n");
+		}
+		print("    Scatter gather");
+	}
+
+	if(!hasFeature) {
+		print("    -");
+	}
+
+	print("\n");
 }
 
 
