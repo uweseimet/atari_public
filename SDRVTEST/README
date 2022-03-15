@@ -16,32 +16,10 @@ NOTE: Currently only LUN 0 is tested.
 
 MCHGTEST, ERRTEST and SERRTEST test other SCSI Driver features, related to
 error handling and media changes. Please refer to the sources for details.
-Excepot for writing the SDRVTEST log file the tests do not write any data.
+Except for writing the SDRVTEST logfile the tests do not write any data.
 
---
-
-SDRVTEST ist ein Tool, mit dem sich testen lÑsst, ob ein GerÑt oder eine
-SCSI-Treiber-Implementierung gewisse SCSI-Kommandos in öbereinstimmung
-mit der aktuellen SCSI-Spezifikation (http://www.t10.org) ausfÅhrt.
-Das GerÑt muss nicht unbedingt ein SCSI-GerÑt sein, sondern es kann sich um
-ein beliebiges GerÑt handeln, das von einem SCSI-Treiber unterstÅtzt wird.
-HDDRIVER stellt SCSI-Treiber nicht nur fÅr SCSI- sondern auch fÅr ACSI-,
-IDE-, ATAPI- und SATA-GerÑte bereit.
-Jeder von SDRVTEST gemeldete Fehler ("ERROR" wird angezeigt) bedeutet mit
-hoher Wahrscheinlichkeit, dass entweder das GerÑt nicht korrekt mit
-SCSI-Kommandos umgeht, oder dass etwas mit der SCSI-Treiber-Implementierung
-fÅr diesen Bus nicht stimmt. Falls ein optionales SCSI-Kommando nicht
-unterstÅtzt wird, wird dies nicht als Fehler angesehen.
-Anwendungen funktionieren mîglicherweise nicht korrekt mit GerÑten oder
-SCSI-Treibern, bei denen die durchgefÅhrten Tests fehlschlagen.
-SDRVTEST sichert die Testergebnisse in einer Datei SDRVTEST.LOG im aktuellen
-Verzeichnis und zeigt die Ergebnisse auch auf dem Bildschirm an.
-HINWEIS: Zur Zeit wird nur LUN 0 getestet.
-
-MCHGTEST, ERRTEST and SERRTEST testen weitere SCSI-Treiber-Features, die sich
-auf Fehlerbehandlung und Medienwechsel beziehen. Bitte entnehmen Sie Details
-den Quelltexten.
-Bis auf das Schreiben des SDRVTEST-Logfiles schreiben die Tests keine Daten.
+The C sources are available on GitHub:
+https://github.com/uweseimet/atari_public.
 
 
-  Uwe.Seimet@seimet.de, 2022-03-13
+  Uwe.Seimet@seimet.de, 03/15/2022

@@ -1,8 +1,8 @@
-/****************************/
-/* SCSI Driver Test 1.70    */
-/*                          */
-/* (C) 2014-2022 Uwe Seimet */
-/****************************/
+/**********************************/
+/* SCSI Driver/Firmware Test 1.71 */
+/*                                */
+/* (C) 2014-2022 Uwe Seimet       */
+/**********************************/
 
 
 #include <string.h>
@@ -115,7 +115,7 @@ void print(const char *, ...);
 void printError(LONG);
 void printSenseData(void);
 void printExpectedSenseData(SENSE_DATA *, UWORD, UWORD);
-bool execute(const char *);
+LONG execute(const char *);
 bool getCookie(LONG, ULONG *);
 bool getNvm(NVM *nvm);
 
@@ -155,7 +155,7 @@ main()
 		return -1;
 	}
 
-	print("SCSI Driver test V1.70\n");
+	print("SCSI Driver test V1.71\n");
 	print("½ 2014-2022 Uwe Seimet\n\n");
 
 	if(getNvm(&nvm)) {
@@ -453,7 +453,7 @@ testInquiry()
 			break;
 
 		case 3:
-			print("SPC");
+			print("SCSI-3 (SPC)");
 			break;
 
 		default:
@@ -767,12 +767,8 @@ testReadCapacity(ULONG *blockSize)
 	cmd.Buffer = capacity16;
 	cmd.TransferLen = sizeof(capacity16);
 
-	status = scsiCall->In(&cmd);
-	if(status) {
-		print("      READ CAPACITY (16) is not supported by device\n");
-		printSenseData();
-	}
-	else {
+	status = execute("    READ CAPACITY (16)");
+	if(!status) {
 		UWORD ratio;
 
 		maxBlock64.hi = capacity16[0];
@@ -910,11 +906,8 @@ testRead(UWORD busNo, ULONG blockSize, UBYTE *ptr1, UBYTE* ptr2, UBYTE* ptr3)
 	cmd.TransferLen = blockSize;
 	initBuffer(ptr1, blockSize);
 
-	status = scsiCall->In(&cmd);
+	status = execute("    READ (6)");
 	if(status) {
-		print("      READ (6) is not supported by device\n");
-		printSenseData();
-
 		hasRW6 = false;
 	}
 	else {
@@ -953,12 +946,8 @@ testRead(UWORD busNo, ULONG blockSize, UBYTE *ptr1, UBYTE* ptr2, UBYTE* ptr3)
 		cmd.TransferLen = blockSize;
 		initBuffer(ptr3, blockSize);
 
-		status = scsiCall->In(&cmd);
-		if(status) {
-			print("      READ (12) is not supported by device\n");
-			printSenseData();
-		}
-		else {
+		status = execute("      READ (12)");
+		if(!status) {
 			checkRoot(ptrRoot, ptr3, blockSize);
 		}
 
@@ -971,12 +960,8 @@ testRead(UWORD busNo, ULONG blockSize, UBYTE *ptr1, UBYTE* ptr2, UBYTE* ptr3)
 		cmd.TransferLen = blockSize;
 		initBuffer(ptr3, blockSize);
 
-		status = scsiCall->In(&cmd);
-		if(status) {
-			print("      READ (16) is not supported by device\n");
-			printSenseData();
-		}
-		else {
+		status = execute("      READ (16)");
+		if(!status) {
 			checkRoot(ptrRoot, ptr3, blockSize);
 
 			if(busNo == 2) {
@@ -1083,7 +1068,7 @@ testSeek()
 	cmd.Buffer = NULL;
 	cmd.TransferLen = 0;
 
-	if(!execute("      SEEK (6)")) {
+	if(execute("      SEEK (6)")) {
 		return;
 	}
 
@@ -1093,7 +1078,7 @@ testSeek()
 		cmd.Cmd = (void *)&Seek10;
 		cmd.CmdLen = (UWORD)sizeof(Seek10);
 
-		execute("      SEEK (6)");
+		execute("      SEEK (10)");
 	}
 }
 
@@ -1127,7 +1112,7 @@ testReadLong()
 
 	memset(&senseData, 0, sizeof(SENSE_DATA));
 
-	if(!execute("      READ LONG (10)")) {
+	if(execute("      READ LONG (10)")) {
 		return;
 	}
 
@@ -1168,7 +1153,7 @@ testReadLong()
 
 	memset(&senseData, 0, sizeof(SENSE_DATA));
 
-	if(!execute("      READ LONG (16)")) {
+	if(execute("      READ LONG (16)")) {
 		return;
 	}
 
@@ -1229,7 +1214,7 @@ testModeSense()
 	cmd.Buffer = buf;
 	cmd.TransferLen = 255;
 
-	if(!execute("      MODE SENSE (6)")) {
+	if(execute("      MODE SENSE (6)")) {
 		return;
 	}
 
@@ -1290,7 +1275,7 @@ testModeSense()
 	cmd.Buffer = buf;
 	cmd.TransferLen = 4096;
 
-	if(!execute("      MODE SENSE (10)")) {
+	if(execute("      MODE SENSE (10)")) {
 		return;
 	}
 
@@ -1339,7 +1324,7 @@ testReportLuns()
 
 	memset(&senseData, 0, sizeof(SENSE_DATA));
 
-	if(!execute("    REPORT LUNS")) {
+	if(execute("    REPORT LUNS")) {
 		return;
 	}
 
@@ -1381,7 +1366,7 @@ testGetConfiguration()
 
 	memset(&senseData, 0, sizeof(SENSE_DATA));
 
-	status = scsiCall->In(&cmd);
+	status = execute("    GET CONFIGURATION");
 	if(!status) {
 		UWORD i;
 		UWORD profileListLen = profileData[11] >> 2;
@@ -1403,17 +1388,6 @@ testGetConfiguration()
 		}
 
 		print("\n");
-	}
-	else if(status == 2 && senseData.senseKey == 0x05 &&
-		senseData.addSenseCode == 0x20) {
-		print("    GET CONFIGURATION is not supported by device\n");
-	}
-	else if(status == 2 && senseData.senseKey == 0x02 &&
-		senseData.addSenseCode == 0x3a) {
-		print("    No medium inserted\n");
-	}
-	else {
-		printExpectedSenseData(&senseData, 0x05, 0x20);
 	}
 }
 
@@ -1480,7 +1454,7 @@ printPages(UBYTE *buf, int page3Offset, int page4Offset,
 			(buf[page3Offset + 4] << 8) + buf[page3Offset + 5]);
 		print("          Alternate tracks per zone: %d\n",
 			(buf[page3Offset + 6] << 8) + buf[page3Offset + 7]);
-		print("          Alternate trackes per logical unit: %d\n",
+		print("          Alternate tracks per logical unit: %d\n",
 			(buf[page3Offset + 8] << 8) + buf[page3Offset + 9]);
 		print("          Sectors per track: %d\n",
 			(buf[page3Offset + 10] << 8) + buf[page3Offset + 11]);
@@ -1694,7 +1668,7 @@ printExpectedSenseData(SENSE_DATA *senseData, UWORD senseKey, UWORD addSenseCode
 			senseKey, senseData->senseKey, addSenseCode, senseData->addSenseCode);
 }
 
-bool
+LONG
 execute(const char *msg)
 {
 	LONG status = scsiCall->In(&cmd);
@@ -1707,10 +1681,10 @@ execute(const char *msg)
 			printError(status);
 		}
 
-		return false;
+		return status;
 	}
 
-	return true;
+	return 0;
 }
 	
 
@@ -1726,7 +1700,9 @@ getCookie(LONG cookie, ULONG *p_value)
 {
 	LONG *cookiejar = (LONG *)Supexec(cookieptr);
 
-	if(!cookiejar) return false;
+	if(!cookiejar) {
+		return false;
+	}
 
 	do {
 		if(cookiejar[0] == cookie) {
