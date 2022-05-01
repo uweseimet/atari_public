@@ -1,5 +1,5 @@
 /**********************************/
-/* SCSI Driver/Firmware Test 1.71 */
+/* SCSI Driver/Firmware Test 1.72 */
 /*                                */
 /* (C) 2014-2022 Uwe Seimet       */
 /**********************************/
@@ -155,7 +155,7 @@ main()
 		return -1;
 	}
 
-	print("SCSI Driver test V1.71\n");
+	print("SCSI Driver and firmware test V1.72\n");
 	print("½ 2014-2022 Uwe Seimet\n\n");
 
 	if(getNvm(&nvm)) {
@@ -378,9 +378,6 @@ testUnitReady()
 		if(status == 2 && senseData.senseKey == 0x02 &&
 			senseData.addSenseCode == 0x3a) {
 			print("    Medium not present\n");
-		}
-		else {
-			printError(status);
 		}
 
 		printSenseData();
@@ -767,7 +764,7 @@ testReadCapacity(ULONG *blockSize)
 	cmd.Buffer = capacity16;
 	cmd.TransferLen = sizeof(capacity16);
 
-	status = execute("    READ CAPACITY (16)");
+	status = execute("      READ CAPACITY (16)");
 	if(!status) {
 		UWORD ratio;
 
@@ -1140,7 +1137,7 @@ testReadLong()
 
 	status = scsiCall->In(&cmd);
 	if(status) {
-			print("       Request has been rejected\n");
+			print("      Request has been rejected\n");
 	}
 
 
@@ -1477,12 +1474,14 @@ printPages(UBYTE *buf, int page3Offset, int page4Offset,
 	}
 
 	if(page4Offset) {
+		int pageLength = buf[page4Offset + 1];
+
 		print("        Page 4: Rigid disk drive geometry page (current, %s)\n",
 			buf[page4Offset] & 0x80 ? "savable" : "not savable");
 
-		if(buf[page4Offset + 1] < 22) {
+		if(pageLength < 22) {
 			print("        ERROR: Page size is %d bytes, which is less than 22\n",
-				buf[page4Offset + 1]);
+				pageLength);
 		}
 
 		print("          Number of cylinders: %d\n",
@@ -1506,12 +1505,14 @@ printPages(UBYTE *buf, int page3Offset, int page4Offset,
 	}
 
 	if(page5Offset) {
+		int pageLength = buf[page5Offset + 1];
+
 		print("        Page 5: Flexible disk page (current, %s)\n",
 			buf[page5Offset] & 0x80 ? "savable" : "not savable");
 
-		if(buf[page5Offset + 1] < 30) {
+		if(pageLength < 30) {
 			print("        ERROR: Page size is %d bytes, which is less than 30\n",
-				buf[page5Offset + 1]);
+				pageLength);
 		}
 
 		print("            Transfer rate: %d\n",
@@ -1549,12 +1550,14 @@ printPages(UBYTE *buf, int page3Offset, int page4Offset,
 	}
 
 	if(page8Offset) {
+		int pageLength = buf[page8Offset + 1];
+
 		print("        Page 8: Caching page (current, %s)\n",
 			buf[page8Offset] & 0x80 ? "savable" : "not savable");
 
-		if(buf[page8Offset + 1] < 10) {
+		if(pageLength < 10) {
 			print("        ERROR: Page size is %d bytes, which is less than 10\n",
-				buf[page8Offset + 1]);
+				pageLength);
 		}
 
 		print("          Read cache disable (RCD): %d\n",

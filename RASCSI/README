@@ -2,7 +2,7 @@ RaSCSI Client Tools
 -------------------
 
 The client tools require a RaSCSI board for the Raspberry Pi and release
-22.04 or newer of the RaSCSI software. In addition, a SCSI Driver is
+22.05 or newer of the RaSCSI software. In addition, a SCSI Driver is
 required, e.g. the one integrated in HDDRIVER.
 The client tools C sources are available on GitHub:
 https://github.com/uweseimet/atari_public.

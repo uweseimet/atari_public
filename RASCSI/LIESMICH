@@ -2,7 +2,7 @@ RaSCSI-Client-Tools
 -------------------
 
 Die Client-Tools setzen ein RaSCSI-Board fÅr den Raspberry Pi und Release
-22.04 oder neuer der RaSCSI-Software voraus. Auûerdem wird ein SCSI-Treiber
+22.05 oder neuer der RaSCSI-Software voraus. Auûerdem wird ein SCSI-Treiber
 benîtigt, z. B. der in HDDRIVER integrierte.
 Die C-Quelltexte der Client-Tools sind auf GitHub verfÅgbar:
 https://github.com/uweseimet/atari_public.
