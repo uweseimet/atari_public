@@ -1,0 +1,72 @@
+RaSCSI-Client-Tools
+-------------------
+
+Die Client-Tools setzen ein RaSCSI-Board fr den Raspberry Pi und Release
+22.04 oder neuer der RaSCSI-Software voraus. Auerdem wird ein SCSI-Treiber
+ben”tigt, z. B. der in HDDRIVER integrierte.
+Die C-Quelltexte der Client-Tools sind auf GitHub verfgbar:
+https://github.com/uweseimet/atari_public.
+Besuchen Sie https://www.rascsi.de fr Details zum RaSCSI-Board und zur
+RaSCSI-Control-App fr Android.
+
+Zur Nutzung von RA_RTC und RA_SHUTD muss mit RaSCSI ein Host-Dienste-Ger„t
+(Ger„tetyp SCHS) mit einer beliebigen SCSI-ID und einer LUN < 8 eingerichtet
+werden. Dies kann ber die RaSCSI-Weboberfl„che, die RaSCSI-Control-App oder
+auf der Kommandozeile erfolgen, z. B. mit:
+
+>rascsi -ID 6 services
+
+RA_PRINT setzt voraus, dass ein SCSI-Drucker (Ger„tetyp SCLP) mit einer
+beliebigen SCSI-ID und einer LUN < 8 eingerichtet wurde. Auch dies kann ber
+die Weboberfl„che, die RaSCSI-Control-App oder auf der Kommandozeile
+geschehen, z. B. mit:
+
+>rascsi -ID 5 printer
+
+Alle Client-Tools finden das jeweilige Ger„t automatisch. Gibt es mehrere
+Ger„te wird das erste gefundene Ger„t verwendet. Wie fr alle anderen
+Ger„te mssen die benutzten SCSI-IDs/LUNs in HDDRUTIL mit "Ger„te und
+Partitionen" konfiguriert werden.
+
+
+RA_RTC.PRG
+----------
+
+Dieses Tool fragt das aktuelle Datum und die Uhrzeit von RaSCSI ab und setzt
+sie auf dem Atari. Sommerzeit-Einstellungen werden dabei automatisch
+bercksichtigt. In der Regel befindet sich RA_RTC im AUTO-Ordner. 
+
+
+RA_SHUTD.PRG
+------------
+
+Dieses Tool f„hrt den Raspberry Pi herunter. Es wird beispielsweise als
+letzte Operation eines MiNT-Shutdowns verwendet. Es ist zu beachten, dass
+RA_SHUTD sich sofort beendet, aber der Pi einige Zeit fr den Shutdown
+braucht. RA_SHUTD kann nicht feststellen, wann der Pi vollst„ndig
+heruntergefahren ist.
+Wird als Parameter "rascsi" bergeben wird lediglich RaSCSI
+heruntergefahren, aber nicht der Raspberry Pi.
+Wird "reboot" bergeben wird der Raspberry Pi neu gestartet.
+
+
+RA_PRINT.TTP
+------------
+
+Mit diesem Tool lassen sich Dateien per RaSCSI drucken.	In der Regel wird man
+auf dem Desktop ein Icon fr RA_PRINT erzeugen, auf das die zu druckende
+Datei schiebt. Alternativ dazu kann man RA_PRINT manuell starten und den
+Dateinamen eingeben.
+RA_PRINT setzt voraus, dass ein Drucksystem (z. B. CUPS) auf dem Raspberry Pi
+eingerichtet ist. Der auf dem Pi konfigurierte Drucker muss kompatibel zu
+dem Druckertreiber sein, mit dem die zu druckende Datei auf dem Atari erzeugt
+wurde. Mit den Standardeinstellungen fr den SCSI-Drucker werden alle Daten
+von RaSCSI unver„ndert an den eigentlichen Drucker geschickt.
+Aus technischen Grnden ist es nicht m”glich, direkt per SCSI zu drucken ohne
+eine Datei zu verwenden.
+RA_PRINT wurde ausschlielich mit dem SCSI-Drucker von RaSCSI getestet,
+k”nnte aber auch mit anderen Druckern funktionieren, die kompatibel zur
+SCSI-2-Spezifikation sind.
+
+
+  Uwe.Seimet@seimet.de, 1. Mai 2022
