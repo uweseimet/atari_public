@@ -39,10 +39,10 @@ RA_RTC is located in the AUTO folder.
 RA_SHUTD.PRG
 ------------
 
-This tool shuts down the Raspberry Pi. It is used as the last operation of
-a MiNT shutdown, for instance. Note that RA_SHUTD terminates immediately,
-but the Pi takes some time to shut down. RA_SHUTD cannot find out when
-the Pi has completely shut down.
+This tool shuts down the Raspberry Pi. Note that RA_SHUTD terminates
+immediately, but the Pi takes some time to shut down. RA_SHUTD cannot find
+out when the Pi has completely shut down. After using RA_SHUTD it is not
+possible anymore to access the devices emulated by RaSCSI.
 If "rascsi" is passed as a parameter only RaSCSI is shut down, but not the
 Raspberry Pi.
 If "reboot" is passed the Raspberry Pi is restarted.

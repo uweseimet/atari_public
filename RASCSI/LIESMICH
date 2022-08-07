@@ -40,11 +40,11 @@ bercksichtigt. In der Regel befindet sich RA_RTC im AUTO-Ordner.
 RA_SHUTD.PRG
 ------------
 
-Dieses Tool f„hrt den Raspberry Pi herunter. Es wird beispielsweise als
-letzte Operation eines MiNT-Shutdowns verwendet. Es ist zu beachten, dass
+Dieses Tool f„hrt den Raspberry Pi herunter. Es ist zu beachten, dass
 RA_SHUTD sich sofort beendet, aber der Pi einige Zeit fr den Shutdown
 braucht. RA_SHUTD kann nicht feststellen, wann der Pi vollst„ndig
-heruntergefahren ist.
+heruntergefahren ist. Nach der Verwendung von RA_SHUTD kann nicht mehr auf
+die von RaSCSI emulierten Ger„te zugegriffen werden.
 Wird als Parameter "rascsi" bergeben wird lediglich RaSCSI
 heruntergefahren, aber nicht der Raspberry Pi.
 Wird "reboot" bergeben wird der Raspberry Pi neu gestartet.
