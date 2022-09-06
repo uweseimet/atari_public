@@ -1,5 +1,5 @@
 /**********************************/
-/* SCSI Driver/Firmware Test 1.72 */
+/* SCSI Driver/Firmware Test 1.73 */
 /*                                */
 /* (C) 2014-2022 Uwe Seimet       */
 /**********************************/
@@ -115,7 +115,7 @@ void print(const char *, ...);
 void printError(LONG);
 void printSenseData(void);
 void printExpectedSenseData(SENSE_DATA *, UWORD, UWORD);
-LONG execute(const char *);
+LONG execute(const char *, bool);
 bool getCookie(LONG, ULONG *);
 bool getNvm(NVM *nvm);
 
@@ -764,7 +764,7 @@ testReadCapacity(ULONG *blockSize)
 	cmd.Buffer = capacity16;
 	cmd.TransferLen = sizeof(capacity16);
 
-	status = execute("      READ CAPACITY (16)");
+	status = execute("      READ CAPACITY (16)", true);
 	if(!status) {
 		UWORD ratio;
 
@@ -903,7 +903,7 @@ testRead(UWORD busNo, ULONG blockSize, UBYTE *ptr1, UBYTE* ptr2, UBYTE* ptr3)
 	cmd.TransferLen = blockSize;
 	initBuffer(ptr1, blockSize);
 
-	status = execute("    READ (6)");
+	status = execute("    READ (6)", true);
 	if(status) {
 		hasRW6 = false;
 	}
@@ -943,7 +943,7 @@ testRead(UWORD busNo, ULONG blockSize, UBYTE *ptr1, UBYTE* ptr2, UBYTE* ptr3)
 		cmd.TransferLen = blockSize;
 		initBuffer(ptr3, blockSize);
 
-		status = execute("      READ (12)");
+		status = execute("      READ (12)", true);
 		if(!status) {
 			checkRoot(ptrRoot, ptr3, blockSize);
 		}
@@ -957,7 +957,7 @@ testRead(UWORD busNo, ULONG blockSize, UBYTE *ptr1, UBYTE* ptr2, UBYTE* ptr3)
 		cmd.TransferLen = blockSize;
 		initBuffer(ptr3, blockSize);
 
-		status = execute("      READ (16)");
+		status = execute("      READ (16)", true);
 		if(!status) {
 			checkRoot(ptrRoot, ptr3, blockSize);
 
@@ -1065,7 +1065,7 @@ testSeek()
 	cmd.Buffer = NULL;
 	cmd.TransferLen = 0;
 
-	if(execute("      SEEK (6)")) {
+	if(execute("      SEEK (6)", true)) {
 		return;
 	}
 
@@ -1075,7 +1075,7 @@ testSeek()
 		cmd.Cmd = (void *)&Seek10;
 		cmd.CmdLen = (UWORD)sizeof(Seek10);
 
-		execute("      SEEK (10)");
+		execute("      SEEK (10)", true);
 	}
 }
 
@@ -1109,7 +1109,7 @@ testReadLong()
 
 	memset(&senseData, 0, sizeof(SENSE_DATA));
 
-	if(execute("      READ LONG (10)")) {
+	if(execute("      READ LONG (10)", true)) {
 		return;
 	}
 
@@ -1150,7 +1150,7 @@ testReadLong()
 
 	memset(&senseData, 0, sizeof(SENSE_DATA));
 
-	if(execute("      READ LONG (16)")) {
+	if(execute("      READ LONG (16)", true)) {
 		return;
 	}
 
@@ -1211,7 +1211,7 @@ testModeSense()
 	cmd.Buffer = buf;
 	cmd.TransferLen = 255;
 
-	if(execute("      MODE SENSE (6)")) {
+	if(execute("      MODE SENSE (6)", true)) {
 		return;
 	}
 
@@ -1272,7 +1272,7 @@ testModeSense()
 	cmd.Buffer = buf;
 	cmd.TransferLen = 4096;
 
-	if(execute("      MODE SENSE (10)")) {
+	if(execute("      MODE SENSE (10)", true)) {
 		return;
 	}
 
@@ -1296,6 +1296,22 @@ testModeSense()
 
 		print("\n");
 	}
+
+
+	print("    Checking for support of vendor-specific mode page 0\n");
+
+	ModeSense6[2] = 0;
+	cmd.Cmd = (void *)&ModeSense6;
+	cmd.CmdLen = (UWORD)sizeof(ModeSense6);
+	cmd.Buffer = buf;
+	cmd.TransferLen = 255;
+
+	if(execute("      MODE SENSE (6)", false)) {
+		print("      Mode page 0 is not supported\n");
+		return;
+	}
+
+	print("      Mode page 0 is supported\n");
 }
 
 
@@ -1321,7 +1337,7 @@ testReportLuns()
 
 	memset(&senseData, 0, sizeof(SENSE_DATA));
 
-	if(execute("    REPORT LUNS")) {
+	if(execute("    REPORT LUNS", true)) {
 		return;
 	}
 
@@ -1363,7 +1379,7 @@ testGetConfiguration()
 
 	memset(&senseData, 0, sizeof(SENSE_DATA));
 
-	status = execute("    GET CONFIGURATION");
+	status = execute("    GET CONFIGURATION", true);
 	if(!status) {
 		UWORD i;
 		UWORD profileListLen = profileData[11] >> 2;
@@ -1672,7 +1688,7 @@ printExpectedSenseData(SENSE_DATA *senseData, UWORD senseKey, UWORD addSenseCode
 }
 
 LONG
-execute(const char *msg)
+execute(const char *msg, bool reportError)
 {
 	LONG status = scsiCall->In(&cmd);
 	if(status == 2) {
@@ -1680,7 +1696,7 @@ execute(const char *msg)
 			print(msg);
 			print(" is not supported by device\n");
 		}
-		else {
+		else if (reportError) {
 			printError(status);
 		}
 
