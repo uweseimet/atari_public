@@ -1,12 +1,12 @@
 # Notes on the projects for Atari 16/32 bit computers in this repository
 
-- MAGTOROM - Protects the MagiC operating system against write access. The binary is available on http://seimet/atari/en.
+- MAGTOROM - Protects the MagiC operating system against write access. The binary is available on https://www.seimet.de/atari/en.
 
 - MODULES - Modules for the HDDRIVER driver, see https://www.hddriver.net for details and binaries.
 
 - NF_SCSI - SCSI Driver for Hatari and ARAnyM. See https://www.hddriver.net/en/scsidriver.html for details.
 
-- OUTSIDE - The virtual memory manager. The binary is available on http://seimet/atari/en.
+- OUTSIDE - The virtual memory manager. The binary is available on https://www.seimet.de/atari/en.
 
 - RASCSI - Atari client tools for the RaSCSI project. The binaries are available on https://www.hddriver.net/en/rascsi_tools.html.
 
