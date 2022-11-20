@@ -1,6 +1,6 @@
-/*******************************//* RaSCSI shutdown client 1.00 *//*                             *//* (C) 2022 Uwe Seimet         *//*******************************/
+/*******************************//* RaSCSI shutdown client 1.01 *//*                             *//* (C) 2022 Uwe Seimet         *//*******************************/
 
-#define VERSION "1.00"
+#define VERSION "1.01"
 #include <stdio.h>#include <std.h>#include <tos.h>
 #include <string.h>#include <scsidrv/scsidefs.h>#include "ra_lib.h"
 
@@ -21,7 +21,7 @@ UBYTE StartStopUnit[] = { 0x1b, 0x00, 0x00, 0x00, 0x00, 0x00 };intmain(int a
 	rascsiOnly = argc > 1 && !strcmpi(argv[1], "rascsi");
 	reboot = argc > 1 && !strcmpi(argv[1], "reboot");
 
-	return execute(shutDown, 3, "RaSCSI", "Host Services",
+	return execute(shutDown, 3, "Host Services",
 		"RaSCSI host services", "RaSCSI-Host-Dienste");
 }
 
@@ -38,16 +38,16 @@ shutDown(tpScsiCall scsiCall, tSCSICmd *cmd, int lun)
 				printf("RaSCSI wurde angehalten\n");
 			}
 			else if(reboot) {
-				printf("Der Raspberry Pi wird neu gestartet\n");
+				printf("Der Pi wird neu gestartet\n");
 			}			else {
-				printf("Der Raspberry Pi wird heruntergefahren\n");
+				printf("Der Pi wird heruntergefahren\n");
 			}		}		else {
 			if(rascsiOnly) {
 				printf("RaSCSI has been stopped\n");
 			}			else if(reboot) {
-				printf("The Raspberry Pi is being restarted\n");
+				printf("The Pi is being restarted\n");
 			}			else {
-				printf("The Raspberry Pi is being shut down\n");
+				printf("The Pi is being shut down\n");
 			}		}
 		return true;
 	}
@@ -55,11 +55,11 @@ shutDown(tpScsiCall scsiCall, tSCSICmd *cmd, int lun)
 	if(isGerman) {
 		if(rascsiOnly) {			printf("Fehler beim Anhalten von RaSCSI\n");
 		}		else {
-			printf("Fehler beim Herunterfahren des Raspberry Pi\n");
+			printf("Fehler beim Herunterfahren des Pi\n");
 		}	}	else {
 		if(rascsiOnly) {
 			printf("Error when stopping RaSCSI\n");
 		}		else {
-			printf("Error when shutting down the Raspberry Pi\n");
+			printf("Error when shutting down the Pi\n");
 		}	}
 	return false;}

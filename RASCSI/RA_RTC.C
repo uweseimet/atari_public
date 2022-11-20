@@ -1,6 +1,6 @@
-/*************************************//* RaSCSI Realtime clock client 1.00 *//*                                   *//* (C) 2022 Uwe Seimet               *//*************************************/
+/*************************************//* RaSCSI Realtime clock client 1.01 *//*                                   *//* (C) 2022 Uwe Seimet               *//*************************************/
 
-#define VERSION "1.00"
+#define VERSION "1.01"
 #include <stdio.h>#include <std.h>#include <tos.h>
 #include <scsidrv/scsidefs.h>#include "ra_lib.h"
 
@@ -17,7 +17,7 @@ UBYTE ModeSense6[] = { 0x1a, 0x08, 0x20, 0x00, sizeof(_datetime), 0x00 };int
 		printf("\n\x1b\x70RaSCSI Echtzeituhr-Client V" VERSION "\x1b\x71\n");	}	else {
 		printf("\n\x1b\x70RaSCSI realtime clock client V" VERSION "\x1b\x71\n");
 	}	printf("½ 2022 Uwe Seimet\n");
-	return execute(getTime, 3, "RaSCSI", "Host Services",
+	return execute(getTime, 3, "Host Services",
 		"RaSCSI host services", "RaSCSI-Host-Dienste");}
 
 bool

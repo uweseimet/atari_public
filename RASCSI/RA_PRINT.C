@@ -1,6 +1,6 @@
-/******************************//* RaSCSI printer client 1.00 *//*                            *//* (C) 2022 Uwe Seimet        *//******************************/
+/******************************//* RaSCSI printer client 1.01 *//*                            *//* (C) 2022 Uwe Seimet        *//******************************/
 
-#define VERSION "1.00"
+#define VERSION "1.01"
 #include <stdio.h>#include <std.h>#include <tos.h>#include <scsidrv/scsidefs.h>#include "ra_lib.h"
 
 
@@ -16,8 +16,8 @@ UBYTE Reserve[] = { 0x16, 0x00, 0x00, 0x00, 0x00, 0x00 };UBYTE Release[] = { 0x
 	setLanguage();
 
 	if(isGerman) {
-		printf("\n\x1b\x70RaSCSI Raspberry Pi Drucker-Client V" VERSION "\x1b\x71\n");	}	else {
-		printf("\n\x1b\x70RaSCSI Raspberry Pi printer client V" VERSION "\x1b\x71\n");	}	printf("½ 2022 Uwe Seimet\n");
+		printf("\n\x1b\x70RaSCSI Drucker-Client V" VERSION "\x1b\x71\n");	}	else {
+		printf("\n\x1b\x70RaSCSI printer client V" VERSION "\x1b\x71\n");	}	printf("½ 2022 Uwe Seimet\n");
 	if(argc < 2) {
 		return -1;
 	}
@@ -34,7 +34,7 @@ UBYTE Reserve[] = { 0x16, 0x00, 0x00, 0x00, 0x00, 0x00 };UBYTE Release[] = { 0x
 		return -1;
 	}
 
-	status = execute(print, 2, NULL, NULL, "SCSI printer", "SCSI-Drucker");
+	status = execute(print, 2, NULL, "SCSI printer", "SCSI-Drucker");
 	fclose(file);
 
 	return status;

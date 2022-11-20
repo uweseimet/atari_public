@@ -1,15 +1,15 @@
 RaSCSI Client Tools
 -------------------
 
-The client tools require a RaSCSI board for the Raspberry Pi and release
-22.04 or newer of the RaSCSI software. In addition, a SCSI Driver is
-required, e.g. the one integrated in HDDRIVER.
+The client tools require a RaSCSI board and release 22.04 or newer of the
+RaSCSI software. In addition, a SCSI Driver is required, e.g. the one
+integrated in HDDRIVER.
 The client tools C sources are available on GitHub:
 https://github.com/uweseimet/atari_public.
 Visit https://www.rascsi.de for details on the RaSCSI board and the RaSCSI
 Control app for Android.
 
-In order to use RA_RTC und RA_SHUTD, with RaSCSI a host services device
+In order to use RA_RTC und RA_SHUTD with RaSCSI a host services device
 (device type SCHS) with an arbitrary SCSI ID and a LUN < 0 has to be created.
 This can be done with RaSCSI the web interface, the RaSCSI Control app or on
 the command line, e.g.
@@ -39,13 +39,12 @@ RA_RTC is located in the AUTO folder.
 RA_SHUTD.PRG
 ------------
 
-This tool shuts down the Raspberry Pi. It is used as the last operation of
-a MiNT shutdown, for instance. Note that RA_SHUTD terminates immediately,
-but the Pi takes some time to shut down. RA_SHUTD cannot find out when
-the Pi has completely shut down.
+This tool shuts down the Pi. Note that RA_SHUTD terminates immediately, but
+the Pi takes some time to shut down. RA_SHUTD cannot find out when the Pi has
+completely shut down. After using RA_SHUTD it is not possible anymore to
+access the devices emulated by RaSCSI.
 If "rascsi" is passed as a parameter only RaSCSI is shut down, but not the
-Raspberry Pi.
-If "reboot" is passed the Raspberry Pi is restarted.
+Pi. If "reboot" is passed the Pi is restarted.
 
 
 RA_PRINT.TTP
@@ -54,8 +53,8 @@ RA_PRINT.TTP
 With this tool files can be printed via RaSCSI. Usually you wcreate an icon
 for RA_PRINT on the desktop, onto which you drop the file to be printed. As
 an alternative you can launch RA_PRINT manually and enter the filename.
-RA_PRINT requires that a printing system (e.g. CUPS) is available on the
-Raspberry Pi. The printer configured on the Pi has to be compatible with the
+RA_PRINT requires that a printing system (e.g. CUPS) is available on the Pi.
+The printer configured on the Pi has to be compatible with the
 printer driver used for creating the file to be printed on the Atari. With
 the RaSCSI SCSI printer default settings RaSCSI sends all data to the
 actual printer without modifying them.
@@ -65,5 +64,5 @@ RA_PRINT was only tested with the RaSCSI SCSI printer, but might also work
 with other printers, which are compatible with the SCSI-2 specification.
 
 
-  Uwe.Seimet@seimet.de, May 1st, 2022
+  Uwe.Seimet@seimet.de, November 20th, 2022
  

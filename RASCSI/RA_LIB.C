@@ -1,4 +1,4 @@
-/*************************//* RaSCSI client library *//*                       *//* (C) 2022 Uwe Seimet   *//*************************/#include <stdio.h>#include <std.h>#include <tos.h>#include <string.h>#include <scsidrv/scsidefs.h>#include "scsi3.h"#include "ra_lib.h"
+/******************************//* RaSCSI client library 1.01 *//*                            *//* (C) 2022 Uwe Seimet        *//******************************/#include <stdio.h>#include <std.h>#include <tos.h>#include <string.h>#include <scsidrv/scsidefs.h>#include "scsi3.h"#include "ra_lib.h"
 
 UWORD getLuns(int *);bool getCookie(LONG, ULONG *);
 
@@ -14,7 +14,7 @@ SENSE_BLK Inquiry = {
 };
 
 intexecute(bool (*execute)(tpScsiCall, tSCSICmd *, int), int deviceType,
-	const char *vendor, const char *product, const char *msgEnglish,
+	const char *product, const char *msgEnglish,
 	const char *msgGerman){	LONG oldstack = 0;
 	LONG result;	bool done = false;
 	int status = -1;
@@ -62,7 +62,6 @@ SENSE_BLK Inquiry = {
 					if(!result) {
 /* Find the required RaSCSI device, based on type and optional name */
 						if(inquiryData.deviceType == deviceType &&
-							(!vendor || !strncmpi(inquiryData.vendor, vendor, strlen(vendor))) &&
 							(!product || !strncmpi(inquiryData.product, product, strlen(product)))) {
 							char name[29];
 
