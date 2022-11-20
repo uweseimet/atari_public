@@ -2,7 +2,7 @@
 
 - MAGTOROM - Protects the MagiC operating system against write access. The binary is available on https://www.seimet.de/atari/en.
 
-- MODULES - Modules for the HDDRIVER driver, see https://www.hddriver.net for details and binaries.
+- MODULES - Modules for the HDDRIVER driver, see https://www.hddriver.net/en/modules.html for details and binaries.
 
 - NF_SCSI - SCSI Driver for Hatari and ARAnyM. See https://www.hddriver.net/en/scsidriver.html for details.
 
