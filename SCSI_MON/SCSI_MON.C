@@ -203,7 +203,7 @@ In(tpSCSICmd parms)
 	else {
 		sprintf(str, "-> %ld", res);
 		sysprintf(str);
-	}
+	}
 	prbuffer(parms, false);
 
 	return res;
