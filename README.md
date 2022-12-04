@@ -8,7 +8,7 @@
 
 - OUTSIDE - The virtual memory manager. The binary is available on https://www.seimet.de/atari/en.
 
-- RASCSI - Atari client tools for the RaSCSI project. The binaries are available on https://www.hddriver.net/en/rascsi_tools.html.
+- RASCSI - Atari client tools for the RaSCSI/PiSCSI project. The binaries are available on https://www.hddriver.net/en/piscsi_tools.html.
 
 - ROMSPEED - Copies the ROM to the Fast-RAM and accelerates the system. The binary is available on https://www.seimet.de/atari/en.
 
