@@ -1,0 +1,144 @@
+_G_BOX      = 20
+_G_TEXT     = 21
+_G_BOXTEXT  = 22
+_G_IMAGE    = 23
+_G_USERDEF  = 24
+_G_IBOX     = 25
+_G_BUTTON   = 26
+_G_BOXCHAR  = 27
+_G_STRING   = 28
+_G_FTEXT    = 29
+_G_FBOXTEXT = 30
+_G_ICON     = 31
+_G_TITLE    = 32
+_G_CICON    = 33
+
+
+objc0000:dc.w $ffff
+	dc.w $0001,$0008
+	dc.w _G_BOX
+	dc.w $0000,$0010
+	dc.l $00021100
+	dc.w $0000,$0000
+	dc.w $0022,$0012
+
+	dc.w $0002
+	dc.w $ffff,$ffff
+	dc.w _G_BUTTON 
+	dc.w $0000,$0011
+	dc.l spec0000
+	dc.w $0004,$0001
+	dc.w $001a,$0801
+
+	dc.w $0003
+	dc.w $ffff,$ffff
+	dc.w _G_TEXT
+	dc.w $0000,$0000
+	dc.l spec0001
+	dc.w $0008,$0003
+	dc.w $0012,$0001
+
+	dc.w $0004
+	dc.w $ffff,$ffff
+	dc.w _G_FTEXT
+	dc.w $0408,$0000
+	dc.l spec0002
+	dc.w $0002,$0006
+	dc.w $0013,$0001
+
+	dc.w $0005
+	dc.w $ffff,$ffff
+	dc.w _G_BUTTON 
+	dc.w $0201,$0000
+	dc.l spec0003
+	dc.w $0002,$0009
+	dc.w $0014,$0001
+
+	dc.w $0006
+	dc.w $ffff,$ffff
+	dc.w _G_BUTTON 
+	dc.w $0201,$0000
+	dc.l spec0004
+	dc.w $0002,$000b
+	dc.w $0014,$0001
+
+	dc.w $0007
+	dc.w $ffff,$ffff
+	dc.w _G_BUTTON 
+	dc.w $0201,$0000
+	dc.l spec0005
+	dc.w $0002,$000d
+	dc.w $0014,$0001
+
+	dc.w $0008
+	dc.w $ffff,$ffff
+	dc.w _G_BUTTON 
+	dc.w $0607,$0000
+	dc.l spec0006
+	dc.w $0008,$0010
+	dc.w $0008,$0001
+
+	dc.w $0000
+	dc.w $ffff,$ffff
+	dc.w _G_BUTTON 
+	dc.w $0625,$0000
+	dc.l spec0007
+	dc.w $0012,$0010
+	dc.w $0008,$0001
+
+spec0000:dc.b "Resource-Converter V3.00",0
+
+	even
+spec0001:dc.l txt0001,plt0001,val0001
+	dc.w $0005
+	dc.w $0006
+	dc.w $0000
+	dc.w $1100
+	dc.w $0000
+	dc.w $ffff
+	dc.w $0019,$0001
+txt0001: dc.b "(C) 1993-2002 Uwe Seimet",0
+plt0001: dc.b 0
+val0001: dc.b 0
+
+	even
+spec0002:dc.l txt0002,plt0002,val0002
+	dc.w $0003
+	dc.w $0006
+	dc.w $0002
+	dc.w $1180
+	dc.w $0000
+	dc.w $ffff
+	dc.w $0005,$0014
+txt0002: dc.b 0,"   ",0
+plt0002: dc.b "Erstes Objekt: ____",0
+val0002: dc.b "9999",0
+
+spec0003:dc.b "Langes Format",0
+
+spec0004:dc.b "DATA-Segment",0
+
+spec0005:dc.b "Objekte exportieren",0
+
+spec0006:dc.b "OK",0
+
+spec0007:dc.b "Abbruch",0
+
+
+
+***********************************
+* Konvertiert durch RSCCONV V3.00 *
+* (C) 1993-2002 Uwe Seimet        *
+***********************************
+
+*Gesamtzahl an Objekten: 0009
+*Objektb„ume: 0001
+*Tedinfos: 0002
+*Icons: 0000
+*Bitbl”cke: 0000
+
+*freie Strings: 0000
+*freie Images: 0000
+
+_treenr0 equ 0001
+_objcnr0 equ 0009

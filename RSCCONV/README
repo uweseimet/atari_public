@@ -1,0 +1,29 @@
+RSCCONV konvertiert .RSC- und .H-Dateien, die von einem Resource
+Construction Set wie INTERFACE erzeugt wurden, in ein Format, das sich
+mit Assemblern wie dem Pure-C-Assembler assemblieren lÑsst. Aus der
+.RSC-Datei wird eine assemblierbare Datei mit der Extension .DAT erzeugt,
+aus der .H-Datei eine Datei mit der Extension .ASM.
+Assemblieren lassen sich die erzeugten Dateien beispielsweise mit dem
+EASYRIDER-Assembler.
+
+RSCCONV unterstÅtzt folgende Einstellungen:
+
+- Erstes Objekt (Kommandozeilen-Option -s)
+  Die erzeugten Objekte werden mit Labels wie "objc0000", "objc0001" usw.
+  abgelegt, beginnend mit der vorgegebenen Nummer fÅr das erste Objekt.
+
+- Langes Format (Kommandozeilen-Option -l)
+  Muss benutzt werden, um Dateien zu konvertieren, die mit der
+  gleichnamingen Einstellung des INTERFACE Resource Construction Sets
+  erzeugt wurden.
+
+- DATA-Segment (Kommandozeilen-Option -d)
+  Legt die erzeugten Daten im DATA-Segment ab.
+
+- Objekte exportieren (Kommandozeilen-Option -o)
+  Erzeugt fÅr jedes Objekt eine xdef-Direktive fÅr den Export des Symbols.
+
+Es ist zu beachten, dass es fÅr RSSCONV keinen Support gibt.
+
+
+  Uwe.Seimet@seimet.de, 20.1.2023

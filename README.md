@@ -12,6 +12,8 @@
 
 - ROMSPEED - Copies the ROM to the Fast-RAM and accelerates the system. The binary is available on https://www.seimet.de/atari/en.
 
+- RSSCONV - Converts .RSC and .H files created by a resource construction set like INTERFACE into a format suitable for assemblers like the EASYRIDER assembler.
+
 - SCSI_MON - The SCSI Driver monitor. The binary is available on https://www.hddriver.net/en/scsidriver.html.
 
 - SCTARGET - Sample code for the SCSI Driver target interface.
