@@ -1,0 +1,68 @@
+PiSCSI Client Tools
+-------------------
+
+The client tools require a RaSCSI/PiSCSI board and release 22.04 or newer
+of the RaSCSI/PiSCSI software. In addition, a SCSI Driver is required, e.g.
+the one integrated in HDDRIVER.
+The client tools C sources are available on GitHub:
+https://github.com/uweseimet/atari_public.
+Visit https://www.piscsi.de for details on PiSCSI and the PiSCSI Control app
+for Android.
+
+In order to use PI_RTC und PI_SHUTD with PiSCSI a host services device
+(device type SCHS) with an arbitrary SCSI ID and a LUN < 0 has to be created.
+This can be done with PiSCSI the web interface, the PiSCSI Control app or on
+the command line, e.g.
+
+>piscsi -ID 6 services
+
+PI_PRINT requires a SCSI printer (device type SCLP) with an arbitrary SCSI
+ID and a LUN < 8 to be created. This can also happen with the web interface,
+the PiSCSI Control app or on the command line, e.g.
+
+>piscsi -ID 5 printer
+
+All client tools find the respective device automatically. If there are
+several devices the first device found is used. Like for any other device,
+the SCSI IDs/LUNs used have to be configured in HDDRUTIL with "Devices and
+Partitions".
+
+
+PI_RTC.PRG
+----------
+
+This tool retrieves the current date and time from PiSCSI and sets it on the
+Atari. Daylight savings time settings are automatically applied. Usually
+PI_RTC is located in the AUTO folder.
+
+
+PI_SHUTD.PRG
+------------
+
+This tool shuts down PiSCSI or the Pi. Note that PI_SHUTD terminates
+immediately, but the Pi takes some time to shut down. PI_SHUTD cannot find
+out when the Pi has completely shut down. After launching PI_SHUTD it is not
+possible anymore to access the devices emulated by PiSCSI.
+If "piscsi" is passed as a parameter only PiSCSI is shut down, but not the Pi.
+With "reboot" the Pi is restarted.
+
+
+PI_PRINT.TTP
+------------
+
+With this tool files can be printed via PiSCSI. Usually you create an icon
+for PI_PRINT on the desktop, onto which you drop the file to be printed. As
+an alternative you can launch PI_PRINT manually and enter the filename.
+PI_PRINT requires that a printing system (e.g. CUPS) is active on the Pi.
+The printer configured on the Pi has to be compatible with the
+printer driver used for creating the file to be printed on the Atari. With
+the PiSCSI SCSI printer default settings PiSCSI sends all data to the
+printer without modifying them.
+Due to technical reasons it is not possible to directly print via SCSI
+without using a file.
+PI_PRINT was only tested with the PiSCSI SCSI printer, but might also work
+with other SCSI printers compatible with the SCSI-2 specification.
+
+
+  Uwe.Seimet@seimet.de
+ 

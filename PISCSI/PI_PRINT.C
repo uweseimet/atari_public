@@ -1,7 +1,7 @@
-/******************************//* RaSCSI printer client 1.01 *//*                            *//* (C) 2022 Uwe Seimet        *//******************************/
+/******************************//* PiSCSI printer client 2.00 *//*                            *//* (C) 2022-2023 Uwe Seimet   *//******************************/
 
-#define VERSION "1.01"
-#include <stdio.h>#include <std.h>#include <tos.h>#include <scsidrv/scsidefs.h>#include "ra_lib.h"
+#define VERSION "2.00"
+#include <stdio.h>#include <std.h>#include <tos.h>#include <scsidrv/scsidefs.h>#include "pi_lib.h"
 
 
 bool print(tpScsiCall, tSCSICmd *, int);
@@ -16,8 +16,8 @@ UBYTE Reserve[] = { 0x16, 0x00, 0x00, 0x00, 0x00, 0x00 };UBYTE Release[] = { 0x
 	setLanguage();
 
 	if(isGerman) {
-		printf("\n\x1b\x70RaSCSI Drucker-Client V" VERSION "\x1b\x71\n");	}	else {
-		printf("\n\x1b\x70RaSCSI printer client V" VERSION "\x1b\x71\n");	}	printf("Ω 2022 Uwe Seimet\n");
+		printf("\n\x1b\x70PiSCSI Drucker-Client V" VERSION "\x1b\x71\n");	}	else {
+		printf("\n\x1b\x70PiSCSI printer client V" VERSION "\x1b\x71\n");	}	printf("Ω 2022-2023 Uwe Seimet\n");
 	if(argc < 2) {
 		return -1;
 	}
@@ -43,7 +43,7 @@ UBYTE Reserve[] = { 0x16, 0x00, 0x00, 0x00, 0x00, 0x00 };UBYTE Release[] = { 0x
 bool
 print(tpScsiCall scsiCall, tSCSICmd *cmd, int lun)
 {
-	/* Currently RaSCSI only supports up to 4096 bytes per transfer */
+	/* Currently PiSCSI only supports up to 4096 bytes per transfer */
 	BYTE buf[4096];
 	size_t length;
 	bool status = true;
@@ -53,10 +53,10 @@ print(tpScsiCall scsiCall, tSCSICmd *cmd, int lun)
 
 	if(scsiCall->Out(cmd)) {
 		if(isGerman) {			printf("Fehler beim Reservieren des Druckers, "
-				"ÅberprÅfen Sie das RaSCSI-Logfile\n");
+				"ÅberprÅfen Sie das PiSCSI-Logfile\n");
 		}		else {
 			printf("Error when reserving the printer, "
-				"check the RaSCSI logfile\n");
+				"check the PiSCSI logfile\n");
 		}
 
 		return false;
@@ -94,10 +94,10 @@ print(tpScsiCall scsiCall, tSCSICmd *cmd, int lun)
 	}
 	else {
 		if(isGerman) {			printf("Fehler beim Drucken, "
-				"ÅberprÅfen Sie das RaSCSI-Logfile\n");
+				"ÅberprÅfen Sie das PiSCSI-Logfile\n");
 		}		else {
 			printf("Error when printing, "
-				"check the RaSCSI logfile\n");
+				"check the PiSCSI logfile\n");
 		}
 	}
 
@@ -105,10 +105,10 @@ print(tpScsiCall scsiCall, tSCSICmd *cmd, int lun)
 
 	if(scsiCall->Out(cmd)) {
 		if(isGerman) {			printf("Fehler beim Freigeben des Druckers, "
-				"ÅberprÅfen Sie das RaSCSI-Logfile\n");
+				"ÅberprÅfen Sie das PiSCSI-Logfile\n");
 		}		else {
 			printf("Error when releasing the printer, "
-				"check the RaSCSI logfile\n");
+				"check the PiSCSI logfile\n");
 		}
 
 		status = false;

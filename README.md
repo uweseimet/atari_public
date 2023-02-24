@@ -10,7 +10,7 @@ Each folder contains a separate project. There are no dependencies between these
 
 - OUTSIDE - The virtual memory manager. The binary is available on https://www.seimet.de/atari/en.
 
-- RASCSI - Atari client tools for the RaSCSI/PiSCSI project. The binaries are available on https://www.hddriver.net/en/piscsi_tools.html.
+- PISCSI - Atari client tools for the RaSCSI/PiSCSI project. The binaries are available on https://www.hddriver.net/en/piscsi_tools.html.
 
 - ROMSPEED - Copies the TOS ROM to the Fast-RAM and accelerates the system. The binary is available on https://www.seimet.de/atari/en.
 
@@ -20,6 +20,6 @@ Each folder contains a separate project. There are no dependencies between these
 
 - SCTARGET - Sample code for the SCSI Driver target interface.
 
-- SDRVTEST - The SCSI Driver/Firmware testsuite. The binary is available on https://www.hddriver.net/en/scsidriver.html.
+- SDRVTEST - The SCSI Driver/Firmware testsuite. The binaries are available on https://www.hddriver.net/en/scsidriver.html.
 
 - XHDI_MON - The XHDI monitor. The binary is available on https://www.hddriver.net/en/downloads.html.

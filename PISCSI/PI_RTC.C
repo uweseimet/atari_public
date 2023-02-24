@@ -1,8 +1,8 @@
-/*************************************//* RaSCSI Realtime clock client 1.01 *//*                                   *//* (C) 2022 Uwe Seimet               *//*************************************/
+/*************************************//* PiSCSI Realtime clock client 2.00 *//*                                   *//* (C) 2022-2023 Uwe Seimet          *//*************************************/
 
-#define VERSION "1.01"
+#define VERSION "2.00"
 #include <stdio.h>#include <std.h>#include <tos.h>
-#include <scsidrv/scsidefs.h>#include "ra_lib.h"
+#include <scsidrv/scsidefs.h>#include "pi_lib.h"
 
 
 bool getTime(tpScsiCall, tSCSICmd *, int);
@@ -14,11 +14,11 @@ UBYTE ModeSense6[] = { 0x1a, 0x08, 0x20, 0x00, sizeof(_datetime), 0x00 };int
 	setLanguage();
 
 	if(isGerman) {
-		printf("\n\x1b\x70RaSCSI Echtzeituhr-Client V" VERSION "\x1b\x71\n");	}	else {
-		printf("\n\x1b\x70RaSCSI realtime clock client V" VERSION "\x1b\x71\n");
-	}	printf("½ 2022 Uwe Seimet\n");
+		printf("\n\x1b\x70PiSCSI Echtzeituhr-Client V" VERSION "\x1b\x71\n");	}	else {
+		printf("\n\x1b\x70PiSCSI realtime clock client V" VERSION "\x1b\x71\n");
+	}	printf("½ 2022-2023 Uwe Seimet\n");
 	return execute(getTime, 3, "Host Services",
-		"RaSCSI host services", "RaSCSI-Host-Dienste");}
+		"PiSCSI host services", "PiSCSI-Host-Dienste");}
 
 bool
 getTime(tpScsiCall scsiCall, tSCSICmd *cmd, int lun)
@@ -40,10 +40,10 @@ getTime(tpScsiCall scsiCall, tSCSICmd *cmd, int lun)
 	}
 
 	if(isGerman) {		printf("Fehler beim Lesen von Datum und Uhrzeit von den "
-			"RaSCSI-Host-Diensten\n");
+			"PiSCSI-Host-Diensten\n");
 	}
 	else {
-		printf("Error when reading date and time from RaSCSI host services\n");
+		printf("Error when reading date and time from PiSCSI host services\n");
 	}
 
 	return false;}

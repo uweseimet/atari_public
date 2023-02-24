@@ -1,0 +1,70 @@
+PiSCSI-Client-Tools
+-------------------
+
+Die Client-Tools setzen ein RaSCSI/PiSCSI-Board und Release 22.04 oder neuer
+der RaSCSI/PiSCSI-Software voraus. Auerdem wird ein SCSI-Treiber ben”tigt,
+z. B. der in HDDRIVER integrierte.
+Die C-Quelltexte der Client-Tools sind auf GitHub verfgbar:
+https://github.com/uweseimet/atari_public.
+Besuchen Sie https://www.piscsi.de fr Details zu PiSCSI und zur
+PiSCSI-Control-App fr Android.
+
+Zur Nutzung von PI_RTC und PI_SHUTD muss mit PiSCSI ein Host-Dienste-Ger„t
+(Ger„tetyp SCHS) mit einer beliebigen SCSI-ID und einer LUN < 8 eingerichtet
+werden. Dies kann ber die PiSCSI-Weboberfl„che, die PiSCSI-Control-App
+oder auf der Kommandozeile erfolgen, z. B. mit:
+
+>piscsi -ID 6 services
+
+PI_PRINT setzt voraus, dass ein SCSI-Drucker (Ger„tetyp SCLP) mit einer
+beliebigen SCSI-ID und einer LUN < 8 eingerichtet wurde. Auch dies kann ber
+die Weboberfl„che, die PiSCSI-Control-App oder auf der Kommandozeile
+geschehen, z. B. mit:
+
+>piscsi -ID 5 printer
+
+Alle Client-Tools finden das jeweilige Ger„t automatisch. Gibt es mehrere
+Ger„te wird das erste gefundene Ger„t verwendet. Wie fr alle anderen
+Ger„te mssen die benutzten SCSI-IDs/LUNs in HDDRUTIL mit "Ger„te und
+Partitionen" konfiguriert werden.
+
+
+PI_RTC.PRG
+----------
+
+Dieses Tool fragt das aktuelle Datum und die Uhrzeit von PiSCSI ab und
+setzt sie auf dem Atari. Sommerzeit-Einstellungen werden dabei automatisch
+bercksichtigt. In der Regel befindet sich PI_RTC im AUTO-Ordner. 
+
+
+PI_SHUTD.PRG
+------------
+
+Dieses Tool f„hrt PiSCSI oder den Pi herunter. Es ist zu beachten, dass
+PI_SHUTD sich sofort beendet, aber der Pi einige Zeit fr den Shutdown
+braucht. PI_SHUTD kann nicht feststellen, wann der Pi vollst„ndig
+heruntergefahren ist. Nach dem Start von PI_SHUTD kann nicht mehr auf die
+von PiSCSI emulierten Ger„te zugegriffen werden.
+Wird als Parameter ""piscsi" bergeben wird lediglich PiSCSI heruntergefahren,
+aber nicht der Pi. Mit "reboot" wird der Pi neu gestartet.
+
+
+PI_PRINT.TTP
+------------
+
+Mit diesem Tool lassen sich Dateien per PiSCSI drucken. In der Regel wird
+man auf dem Desktop ein Icon fr PI_PRINT erzeugen, auf das die zu druckende
+Datei schiebt. Alternativ dazu kann man PI_PRINT manuell starten und den
+Dateinamen eingeben.
+PI_PRINT setzt voraus, dass ein Drucksystem (z. B. CUPS) auf dem Pi aktiv
+ ist. Der konfigurierte Drucker auf dem Pi muss kompatibel zu dem
+Druckertreiber sein, mit dem die zu druckende Datei auf dem Atari erzeugt
+wurde. Mit den Standardeinstellungen fr den SCSI-Drucker werden alle Daten
+von PiSCSI unver„ndert an den Drucker geschickt. Aus technischen Grnden ist
+es nicht m”glich, direkt per SCSI zu drucken ohne eine Datei zu verwenden.
+PI_PRINT wurde ausschlielich mit dem SCSI-Drucker von PiSCSI getestet,
+k”nnte aber auch mit anderen SCSI-Druckern funktionieren, die kompatibel zur
+SCSI-2-Spezifikation sind.
+
+
+  Uwe.Seimet@seimet.de
