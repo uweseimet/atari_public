@@ -5,7 +5,7 @@
 /**************************/
 
 #include <tos.h>
-#include <modstart.h>
+#include "../modstart.h"
 
 int
 main()

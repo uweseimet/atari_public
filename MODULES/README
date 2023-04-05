@@ -1,15 +1,15 @@
 HDDRIVER Modules
 ----------------
 
-HDDRIVER 11 supports starting programs, so-called HDDRIVER modules, early
-during the boot sequence before the actual driver HDDRIVER.SYS. The main
-difference between modules and AUTO folder programs is that a module is
-launched *before* HDDRIVER.SYS, an AUTO folder program is launched *after*
-HDDRIVER.SYS. A typical module provides functionality HDDRIVER can make
-use of during the boot sequence, e.g. a SCSI Driver, which provides access
-to a non-standard bus, e.g. to a USB hardware extension. For some programs
-it can be useful that they can be launched both ways, as a module and from
-within the AUTO folder.
+Since version 11 HDDRIVER supports launching programs, so-called HDDRIVER
+modules, early during the boot sequence before the actual driver
+HDDRIVER.SYS. The main difference between modules and AUTO folder programs
+is that a module is launched *before* HDDRIVER.SYS, whereas an AUTO folder
+program is launched *after* HDDRIVER.SYS. A typical module provides
+functionality HDDRIVER can make use of during the boot sequence, like a SCSI
+Driver, which provides access to a non-standard bus, e.g. to a USB hardware
+extension. For some programs it can be useful if they can be launched both
+ways, as a module and also from within the AUTO folder.
 During the boot sequence HDDRIVER.SYS scans all available buses for devices,
 so that any mass storage device supported by a SCSI Driver can fully be
 managed by HDDRIVER, as if support for this device was built-in. HDDRIVER
@@ -29,9 +29,9 @@ HDDRIVER.SYS, depending on the HDDRIVER installation settings configured
 with HDDRUTIL.
 Module filenames have the format "HDDRMODn.SYS", with n being a digit from
 0-9. The value of n determines the module execution order. During the boot
-process (if HDDRIVER was configured accordingly) modules are executed
-until no further module file for an increasing n is found. HDDRIVER.SYS is
-launched after the last module.
+process (if HDDRIVER was configured accordingly with HDDRUTIL) modules are
+executed until no further module file for an increasing n is found.
+HDDRIVER.SYS is launched after the last module.
 If there are any issues with loading a module, e.g. errors when accessing
 the boot partition, any remaining modules are skipped and HDDRIVER.SYS is
 executed immediately.
@@ -42,19 +42,20 @@ Modules implemented in C
 ------------------------
 
 Depending on its functionality it may be useful to launch the same binary
-either from the AUTO folder or as an HDDRIVER module. MODSTART.S is a piece
-of Pure C initialization code that enables a program to be executed by TOS
-and also as a module. Please see the comments in the source code for details.
-In particular MODSTART tweaks the memory management of a program, so that it
+either from the AUTO folder or as a module. MODSTART.S is a piece of Pure C
+initialization code that enables a program to be executed by TOS and also as
+a module. Please see the comments in the source code for details. In
+particular MODSTART tweaks the memory management of a program, so that it
 can properly be executed during the boot process.
 It is sufficient to just add MODSTART as the first item (e.g. before
 PCSTART) to the Pure C project file. The MODSTART startup code automatically
-detects whether the binary was started by TOS or as an HDDRIVER module.
+detects whether a binary was launched by TOS or as an HDDRIVER module.
 Modules implemented in C (using MODSTART) must terminate with Pterm0(),
 Pterm() or Ptermres(). Their main() method must not be terminated just by a
 C return statement. Modules cannot return any result.
-In case a program needs to know at runtime whether it was started as a
-module the function isHddriverModule() declared in HDDRMOD.H can be called.
+In case a program needs to know at runtime whether it was launched as a
+module the function isHddriverModule() declared in HDDRMOD.H provides this
+information.
 
 
 Modules implemented in assembler
@@ -77,8 +78,33 @@ The simplest possible module in assembler (effectively doing nothing) is:
 Sample Module
 -------------
 
-SAMPLE.C implements a simple HDDRIVER module, which is aware of whether	it
-was started as a regular program or as a module.
+The sample module in the SAMPLE folder is a simple module that is aware of
+whether it was started as a regular program or as a module.
+
+
+Afterburner040 PMMU Fix Module
+------------------------------
+
+The Afterburner040 requires the 68040 PMMU to be initialized in a certain
+way in order to avoid DMA transfer issues. Until HDDRIVER 11 the HDDRIVER
+binary dealt with this initialization. Since HDDRIVER 12 the initialization
+code is provided by a HDDRIVER module and a program for the AUTO folder,
+resp. This module is located in the AB040MMU folder.
+This approach relieves HDDRIVER of platform-specific code and is more
+flexible than having hardcoded AB040-specific code in the HDDRIVER binary.
+
+
+SCSI Driver Modules
+-------------------
+
+During the boot sequence HDDRIVER.SYS scans all available buses for devices,
+so that any mass storage device supported by a SCSI Driver can fully be
+managed by HDDRIVER, as if support for this device was built-in. HDDRIVER
+features like XHDI support or booting the AUTO folder and accessories from
+any partition are automatically available for any drive managed by HDDRIVER.
+HDDRIVER maps XHDI major device IDs to their corresponding SCSI Driver bus
+IDs by dividing the major device ID by 8. This provides for 8 XHDI major
+device IDs per SCSI Driver bus.
 
 
 Module Restrictions

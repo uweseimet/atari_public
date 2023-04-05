@@ -1,0 +1,10 @@
+For SCSI transfers the PMMU of the Afterburner040 requires a special
+initialization, in order to prevent caching of old data after loading new
+data from a hard disk drive. Since HDDRIVER 12 this initialization is provided
+by AB040MMU.PRG, which should be launched as first program in the AUTO folder,
+or even better is launched as HDDRIVER module HDDRMOD0.SYS. In this case it
+needs to be copied onto the boot partition. This is the same partition on
+which HDDRIVER.SYS has been installed. In addition, ensure that in HDDRUTIL
+the option for launching HDDRIVER modules is enabled before installing
+HDDRIVER. Otherwise modules are not be executed.
+AB040MMU.PRG or the module, resp., require HDDRIVER 12 or newer.
