@@ -1,7 +1,7 @@
 /**********************************/
-/* SCSI Driver/Firmware Test 1.73 */
+/* SCSI Driver/Firmware Test 1.80 */
 /*                                */
-/* (C) 2014-2022 Uwe Seimet       */
+/* (C) 2014-2023 Uwe Seimet       */
 /**********************************/
 
 
@@ -155,8 +155,8 @@ main()
 		return -1;
 	}
 
-	print("SCSI Driver and firmware test V1.72\n");
-	print("½ 2014-2022 Uwe Seimet\n\n");
+	print("SCSI Driver and firmware test V1.80\n");
+	print("½ 2014-2023 Uwe Seimet\n\n");
 
 	if(getNvm(&nvm)) {
 		print("SCSI initiator ID in NVRAM is %d\n", nvm.scsiid & 0x07);
@@ -1439,6 +1439,13 @@ printFeatures(UWORD features)
 
 	if(features & cScatterGather) {
 		print("    Scatter gather\n");
+		hasFeature = true;
+	}
+
+/* SCSI Driver extension supported since HDDRIVER 12: Support for 32 LUNs,
+	 see http://www.hddriver.net/en/scsidriver_extension.html. */
+	if(features & 0x40) {
+		print("    32 LUNs\n");
 		hasFeature = true;
 	}
 
