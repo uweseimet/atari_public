@@ -6,28 +6,31 @@ modules, early during the boot sequence, even before the actual driver
 HDDRIVER.SYS. The main difference between modules and AUTO folder programs
 is that a module is launched *before* HDDRIVER.SYS, whereas an AUTO folder
 program is launched *after* HDDRIVER.SYS. A typical module provides
-functionality HDDRIVER can make use of during the boot sequence, like a SCSI
-Driver providing access to a non-standard interfaces, e.g. USB. But modules
-can also provide other functionality.
+functionality HDDRIVER can make use of during the boot process, like a SCSI
+Driver providing access to non-standard mass storage interfaces, e.g. USB.
+But modules can also provide other functionality.
 For some programs it can be useful if they can be launched both ways, as a
-module and also from within the AUTO folder.
+module and also from the AUTO folder.
 
 
 Module Execution
 ----------------
 
 Like HDDRIVER.SYS modules are located in the root directory of the boot
-partition, which does not necessarily have to be drive C:. They run in the
-same type of RAM (ST-RAM or TT-RAM) as HDDRIVER.SYS, depending on the
-HDDRIVER installation settings configured in HDDRUTIL.
+partition. This does not necessarily have to be drive C: because you can
+also install HDDRIVER on other drives. Modules run in the same type of RAM
+(ST-RAM or TT-RAM) as HDDRIVER.SYS, depending on the HDDRIVER installation
+settings configured in HDDRUTIL.
 Module filenames have the format "HDDRMODn.SYS", with n being a digit from
 0-9. The value of n determines the module execution order. During the boot
 process (if HDDRIVER was configured accordingly with HDDRUTIL) modules are
 executed until no further module file for an increasing n is found.
 HDDRIVER.SYS is launched after the last module.
 If there are any issues with loading a module, e.g. errors when accessing
-the boot partition, any remaining modules are skipped and HDDRIVER.SYS is
-executed immediately.
+the boot partition where the module files reside, any remaining modules are
+skipped and HDDRIVER.SYS is executed immediately.
+Note that modules cannot dynamically allocate any additional memory. This
+is because of technical reasons imposed by the TOS boot process.
 Modules are always run in supervisor mode. MODSTART.S and SAMPLE.C should
 be studied in order to learn more about HDDRIVER modules.
 
@@ -43,7 +46,7 @@ particular MODSTART tweaks the memory management of a program, so that it
 can properly be executed during the boot process.
 It is sufficient to just add MODSTART as the first item (e.g. before
 PCSTART) to the Pure C project file. The MODSTART startup code automatically
-detects whether a binary was launched by TOS or as an HDDRIVER module.
+detects whether a binary was launched by TOS or as a module.
 Modules implemented in C (using MODSTART) must terminate with Pterm0(),
 Pterm() or Ptermres(). Their main() method must not be terminated just by a
 C return statement. Modules cannot return any result.
@@ -83,8 +86,8 @@ The Afterburner040 hardware for the Falcon requires the 68040 PMMU to be
 initialized in a certain way in order to avoid caching issues with DMA
 transfers. Until HDDRIVER 11 the HDDRIVER binary dealt with this
 initialization. Since HDDRIVER 12 the initialization code is provided by
-a HDDRIVER module and a program for the AUTO folder, resp. The sources for
-this module are located in the AB040MMU folder.
+a module and a program for the AUTO folder, resp. The sources for this
+module are located in the AB040MMU folder.
 The new approach relieves HDDRIVER of platform-specific code and is more
 flexible than having hardcoded AB040-specific code in the HDDRIVER binary.
 
@@ -98,6 +101,8 @@ so that any mass storage device supported by a SCSI Driver can be managed
 by HDDRIVER, as if support for this device was built-in. HDDRIVER features
 like XHDI support or booting the AUTO folder and accessories from any
 partition are automatically available for any drive managed by HDDRIVER.
+Because of this, SCSI Drivers launched as modules should *not* install BIOS
+or XHDI code of their own.
 HDDRIVER maps any XHDI major device ID to its corresponding SCSI Driver bus
 ID by dividing the major device ID by 8. This provides for 8 XHDI major
 device IDs per SCSI Driver bus.
@@ -107,12 +112,11 @@ Module Restrictions
 -------------------
 
 Modules do not have regular access to filesystems on mass storage devices,
-because HDDRIVER has not been initialized yet at the time of module
-execution.
-Modules are not meant to be replacements for programs that can simply be
-launched from within the AUTO folder. They should only be used when it is
-required to execute code as early as possible during the boot process,
-i.e. before HDDRIVER.SYS.
+because HDDRIVER has not been launched yet at the time of module execution.
+Modules are *not* meant to be replacements for programs that can simply be
+launched from the AUTO folder. They should only be used when it is required
+to execute code as early as possible during the boot process, i.e. before
+HDDRIVER.SYS.
 
 
   Uwe.Seimet@seimet.de
