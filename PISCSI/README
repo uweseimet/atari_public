@@ -6,21 +6,27 @@ of the RaSCSI/PiSCSI software. In addition, a SCSI Driver is required, e.g.
 the one integrated in HDDRIVER.
 The client tools C sources are available on GitHub:
 https://github.com/uweseimet/atari_public.
-Visit https://www.piscsi.de for details on PiSCSI and the PiSCSI Control app
-for Android.
+Visit https://www.piscsi.de for details on PiSCSI and the Atari and on the
+PiSCSI Control app for Android.
 
 In order to use PI_RTC und PI_SHUTD with PiSCSI a host services device
 (device type SCHS) with an arbitrary SCSI ID and a LUN < 0 has to be created.
-This can be done with PiSCSI the web interface, the PiSCSI Control app or on
-the command line, e.g.
+With HDDRIVER 12 and TT/Falcon SCSI LUNs 0-31 are supported.
+You can launch PiSCSI with the PiSCSI the web interface, the PiSCSI Control
+app or on the command line, e.g.
 
 >piscsi -ID 6 services
 
-PI_PRINT requires a SCSI printer (device type SCLP) with an arbitrary SCSI
-ID and a LUN < 8 to be created. This can also happen with the web interface,
-the PiSCSI Control app or on the command line, e.g.
+PI_PRINT requires a SCSI printer (device type SCLP) to be created. This can
+also be done with the web interface, the PiSCSI Control app or on the command
+line, e.g.
 
 >piscsi -ID 5 printer
+
+With the internal host adapter of the MegaSTE only a single SCSI ID is
+possible, but up to 8 devices can added by using LUNs 0-7, e.g.
+
+>piscsi -ID 0 harddisk.hds -ID 0:6 printer -ID 0:7 services
 
 All client tools find the respective device automatically. If there are
 several devices the first device found is used. Like for any other device,

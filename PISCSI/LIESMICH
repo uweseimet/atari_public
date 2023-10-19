@@ -6,22 +6,28 @@ der RaSCSI/PiSCSI-Software voraus. Auerdem wird ein SCSI-Treiber ben”tigt,
 z. B. der in HDDRIVER integrierte.
 Die C-Quelltexte der Client-Tools sind auf GitHub verfgbar:
 https://github.com/uweseimet/atari_public.
-Besuchen Sie https://www.piscsi.de fr Details zu PiSCSI und zur
+Besuchen Sie https://www.piscsi.de fr Details zu PiSCSI am Atari und zur
 PiSCSI-Control-App fr Android.
 
 Zur Nutzung von PI_RTC und PI_SHUTD muss mit PiSCSI ein Host-Dienste-Ger„t
 (Ger„tetyp SCHS) mit einer beliebigen SCSI-ID und einer LUN < 8 eingerichtet
-werden. Dies kann ber die PiSCSI-Weboberfl„che, die PiSCSI-Control-App
-oder auf der Kommandozeile erfolgen, z. B. mit:
+werden. Mit HDDRIVER 12 und TT/Falcon SCSI werden die LUNs 0-31 untersttzt.
+Der Start von PiSCSI kann ber die PiSCSI-Weboberfl„che, die PiSCSI-Control-
+App oder auf der Kommandozeile erfolgen, z. B. mit:
 
 >piscsi -ID 6 services
 
-PI_PRINT setzt voraus, dass ein SCSI-Drucker (Ger„tetyp SCLP) mit einer
-beliebigen SCSI-ID und einer LUN < 8 eingerichtet wurde. Auch dies kann ber
-die Weboberfl„che, die PiSCSI-Control-App oder auf der Kommandozeile
-geschehen, z. B. mit:
+PI_PRINT setzt voraus, dass ein SCSI-Drucker (Ger„tetyp SCLP) eingerichtet
+wurde. Auch dies kann ber die Weboberfl„che, die PiSCSI-Control-App oder
+auf der Kommandozeile geschehen, z. B. mit:
 
 >piscsi -ID 5 printer
+
+Mit dem internen Hostadapter des MegaSTE ist nur eine einzige SCSI-ID
+m”glich, aber bis zu 8 Ger„te k”nnen durch die Nutzung der LUNs 0-7
+hinzugefgt werden, z.B.
+
+>piscsi -ID 0 harddisk.hds -ID 0:6 printer -ID 0:7 services
 
 Alle Client-Tools finden das jeweilige Ger„t automatisch. Gibt es mehrere
 Ger„te wird das erste gefundene Ger„t verwendet. Wie fr alle anderen

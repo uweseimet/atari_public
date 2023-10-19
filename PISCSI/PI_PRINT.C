@@ -1,6 +1,6 @@
-/******************************//* PiSCSI printer client 2.00 *//*                            *//* (C) 2022-2023 Uwe Seimet   *//******************************/
+/******************************//* PiSCSI printer client 2.10 *//*                            *//* (C) 2022-2023 Uwe Seimet   *//******************************/
 
-#define VERSION "2.00"
+#define VERSION "2.10"
 #include <stdio.h>#include <std.h>#include <tos.h>#include <scsidrv/scsidefs.h>#include "pi_lib.h"
 
 

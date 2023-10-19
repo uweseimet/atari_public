@@ -1,6 +1,6 @@
-/******************************//* PiSCSI client library 2.00 *//*                            *//* (C) 2022-2023 Uwe Seimet   *//******************************/#include <stdio.h>#include <std.h>#include <tos.h>#include <string.h>#include <scsidrv/scsidefs.h>#include "scsi3.h"#include "pi_lib.h"
+/******************************//* PiSCSI client library 2.10 *//*                            *//* (C) 2022-2023 Uwe Seimet   *//******************************/#include <stdio.h>#include <std.h>#include <tos.h>#include <string.h>#include <scsidrv/scsidefs.h>#include "scsi3.h"#include "pi_lib.h"
 
-UWORD getLuns(int *);bool getCookie(LONG, ULONG *);
+UWORD getLuns(int *, int);bool getCookie(LONG, ULONG *);
 
 
 bool isGerman;tpScsiCall scsiCall;tSCSICmd cmd;
@@ -34,7 +34,7 @@ SENSE_BLK Inquiry = {
 				&devInfo.SCSIId, &maxLen);
 
 			if(((LONG)handle & 0xff000000L) != 0xff000000L) {
-				int lunList[8];
+				int lunList[32];
 				int luns;
 				int i;
 				INQUIRY_DATA inquiryData;
@@ -44,7 +44,7 @@ SENSE_BLK Inquiry = {
 				cmd.Timeout = 400;
 				cmd.Flags = 0;
 
-				luns = getLuns(lunList);
+				luns = getLuns(lunList, (int)(sizeof(lunList) / sizeof(int)));
 
 				cmd.Cmd = (void *)&Inquiry;
 				cmd.CmdLen = 6;
@@ -55,6 +55,11 @@ SENSE_BLK Inquiry = {
 					int lun = lunList[i];
 
 					Inquiry.lun = lun;
+
+/* LUN in high byte of flags in case 32 LUNs are supported */
+					if(*(cmd.Handle) & 0x40) {
+						cmd.Flags = (lun << 8) | 0x40;
+					}
 
 					memset(&inquiryData, 0, sizeof(INQUIRY_DATA));
 
@@ -116,7 +121,7 @@ SENSE_BLK Inquiry = {
 
 
 UWORD
-getLuns(int *lunList) {
+getLuns(int *lunList, int maxLuns) {
 	UBYTE ReportLuns[] = { 0xa0, 0, 0, 0, 0, 0, 0, 0, 0x00, 0x00, 0, 0 };
 
 	ULONG buf[66];
@@ -153,10 +158,12 @@ getLuns(int *lunList) {
 	luns = (UWORD)(buf[0] / 8);
 
 	index = 0;
-	for(i = 0; i < luns && i < sizeof(buf) - 8 && index < 8; i++) {
+	for(i = 0; i < luns && i < sizeof(buf) - 8 && index < maxLuns; i++) {
 		int lun = (int)buf[2 * i + 3];
-		/* Ignore LUNs > 7 because of SCSI Driver limitations */
-		if(lun < 8) {
+		/* Whether more than 8 LUNs are supported depends on the bus
+		   and the SCSI Driver. With HDDRIVER 12 for Falcon/TT SCSI
+		   up to 32 LUNs are supported. */
+		if(lun < (*(cmd.Handle) & 0x40) ? 32 : 8) {
 			lunList[index++] = lun;
 		}
 	}
