@@ -162,7 +162,8 @@ main(WORD argc, const char *argv[])
 	else {
 		memcpy(&oldScsiCall, scsiCall, sizeof(tScsiCall));
 		myScsiCall.Version = scsiCall->Version;
-		memcpy(scsiCall, &myScsiCall, sizeof(myScsiCall));
+		/* Only copy the initiator vectors */
+		memcpy(scsiCall, &myScsiCall, 2 + 4 * 9);
 	}
 
 	setCookie('USSC', (ULONG)&usscCookie);
