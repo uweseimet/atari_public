@@ -1,10 +1,10 @@
 /******************************************/
-/* SCSI Driver for Hatari and ARAnyM 1.20 */
+/* SCSI Driver for Hatari and ARAnyM 1.21 */
 /*                                        */
-/* (C) 2016-2020 Uwe Seimet               */
+/* (C) 2016-2023 Uwe Seimet               */
 /******************************************/
 
-#define VERSION "1.20"
+#define VERSION "1.21"
 
 
 #include <stdio.h>
@@ -162,7 +162,7 @@ main(WORD argc, const char *argv[])
 	else {
 		memcpy(&oldScsiCall, scsiCall, sizeof(tScsiCall));
 		myScsiCall.Version = scsiCall->Version;
-		memcpy(scsiCall, &myScsiCall, sizeof(tScsiCall));
+		memcpy(scsiCall, &myScsiCall, sizeof(myScsiCall));
 	}
 
 	setCookie('USSC', (ULONG)&usscCookie);
@@ -173,7 +173,7 @@ main(WORD argc, const char *argv[])
 
 	printf("\n\x1b\x70SCSI Driver for Hatari and ARAnyM V" VERSION
 		"\x1b\x71\n");
-	printf("½ 2016-2020 Uwe Seimet\n");
+	printf("½ 2016-2023 Uwe Seimet\n");
 
 	Ptermres(_PgmSize, 0);
 

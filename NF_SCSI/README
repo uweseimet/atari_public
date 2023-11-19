@@ -10,16 +10,16 @@ This is the TOS part of the SCSI Driver for Hatari and ARAnyM.
 The SCSI Driver for Hatari and ARAnyM implements a SCSI Driver on top of
 the Linux SG 3 driver interface. With this driver Atari software running in
 Hatari or ARAnyM can access devices (SCSI, IDE, SATA, USB) managed by the
-Linux SG driver. (Note that NVMe ports are not supported by the Linux SG
-driver.) The Linux user needs the proper permissions to access the SG device
-files /dev/sg*. Depending on the Linux distribution one may have to belong to
+Linux SG driver. (Note that NVMe is not supported by the Linux SG driver.)
+The Linux user needs the proper permissions to access the SG device files
+/dev/sg*. Depending on the Linux distribution one may have to belong to
 the groups 'disk' and 'cdrom', for instance.
 
 The SCSI Driver for Hatari and ARAnyM implements the SCSI Driver interface
 version 1.01. It consists of two software components:
 
 1. Native SCSI Driver host implementation, which for Linux is provided by
-   Hatari and ARAnyM. It maps SCSI Driver calls to Linux SG driver calls.
+   Hatari and ARAnyM. It maps SCSI Driver calls to Linux driver calls.
    In order to run the SCSI Driver stub for TOS on other platforms than
    Linux, this is the code that has to be ported.
 2. SCSI Driver stub for TOS, NF_SCSI.PRG. This component uses the NatFeats
@@ -29,7 +29,7 @@ version 1.01. It consists of two software components:
 In order to install the SCSI Driver either launch NF_SCSI.PRG, e.g. from the
 AUTO folder of an emulated GEMDOS drive, or place the NF_SCSI driver as
 HDDRIVER module HDDRMOD0.SYS in the root directory of the boot drive image
-and configure HDDRIVER 11 to execute driver modules.
+and configure HDDRIVER 11 or newer to execute driver modules.
 NF_SCSI establishes two SCSI Driver buses with bus IDs 30 and 31. Optionally
 a different bus start ID can be passed as an argument when launching NF_SCSI.
 The first bus is called "Linux SCSI (Bus A)" and maps the Linux devices
@@ -40,9 +40,10 @@ issues with mapping the device IDs to XHDI major device numbers. This is why
 the approach with two buses has been taken.
 
 The SCSI Driver provides low level device access for software that is aware
-of SCSI Drivers, like HDDRIVER, HDDRUTIL, DISKUS, ExtenDOS or GEMAR. In order
-to get direct access to mass storage devices on filesystem level an Atari
-hard disk driver with SCSI Driver support has to be run, e.g. HDDRIVER.
+of SCSI Drivers, like HDDRIVER, HDDRUTIL, DISKUS, ExtenDOS, GEMAR or the
+Atari drivers for the DaynaPort. In order to get direct access to mass
+storage devices on filesystem level an Atari hard disk driver with SCSI
+Driver support has to be run, e.g. HDDRIVER.
 
 HDDRIVER automatically provides XHDI functionality for all mass storage
 devices managed by SCSI Drivers that were launched before HDDRIVER. XHDI
@@ -67,7 +68,7 @@ means version 1.02.
 
 Returns the host's bus features, which depend on the host system. For reasons
 of backwards compatibility this call also returns a bus name, but this name
-is ignored by the TOS stub since version 1.20.
+is ignored by the TOS stub since NF_SCSI version 1.20.
 
 3. SCSI_INQUIRE_BUS, SCSI_OPEN, SCSI_CLOSE, SCSI_ERROR, SCSI_CHECK_DEV
 
@@ -84,4 +85,4 @@ Please refer to the source code (Hatari or ARAnyM, as well as the TOS stub)
 for details.
 
 
-  Uwe.Seimet@seimet.de, 2020-12-14
+  Uwe.Seimet@seimet.de, 2023-11-19
