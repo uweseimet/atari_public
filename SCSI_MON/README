@@ -9,10 +9,9 @@ the SYS_MON software by Karsten Isakovic, which has to be launched before
 SCSI_MON.
 When launched with the option "--con" the console is used as output device.
 With "--aux" the serial port and with "--prt" the parallel port is used.
-When passing one of these options SYS_MON is not required.
-When launched as HDDRIVER module "--aux" is the default setting. Typically
-the SCSI_MON module is launched after the SCSI Driver modules, so that it
-logs all SCSI Driver calls.
+When passing one of these options SYS_MON is not required. When using
+an Atari emulation using one of these options may be required, because
+otherwise SYS_MON's output mechanism might not work.
 
 If a SCSI Driver with target interface is installed, e.g. HDDRIVER, and
 SCSI_MON is launched after any other software using the target interface,
@@ -36,10 +35,9 @@ Wird SCSI_MON mit der Option "--con" gestartet, erfolgt die Ausgabe der
 Daten auf der Konsole. Mit der Option "--aux" gestartet, erfolgt die
 Ausgabe Åber die serielle Schnittstelle, mit "--prt" wird die parallele
 Schnittstelle benutzt. Bei Verwendung dieser Optionen ist SYS_MON nicht
-erforderlich.
-Beim Start als HDDRIVER-Modul ist "--aux" die Default-Einstellung.
-Typischerweise wird das SCSI_MON-Modul nach den SCSI-Treiber-Modulen
-gestartet, so dass es alle SCSI-Treiber-Aufrufe protokolliert.
+erforderlich. Beim Verwenden in einer Atari-Emulation mag die Angabe
+einer dieser Optionen jedoch notwendig sein, weil sonst SYS_MONs
+Ausgabe-Mechanismus mîglicherweise nicht funktioniert. 
 
 Falls ein SCSI-Treiber mit Target-Interface installiert ist (HDDRIVER ab
 Version 7.8) und SCSI_MON als letztes Programm gestartet wird, das das
@@ -50,4 +48,4 @@ wÑhrend der Zeit, in der SCSI-Kommandos vom Target empfangen werden, nicht
 aktiv sein darf. Andernfalls zeigt SCSI_MON diese Kommandos nicht an.
 
 
-  Uwe.Seimet@seimet.de, 2020-02-18
+  Uwe.Seimet@seimet.de, 2023-11-20

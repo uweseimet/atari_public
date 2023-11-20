@@ -1,7 +1,7 @@
 /****************************/
-/* SCSI_MON 1.40            */
+/* SCSI_MON 1.50            */
 /*                          */
-/* (C) 1999-2020 Uwe Seimet */
+/* (C) 1999-2023 Uwe Seimet */
 /****************************/
 
 
@@ -10,15 +10,14 @@
 #include <string.h>
 #include <tos.h>
 #include <scsidrv/scsidefs.h>
-#include "../modules/modstart.h"
 
 
 #define ERROR -1
 #define EDRVNR -2
 #define EUNDEV -15
 #define ENHNDL -35
-#define EINVHNDL -37
 #define EACCDN -36
+#define EINVHNDL -37
 
 
 typedef int bool;
@@ -75,7 +74,7 @@ tScsiCall myScsiCall = {
 	Open,
 	Close,
 	Error,
-	Install /*,
+	Install, /*
 	Deinstall,
 	GetCmd,
 	SendData,
@@ -108,7 +107,6 @@ extern void auxout(WORD);
 extern void prtout(WORD);
 
 
-int terminate(const char *);
 void installHandler(void);
 void prres(tpSCSICmd, LONG);
 void prerr(LONG);
@@ -122,49 +120,34 @@ static int getcookie(long, ULONG *p);
 int
 main(WORD argc, const char *argv[])
 {
-	if(isHddriverModule()) {
-		aux = true;
-	}
-
 	if(argc > 1) {
 		con = !strcmp(argv[1], "--con");
 		aux = !strcmp(argv[1], "--aux");
 		prt = !strcmp(argv[1], "--prt");
 
 		if(!con && !aux && !prt) {
-			return terminate("\nIllegal output channel argument, SCSI_MON not installed");
+			printf("\nIllegal output channel argument, SCSI_MON not installed");
+			return -1;
 		}
 	}
 
 	if(!getcookie('SCSI', (ULONG *)&scsiCall)) {
-		return terminate("\nSCSI Driver not found, SCSI_MON not installed");
+		printf("\nSCSI Driver not found, SCSI_MON not installed");
+		return -1;
 	}
 
-	memcpy(&oldScsiCall, scsiCall, 38);
+	memcpy(&oldScsiCall, scsiCall, sizeof(tScsiCall));
 	myScsiCall.Version = scsiCall->Version;
-	memcpy(scsiCall, &myScsiCall, 38);
+	memcpy(scsiCall, &myScsiCall, 2 + 4 * 10);
 
 	memset(handlerInfo, 0, sizeof(handlerInfo));
 
-	printf("\n\x1b\x70SCSI_MON V1.40\x1b\x71");
-	printf("\n½ 1999-2020 Uwe Seimet\n");
+	printf("\n\x1b\x70SCSI_MON V1.50\x1b\x71");
+	printf("\n½ 1999-2023 Uwe Seimet\n");
 
 	Ptermres(_PgmSize, 0);
 
 	return 0;
-}
-
-
-int
-terminate(const char *errorMessage)
-{
-	printf(errorMessage);
-
-	if(isHddriverModule()) {
-		Pterm(-1);
-	}
-
-	return -1;
 }
 
 
@@ -264,6 +247,7 @@ InquireSCSI(WORD what, tBusInfo *info)
 		if(info->Features & 0x08) strcat(str, " cTarget");
 		if(info->Features & 0x10) strcat(str, " cCanDisconnect");
 		if(info->Features & 0x20) strcat(str, " cScatterGather");
+		if(info->Features & 0x400) strcat(str, " 32 LUNs");
 		sprintf(s, "  MaxLen %ld", info->MaxLen);
 		strcat(str, s);
 		sysprintf(str);
@@ -325,6 +309,7 @@ CheckDev(WORD busno, const DLONG *id, char *name, UWORD *features)
 		if(*features & 0x08) strcat(str, " cTarget");
 		if(*features & 0x10) strcat(str, " cCanDisconnect");
 		if(*features & 0x20) strcat(str, " cScatterGather");
+		if(*features & 0x40) strcat(str, " 32 LUNs");
 
 		sysprintf(str);
 	}
@@ -375,6 +360,7 @@ Open(WORD busno, const DLONG *id, ULONG *maxlen)
 		if(*handle & 0x08) strcat(str, " cTarget");
 		if(*handle & 0x10) strcat(str, " cCanDisconnect");
 		if(*handle & 0x20) strcat(str, " cScatterGather");
+		if(*handle & 0x40) strcat(str, " 32 LUNs");
 		sprintf(s, "  MaxLen %ld", *maxlen);
 		strcat(str, s);
 		sysprintf(str);
@@ -414,17 +400,26 @@ Error(tHandle handle, WORD rwflag, WORD errno)
 			sprintf(s, " $%04X", errno);
 			strcat(str, s);
 		}
-		if(errno & 0x01) strcat(str, " cErrMediach");
-		if(errno & 0x02) strcat(str, " cErrReset");
+		if(errno & 0x01) {
+			strcat(str, " cErrMediach");
+		}
+		if(errno & 0x02) {
+			strcat(str, " cErrReset");
+		}
 	}
-	else
+	else {
 		sprintf(str, "Error    Handle $%p  rwflag cErrRead", handle);
+	}
 	sysprintf(str);
 
 	res = oldScsiCall.Error(handle, rwflag, errno);
 	sprintf(str, "-> %ld ", res);
-	if(res & 0x01) strcat(str, " cErrMediach");
-	if(res & 0x02) strcat(str, " cErrReset");
+	if(res & 0x01) {
+		strcat(str, " cErrMediach");
+	}
+	if(res & 0x02) {
+		strcat(str, " cErrReset");
+	}
 	sysprintf(str);
 
 	return res;
@@ -873,7 +868,8 @@ prbuffer(tpSCSICmd parms, bool isOut)
 		return;
 	}
 
-	/* Print parameter lists or returned data for selected commands */
+	/* Print parameter lists or returned data for selected commands
+		 which do not return a lot of data */
 	switch(parms->Cmd[0]) {
 		/* REQUEST SENSE */
 		case 0x03:
