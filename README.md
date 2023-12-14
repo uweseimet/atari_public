@@ -12,11 +12,11 @@ Each folder contains a separate project. There are no dependencies between these
 
 - OUTSIDE - The virtual memory manager. The binary is available on https://www.seimet.de/atari/en.
 
-- PISCSI - Atari client tools for the RaSCSI/PiSCSI project. The binaries are available on https://www.hddriver.net/en/piscsi_tools.html.
-
 - ROMSPEED - Copies the TOS ROM to the Fast-RAM and accelerates the system. The binary is available on https://www.seimet.de/atari/en. Also see https://www.stcarchiv.de/stc1991/09/romspeed-und-virtuelle-speicherverwaltung (German only).
 
 - RSSCONV - Converts .RSC and .H files created by a resource construction set like INTERFACE into a format suitable for assemblers like the EASYRIDER assembler.
+
+- SCSI2PI - Atari client tools for the PiSCSI/SCSI2Pi projects. The binaries are available on https://www.hddriver.net/en/piscsi_tools.html.
 
 - SCSI_MON - The SCSI Driver monitor. The binary is available on https://www.hddriver.net/en/scsidriver.html.
 

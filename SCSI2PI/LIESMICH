@@ -1,0 +1,101 @@
+SCSI2Pi-Client-Tools
+--------------------
+
+Die Client-Tools setzen ein RaSCSI/PiSCSI-Board und Release 1.0 der
+SCSI2Pi-Software auf dem Pi voraus. Release 22.04 oder neuer der
+RaSCSI/PiSCSI-Software funktionieren zur Zeit mit allen Tools auûer PI_EXEC
+und SETLOG.
+Auûerdem wird ein SCSI-Treiber benîtigt, z. B. der in HDDRIVER integrierte.
+Die C-Quelltexte der Client-Tools sind auf GitHub verfÅgbar:
+https://github.com/uweseimet/atari_public.
+Besuchen Sie https://www.scsi2pi.net fÅr Details zu SCSI2Pi am Atari und zur
+SCSI-Control-App fÅr Android.
+
+Zur Nutzung von PI_RTC und PI_SHUTD muss ein Host-Dienste-GerÑt (GerÑtetyp
+SCHS) mit einer beliebigen SCSI-ID und einer LUN < 8 eingerichtet werden.
+Mit HDDRIVER 12 und TT/Falcon SCSI werden die LUNs 0-31 unterstÅtzt.
+Das Einrichten der Host-Dienste kann Åber die WeboberflÑche, die
+SCSI-Control-App oder auf der Kommandozeile erfolgen, z. B. mit:
+
+>s2p -id 6 services
+
+PI_PRINT setzt voraus, dass ein SCSI-Drucker (GerÑtetyp SCLP) eingerichtet
+wurde. Auch dies kann Åber die WeboberflÑche, die SCSI-Control-App oder
+auf der Kommandozeile geschehen, z. B. mit:
+
+>s2p -id 5 printer
+
+Mit dem internen Hostadapter des MegaSTE ist nur eine einzige SCSI-ID
+mîglich, aber bis zu 8 GerÑte kînnen durch die Nutzung der LUNs 0-7
+hinzugefÅgt werden, z.B.
+
+>s2p -id 0 harddisk.hds -id 0:6 printer -id 0:7 services
+
+Alle Client-Tools finden das jeweilige GerÑt automatisch. Gibt es mehrere
+GerÑte wird das erste gefundene GerÑt verwendet. Wie fÅr alle anderen
+GerÑte mÅssen die benutzten SCSI-IDs/LUNs in HDDRUTIL mit "GerÑte und
+Partitionen" konfiguriert werden.
+
+
+PI_RTC.PRG
+----------
+
+Dieses Tool fragt das aktuelle Datum und die Uhrzeit vom Pi ab und setzt
+sie auf dem Atari. Sommerzeit-Einstellungen werden dabei automatisch
+berÅcksichtigt. In der Regel befindet sich PI_RTC im AUTO-Ordner. 
+
+
+PI_SHUTD.PRG
+------------
+
+Dieses Tool fÑhrt SCSI2Pi oder den Pi herunter. Es ist zu beachten, dass
+PI_SHUTD sich sofort beendet, aber der Pi einige Zeit fÅr den Shutdown
+braucht. PI_SHUTD kann nicht feststellen, wann der Pi vollstÑndig
+heruntergefahren ist. Nach dem Start von PI_SHUTD kann nicht mehr auf die
+emulierten GerÑte zugegriffen werden.
+Wird als Parameter ""scsi2pi" (bzw. "piscsi" bei Verwendung von PiSCSI
+statt SCSI2Pi) Åbergeben wird lediglich SCSI2Pi heruntergefahren, aber
+nicht der Pi. Mit "reboot" wird der Pi neu gestartet.
+
+
+PI_PRINT.TTP
+------------
+
+Mit diesem Tool lassen sich Dateien Åber den Pi drucken. In der Regel wird
+man auf dem Desktop ein Icon fÅr PI_PRINT erzeugen, auf das die zu druckende
+Datei schiebt. Alternativ dazu kann man PI_PRINT manuell starten und den
+Dateinamen eingeben.
+PI_PRINT setzt voraus, dass ein Drucksystem (z. B. CUPS) auf dem Pi aktiv
+ ist. Der konfigurierte Drucker auf dem Pi muss kompatibel zu dem
+Druckertreiber sein, mit dem die zu druckende Datei auf dem Atari erzeugt
+wurde. Mit den Standardeinstellungen fÅr den SCSI-Drucker werden alle Daten
+unverÑndert an den Drucker geschickt. Aus technischen GrÅnden ist es nicht
+mîglich, direkt per SCSI zu drucken ohne eine Datei zu verwenden.
+PI_PRINT wurde ausschlieûlich mit dem SCSI-Drucker von SCSI2Pi getestet,
+kînnte aber auch mit anderen SCSI-Druckern funktionieren, die kompatibel zur
+SCSI-2-Spezifikation sind.
+
+
+PI_EXEC.TTP
+-----------
+
+Mit PI_EXEC lassen sich per SCSI Kommandos zum s2p-Prozess auf dem Pi
+schicken. SCSI2Pi lÑsst sich so mit dem Atari steuern. Es stehen alle
+Operationen zur VerfÅgung, die vom s2p-Remote-Interface definiert werden.
+Dieses Interface basiert auf Googles Protobuf-Protokoll und ist in der
+Datei s2p_interface.proto beschrieben, die Teil der SCSI2Pi-Quelltexte ist.
+Die Protobuf-Nachrichten kînnen in JSON, im Protobuf-Textformat und als
+Protobuf-BinÑrnachrichten gesendet und empfangen werden. FÅr den Atari
+dÅrfte JSON das beste Format darstellen.
+LOGLEVEL.TOS gibt ein Beispiel zum Parsen von JSON-Daten mit dem Atari.
+
+
+LOGLEVEL.TOS
+------------
+
+Dieses kleine Tool demonstriert, wie sich SCSI2Pi durch SCSI-Kommandos vom
+Atari aus steuern lÑsst. Die verfÅgbaren s2p-Log-Levels werden abgefragt,
+und man kann einen neuen Log-Level setzen. 
+
+
+  Uwe.Seimet@seimet.de
