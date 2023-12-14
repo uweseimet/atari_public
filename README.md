@@ -16,7 +16,7 @@ Each folder contains a separate project. There are no dependencies between these
 
 - RSSCONV - Converts .RSC and .H files created by a resource construction set like INTERFACE into a format suitable for assemblers like the EASYRIDER assembler.
 
-- SCSI2PI - Atari client tools for the <a href="https://github.com/uweseimet/scsi2pi">SCSI2Pi</a>/<a href="https://github.com/PISCSI/piscsi">PiSCSI</a>/ projects. The binaries are available on https://www.hddriver.net/en/piscsi_tools.html.
+- SCSI2PI - Atari client tools for the <a href="https://github.com/uweseimet/scsi2pi">SCSI2Pi</a>/<a href="https://github.com/PISCSI/piscsi">PiSCSI</a> projects. The binaries are available on https://www.hddriver.net/en/piscsi_tools.html.
 
 - SCSI_MON - The SCSI Driver monitor. The binary is available on https://www.hddriver.net/en/scsidriver.html.
 
