@@ -1,5 +1,5 @@
 /**********************************/
-/* SCSI Driver/Firmware Test 1.80 */
+/* SCSI Driver/Firmware Test 1.90 */
 /*                                */
 /* (C) 2014-2023 Uwe Seimet       */
 /**********************************/
@@ -107,7 +107,7 @@ void testModeSense(void);
 void testReportLuns(void);
 void testGetConfiguration(void);
 void printFeatures(UWORD);
-void printPages(UBYTE *, int, int, int,int);
+void printPages(UBYTE *, int, int, int, int, int, int, int, int, int);
 bool checkRoot(UBYTE *, UBYTE *, ULONG);
 void initBuffer(UBYTE *, ULONG);
 char * DULongToString(const D_ULONG *);
@@ -155,7 +155,7 @@ main()
 		return -1;
 	}
 
-	print("SCSI Driver and firmware test V1.80\n");
+	print("SCSI Driver and firmware test V1.90\n");
 	print("½ 2014-2023 Uwe Seimet\n\n");
 
 	if(getNvm(&nvm)) {
@@ -1194,10 +1194,15 @@ testModeSense()
 	};
 
 	UBYTE buf[4096];
+	int page1Offset = 0;
+	int page2Offset = 0;
 	int page3Offset = 0;
 	int page4Offset = 0;
 	int page5Offset = 0;
+	int page7Offset = 0;
 	int page8Offset = 0;
+	int page10Offset = 0;
+	int page12Offset = 0;
 	int size;
 	int i;
 
@@ -1231,6 +1236,14 @@ testModeSense()
 			print("%d", page);
 
 			switch(page) {
+				case 1:
+					page1Offset = i;
+					break;
+
+				case 2:
+					page2Offset = i;
+					break;
+
 				case 3:
 					page3Offset = i;
 					break;
@@ -1243,8 +1256,20 @@ testModeSense()
 					page5Offset = i;
 					break;
 
+				case 7:
+					page7Offset = i;
+					break;
+
 				case 8:
 					page8Offset = i;
+					break;
+
+				case 10:
+					page10Offset = i;
+					break;
+
+				case 12:
+					page12Offset = i;
 					break;
 
 				default:
@@ -1257,8 +1282,8 @@ testModeSense()
 		print("\n");
 	}
 
-	printPages(buf, page3Offset, page4Offset,
-		page5Offset, page8Offset);
+	printPages(buf, page1Offset, page2Offset, page3Offset, page4Offset,
+		page5Offset, page7Offset, page8Offset, page10Offset, page12Offset);
 
 	if(!(*cmd.Handle & cAllCmds)) {
 		return;
@@ -1456,16 +1481,87 @@ printFeatures(UWORD features)
 
 
 void
-printPages(UBYTE *buf, int page3Offset, int page4Offset,
-	int page5Offset, int page8Offset)
+printPages(UBYTE *buf, int page1Offset, int page2Offset, int page3Offset,
+	int page4Offset, int page5Offset, int page7Offset, int page8Offset,
+	int page10Offset, int page12Offset)
 {
+	if(page1Offset) {
+		const int pageLength = buf[page1Offset + 1];
+		
+		print("        Page 1: Read-write error recovery page (current, %s)\n",
+			buf[page1Offset] & 0x80 ? "savable" : "not savable");
+
+		if(pageLength < 10) {
+			print("        ERROR: Page size is %d bytes, which is less than 10\n",
+				pageLength);
+		}
+
+		print("          Disable correction (DCR): %d\n",
+			buf[page1Offset + 2] & 0x01);
+		print("          Disable transfer on error (DTE): %d\n",
+			(buf[page1Offset + 2] & 0x02) >> 1);
+		print("          Post error (PER): %d\n",
+			(buf[page1Offset + 2] & 0x04) >> 2);
+		print("          Enable early recovery (EER): %d\n",
+			(buf[page1Offset + 2] & 0x08) >> 3);
+		print("          Read continuous (RC): %d\n",
+			(buf[page1Offset + 2] & 0x10) >> 4);
+		print("          Transfer block (TB): %d\n",
+			(buf[page1Offset + 2] & 0x20) >> 5);
+		print("          Automatic read reallocation (ARRE): %d\n",
+			(buf[page1Offset + 2] & 0x40) >> 6);
+		print("          Automatic write reallocation (AWRE): %d\n",
+			(buf[page1Offset + 2] & 0x80) >> 7);
+		print("          Read retry count: %d\n",
+			buf[page1Offset + 3]);
+		print("          Correction span: %d\n",
+			buf[page1Offset + 4]);
+		print("          Head offset count: %d\n",
+			buf[page1Offset + 5]);
+		print("          Data strobe offset count: %d\n",
+			buf[page1Offset + 6]);
+		print("          Write retry count: %d\n",
+			buf[page1Offset + 8]);
+		print("          Recovery time limit: %d ms\n",
+			(buf[page1Offset + 10] << 8) + buf[page3Offset + 11]);
+	}
+
+	if(page2Offset) {
+		const int pageLength = buf[page2Offset + 1];
+
+		print("        Page 2: Disconnect-reconnect page (current, %s)\n",
+			buf[page2Offset] & 0x80 ? "savable" : "not savable");
+
+		if(pageLength < 14) {
+			print("        ERROR: Page size is %d bytes, which is less than 14\n",
+				pageLength);
+		}
+
+		print("          Buffer full ratio: %d\n",
+			buf[page2Offset + 2]);
+		print("          Buffer empty ratio: %d\n",
+			buf[page2Offset + 3]);
+		print("          Bus inactivity limit: %d\n",
+			(buf[page2Offset + 4] << 8) + buf[page2Offset + 5]);
+		print("          Disconnect time limit: %d * 100 us\n",
+			(buf[page2Offset + 6] << 8) + buf[page2Offset + 7]);
+		print("          Connect time limit: %d * 100 us\n",
+			(buf[page2Offset + 8] << 8) + buf[page2Offset + 9]);
+		print("          Maximum burst size: %d\n",
+			(buf[page2Offset + 10] << 8) + buf[page2Offset + 11]);
+		print("          Data transfer disconnect control (DTDC): %d\n",
+			buf[page2Offset + 12] & 0x03);
+	}
+
 	if(page3Offset) {
+		const int pageLength = buf[page3Offset + 1];
+
 		print("        Page 3: Format device page (current, %s)\n",
 			buf[page3Offset] & 0x80 ? "savable" : "not savable");
 
-		if(buf[page3Offset + 1] < 22) {
+		if(pageLength < 22) {
 			print("        ERROR: Page size is %d bytes, which is less than 22\n",
-				buf[page3Offset + 1]);
+				pageLength);
 		}
 
 		print("          Tracks per zone: %d\n",
@@ -1497,7 +1593,7 @@ printPages(UBYTE *buf, int page3Offset, int page4Offset,
 	}
 
 	if(page4Offset) {
-		int pageLength = buf[page4Offset + 1];
+		const int pageLength = buf[page4Offset + 1];
 
 		print("        Page 4: Rigid disk drive geometry page (current, %s)\n",
 			buf[page4Offset] & 0x80 ? "savable" : "not savable");
@@ -1528,7 +1624,7 @@ printPages(UBYTE *buf, int page3Offset, int page4Offset,
 	}
 
 	if(page5Offset) {
-		int pageLength = buf[page5Offset + 1];
+		const int pageLength = buf[page5Offset + 1];
 
 		print("        Page 5: Flexible disk page (current, %s)\n",
 			buf[page5Offset] & 0x80 ? "savable" : "not savable");
@@ -1572,8 +1668,35 @@ printPages(UBYTE *buf, int page3Offset, int page4Offset,
 			(buf[page5Offset + 28] << 8) + buf[page5Offset + 29]);
 	}
 
+	if(page7Offset) {
+		const int pageLength = buf[page7Offset + 1];
+
+		print("        Page 7: Verify error recovery page (current, %s)\n",
+			buf[page7Offset] & 0x80 ? "savable" : "not savable");
+
+		if(pageLength < 10) {
+			print("        ERROR: Page size is %d bytes, which is less than 10\n",
+				pageLength);
+		}
+
+		print("          Error recovery parameter (DCR): %d\n",
+			buf[page7Offset + 2] & 0x01);
+		print("          Disable transfer on error (DTE): %d\n",
+			(buf[page7Offset + 2] & 0x02) >> 1);
+		print("          Post error (PER): %d\n",
+			(buf[page7Offset + 2] & 0x04) >> 2);
+		print("          Enable early recovery (EER): %d\n",
+			(buf[page7Offset + 2] & 0x08) >> 3);
+		print("          Verify retry count: %d\n",
+			buf[page7Offset + 3]);
+		print("          Verify correction span: %d\n",
+			buf[page7Offset + 4]);
+		print("          Verify recovery time limit: %d ms\n",
+			(buf[page7Offset + 10] << 8) + buf[page7Offset + 11]);
+	}
+
 	if(page8Offset) {
-		int pageLength = buf[page8Offset + 1];
+		const int pageLength = buf[page8Offset + 1];
 
 		print("        Page 8: Caching page (current, %s)\n",
 			buf[page8Offset] & 0x80 ? "savable" : "not savable");
@@ -1601,6 +1724,68 @@ printPages(UBYTE *buf, int page3Offset, int page4Offset,
 			(buf[page8Offset + 8] << 8) + buf[page8Offset + 9]);
 		print("          Maximum pre-fetch ceiling: %d\n",
 			(buf[page8Offset + 10] << 8) + buf[page8Offset + 11]);
+	}
+
+	if(page10Offset) {
+		const int pageLength = buf[page10Offset + 1];
+
+		print("        Page 10: Control mode page (current, %s)\n",
+			buf[page10Offset] & 0x80 ? "savable" : "not savable");
+
+		if(pageLength < 6) {
+			print("        ERROR: Page size is %d bytes, which is less than 6\n",
+				pageLength);
+		}
+
+		print("          Report log exception condition (RLEC): %d\n",
+			buf[page10Offset + 2] & 0x01);
+		print("          Disable queuing (DQue): %d\n",
+			buf[page10Offset + 3] & 0x01);
+		print("          Queue error management (QErr): %d\n",
+			(buf[page10Offset + 3] & 0x02) >> 1);
+		print("          Queue algorithm modifier: %d\n",
+			(buf[page10Offset + 3] & 0xf0) >> 4);
+		print("          Error AEN permission (EAENP): %d\n",
+			buf[page10Offset + 4] & 0x01);
+		print("          Unit attention AEN permission (UAAENP): %d\n",
+			(buf[page10Offset + 4] & 0x02) >> 1);
+		print("          Ready AEN permission (RAENP): %d\n",
+			(buf[page10Offset + 4] & 0x04) >> 2);
+		print("          Enable extended contingent allegiance (EECA): %d\n",
+			(buf[page10Offset + 4] & 0x80) >> 7);
+	}
+
+	if(page12Offset) {
+		const int pageLength = buf[page12Offset + 1];
+
+		print("        Page 12: Notch page (current, %s)\n",
+			buf[page12Offset] & 0x80 ? "savable" : "not savable");
+
+		if(pageLength < 22) {
+			print("        ERROR: Page size is %d bytes, which is less than 22\n",
+				pageLength);
+		}
+
+		print("          Notched drive (ND): %d\n",
+			(buf[page12Offset + 2] & 0x80) >> 7);
+		print("          Logical or physical notch (LPN): %d\n",
+			(buf[page12Offset + 2] & 0x40) >> 6);
+		print("          Maximum number of notches: %d\n",
+			(buf[page12Offset + 4] << 8) + buf[page12Offset + 5]);
+		print("          Active notch: %u\n",
+			(buf[page12Offset + 6] << 8) + buf[page12Offset + 7]);
+		print("          Starting boundary: %u\n",
+			(buf[page12Offset + 8] << 24) + (buf[page12Offset + 9] << 16) +
+			(buf[page12Offset + 10] << 8) + buf[page12Offset + 11]);
+		print("          Ending boundary: %u\n",
+			(buf[page12Offset + 12] << 24) + (buf[page12Offset + 10] << 16) +
+			(buf[page12Offset + 14] << 8) + buf[page12Offset + 15]);
+		print("          Pages notched high: %u\n",
+			(buf[page12Offset + 16] << 24) + (buf[page12Offset + 17] << 16) +
+			(buf[page12Offset + 18] << 8) + buf[page12Offset + 19]);
+		print("          Pages notched low: %u\n",
+			(buf[page12Offset + 20] << 24) + (buf[page12Offset + 21] << 16) +
+			(buf[page12Offset + 22] << 8) + buf[page12Offset + 23]);
 	}
 }
 
