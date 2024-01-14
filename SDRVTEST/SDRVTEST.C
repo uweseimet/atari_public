@@ -1,5 +1,5 @@
 /**********************************/
-/* SCSI Driver/Firmware Test 2.00 */
+/* SCSI Driver/Firmware Test 2.10 */
 /*                                */
 /* (C) 2014-2024 Uwe Seimet       */
 /**********************************/
@@ -107,7 +107,8 @@ void testModeSense(void);
 void testReportLuns(void);
 void testGetConfiguration(void);
 void printFeatures(UWORD);
-void printPages(UBYTE *, int *, int);
+void printPageHeader(UBYTE *, int, const char *, int);
+void printPages(UBYTE *, int *, int, int);
 void printPage1(UBYTE *, int);
 void printPage2(UBYTE *, int);
 void printPage3(UBYTE *, int);
@@ -117,6 +118,7 @@ void printPage7(UBYTE *, int);
 void printPage8(UBYTE *, int);
 void printPage10(UBYTE *, int);
 void printPage12(UBYTE *, int);
+void printPage0(UBYTE *, int, int);
 void printPage(UBYTE *, int);
 bool checkRoot(UBYTE *, UBYTE *, ULONG);
 void initBuffer(UBYTE *, ULONG);
@@ -165,7 +167,7 @@ main()
 		return -1;
 	}
 
-	print("SCSI Driver and firmware test V2.00\n");
+	print("SCSI Driver and firmware test V2.10\n");
 	print("½ 2014-2024 Uwe Seimet\n\n");
 
 	if(getNvm(&nvm)) {
@@ -1226,7 +1228,7 @@ testModeSense()
 		return;
 	}
 
-	size = buf[0];
+	size = buf[0] + 1;
 	print("      Received %d data bytes\n", size);
 
 	if(size > 4) {
@@ -1249,7 +1251,7 @@ testModeSense()
 		print("\n");
 	}
 
-	printPages(buf, pageOffsets, 64);
+	printPages(buf, pageOffsets, 64, size);
 
 	if(!(*cmd.Handle & cAllCmds)) {
 		return;
@@ -1431,11 +1433,11 @@ printFeatures(UWORD features)
 
 
 void
-printPages(UBYTE *buf, int *pageOffsets, int size)
+printPages(UBYTE *buf, int *pageOffsets, int offsets, int size)
 {
 	int i;
 
-	for(i = 1; i < size; i++) {
+	for(i = 1; i < offsets; i++) {
 		if(pageOffsets[i] != -1) {
 			switch(i) {
 				case 1:
@@ -1480,21 +1482,39 @@ printPages(UBYTE *buf, int *pageOffsets, int size)
 			}
 		}
 	}
+
+	if(pageOffsets[0] != -1) {
+		printPage0(buf, pageOffsets[0], size - pageOffsets[0] - 1);
+	}
+}
+
+
+void
+printPageHeader(UBYTE *buf, int offset, const char *name, int expected)
+{
+	const int size = buf[offset + 1];
+
+	print("        Page %d: %s page (current, %s)\n", buf[offset] & 0x3f, name,
+		buf[offset] & 0x80 ? "savable" : "not savable");
+
+	if(size < expected) {
+		print("          ERROR: Page size is %d bytes, which is less than %d\n",
+			size, expected);
+	}
+	else if(size > expected) {
+		print("          Page size is %d bytes, which is more than %d\n",
+			size, expected);
+	}
+	else {
+		print("          Page size is %d bytes\n", size);
+	}
 }
 
 
 void
 printPage1(UBYTE *buf, int offset)
 {
-	const int length = buf[offset + 1];
-
-	print("        Page 1: Read-write error recovery page (current, %s)\n",
-		buf[offset] & 0x80 ? "savable" : "not savable");
-
-	if(length < 10) {
-		print("        ERROR: Page size is %d bytes, which is less than 10\n",
-			length);
-	}
+	printPageHeader(buf, offset, "Read-write error recovery", 10);
 
 	print("          Disable correction (DCR): %d\n",
 		buf[offset + 2] & 0x01);
@@ -1530,15 +1550,7 @@ printPage1(UBYTE *buf, int offset)
 void
 printPage2(UBYTE *buf, int offset)
 {
-	const int length = buf[offset + 1];
-
-	print("        Page 2: Disconnect-reconnect page (current, %s)\n",
-		buf[offset] & 0x80 ? "savable" : "not savable");
-
-	if(length < 14) {
-		print("        ERROR: Page size is %d bytes, which is less than 14\n",
-			length);
-	}
+	printPageHeader(buf, offset, "Disconnect-reconnect", 14);
 
 	print("          Buffer full ratio: %d\n",
 		buf[offset + 2]);
@@ -1560,15 +1572,7 @@ printPage2(UBYTE *buf, int offset)
 void
 printPage3(UBYTE *buf, int offset)
 {
-	const int length = buf[offset + 1];
-
-	print("        Page 3: Format device page (current, %s)\n",
-		buf[offset] & 0x80 ? "savable" : "not savable");
-
-	if(length < 22) {
-		print("        ERROR: Page size is %d bytes, which is less than 22\n",
-			length);
-	}
+	printPageHeader(buf, offset, "Format device", 22);
 
 	print("          Tracks per zone: %d\n",
 		(buf[offset + 2] << 8) + buf[offset + 3]);
@@ -1602,15 +1606,7 @@ printPage3(UBYTE *buf, int offset)
 void
 printPage4(UBYTE *buf, int offset)
 {
-	const int length = buf[offset + 1];
-
-	print("        Page 4: Rigid disk drive geometry page (current, %s)\n",
-		buf[offset] & 0x80 ? "savable" : "not savable");
-
-	if(length < 22) {
-		print("        ERROR: Page size is %d bytes, which is less than 22\n",
-			length);
-	}
+	printPageHeader(buf, offset, "Rigid disk drive geometry", 22);
 
 	print("          Number of cylinders: %d\n",
 		(buf[offset + 2] << 16) + (buf[offset + 3] << 8)
@@ -1636,15 +1632,7 @@ printPage4(UBYTE *buf, int offset)
 void
 printPage5(UBYTE *buf, int offset)
 {
-	const int length = buf[offset + 1];
-
-	print("        Page 5: Flexible disk page (current, %s)\n",
-		buf[offset] & 0x80 ? "savable" : "not savable");
-
-	if(length < 30) {
-		print("        ERROR: Page size is %d bytes, which is less than 30\n",
-			length);
-	}
+	printPageHeader(buf, offset, "Flexible disk", 30);
 
 	print("            Transfer rate: %d\n",
 		(buf[offset + 2] << 8) + buf[offset + 3]);
@@ -1684,15 +1672,7 @@ printPage5(UBYTE *buf, int offset)
 void
 printPage7(UBYTE *buf, int offset)
 {
-	const int length = buf[offset + 1];
-
-	print("        Page 7: Verify error recovery page (current, %s)\n",
-		buf[offset] & 0x80 ? "savable" : "not savable");
-
-	if(length < 10) {
-		print("        ERROR: Page size is %d bytes, which is less than 10\n",
-			length);
-	}
+	printPageHeader(buf, offset, "Verify error recovery", 10);
 
 	print("          Error recovery parameter (DCR): %d\n",
 		buf[offset + 2] & 0x01);
@@ -1714,15 +1694,7 @@ printPage7(UBYTE *buf, int offset)
 void
 printPage8(UBYTE *buf, int offset)
 {
-	const int length = buf[offset + 1];
-
-	print("        Page 8: Caching page (current, %s)\n",
-		buf[offset] & 0x80 ? "savable" : "not savable");
-
-	if(length < 10) {
-		print("        ERROR: Page size is %d bytes, which is less than 10\n",
-			length);
-	}
+	printPageHeader(buf, offset, "Caching", 10);
 
 	print("          Read cache disable (RCD): %d\n",
 		buf[offset + 2] & 0x01);
@@ -1748,15 +1720,7 @@ printPage8(UBYTE *buf, int offset)
 void
 printPage10(UBYTE *buf, int offset)
 {
-	const int length = buf[offset + 1];
-
-	print("        Page 10: Control mode page (current, %s)\n",
-		buf[offset] & 0x80 ? "savable" : "not savable");
-
-	if(length < 6) {
-		print("        ERROR: Page size is %d bytes, which is less than 6\n",
-			length);
-	}
+	printPageHeader(buf, offset, "Control mode", 6);
 
 	print("          Report log exception condition (RLEC): %d\n",
 		buf[offset + 2] & 0x01);
@@ -1780,15 +1744,7 @@ printPage10(UBYTE *buf, int offset)
 void
 printPage12(UBYTE *buf, int offset)
 {
-	const int length = buf[offset + 1];
-
-	print("        Page 12: Notch page (current, %s)\n",
-		buf[offset] & 0x80 ? "savable" : "not savable");
-
-	if(length < 22) {
-		print("        ERROR: Page size is %d bytes, which is less than 22\n",
-			length);
-	}
+	printPageHeader(buf, offset, "Notch", 22);
 
 	print("          Notched drive (ND): %d\n",
 		(buf[offset + 2] & 0x80) >> 7);
@@ -1814,17 +1770,36 @@ printPage12(UBYTE *buf, int offset)
 
 
 void
-printPage(UBYTE *buf, int offset)
+printPage0(UBYTE *buf, int offset, int length)
 {
 	int i;
-	const int page = buf[offset] & 0x3f;
-	const int length = buf[offset + 1];
 
-	print("        Page %d: Vendor-specific page (current, %s)\n", page,
+	print("        Page 0 (current, %s)\n",
 		buf[offset] & 0x80 ? "savable" : "not savable");
 
 	print("          ");
 	for(i = 0; i < length; i++) {
+		if(i) {
+			print(":");
+		}
+		print("%02x", buf[offset + 1 + i]);
+	}
+
+	print("\n");
+}
+
+
+void
+printPage(UBYTE *buf, int offset)
+{
+	int i;
+
+	const int size = buf[offset + 1];
+
+	printPageHeader(buf, offset, "Vendor-specific", size);
+
+	print("          ");
+	for(i = 0; i < size; i++) {
 		if(i) {
 			print(":");
 		}
