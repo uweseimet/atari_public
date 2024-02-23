@@ -1,5 +1,5 @@
 /**********************************/
-/* SCSI Driver/Firmware Test 2.10 */
+/* SCSI Driver/Firmware Test 2.11 */
 /*                                */
 /* (C) 2014-2024 Uwe Seimet       */
 /**********************************/
@@ -167,7 +167,7 @@ main()
 		return -1;
 	}
 
-	print("SCSI Driver and firmware test V2.10\n");
+	print("SCSI Driver and firmware test V2.11\n");
 	print("½ 2014-2024 Uwe Seimet\n\n");
 
 	if(getNvm(&nvm)) {
@@ -1103,7 +1103,7 @@ testReadLong()
 	};
 
 	LONG status;
-	UBYTE buffer[512];
+	UBYTE buffer[513];
 
 	if(!(*cmd.Handle & cAllCmds)) {
 		return;
@@ -1112,7 +1112,7 @@ testReadLong()
 	print("  READ LONG\n");
 
 
-	print("    Reading 0 bytes for sector 0 with READ LONG (10)\n");
+	print("    Reading 0 bytes of sector 0 with READ LONG (10)\n");
 
 	cmd.Cmd = (void *)&ReadLong10;
 	cmd.CmdLen = (UWORD)sizeof(ReadLong10);
@@ -1125,7 +1125,7 @@ testReadLong()
 		return;
 	}
 
-	print("    Reading 1 byte for sector 0 with READ LONG (10)\n");
+	print("    Reading 1 byte of sector 0 with READ LONG (10)\n");
 
 	cmd.Buffer = &buffer;
 	cmd.TransferLen = 1;
@@ -1138,7 +1138,7 @@ testReadLong()
 		print("      Request has been rejected\n");
 	}
 
-	print("    Reading 512 bytes for sector 0 with READ LONG (10)\n");
+	print("    Reading 512 bytes of sector 0 with READ LONG (10)\n");
 
 	cmd.Buffer = &buffer;
 	cmd.TransferLen = 512;
@@ -1153,7 +1153,22 @@ testReadLong()
 	}
 
 
-	print("    Reading 0 bytes for sector 0 with READ LONG (16)\n");
+	print("    Reading 513 bytes of sector 0 with READ LONG (10)\n");
+
+	cmd.Buffer = &buffer;
+	cmd.TransferLen = 513;
+	ReadLong10[7] = 2;
+	ReadLong10[8] = 1;
+
+	memset(&senseData, 0, sizeof(SENSE_DATA));
+
+	status = scsiCall->In(&cmd);
+	if(status) {
+			print("      Request has been rejected\n");
+	}
+
+
+	print("    Reading 0 bytes of sector 0 with READ LONG (16)\n");
 
 	cmd.Cmd = (void *)&ReadLong16;
 	cmd.CmdLen = (UWORD)sizeof(ReadLong16);
@@ -1166,7 +1181,7 @@ testReadLong()
 		return;
 	}
 
-	print("    Reading 1 byte for sector 0 with READ LONG (16)\n");
+	print("    Reading 1 byte of sector 0 with READ LONG (16)\n");
 
 	cmd.Buffer = &buffer;
 	cmd.TransferLen = 1;
@@ -1179,12 +1194,26 @@ testReadLong()
 		print("      Request has been rejected\n");
 	}
 
-	print("    Reading 512 bytes for sector 0 with READ LONG (16)\n");
+	print("    Reading 512 bytes of sector 0 with READ LONG (16)\n");
 
 	cmd.Buffer = &buffer;
 	cmd.TransferLen = 512;
 	ReadLong16[12] = 2;
 	ReadLong16[13] = 0;
+
+	memset(&senseData, 0, sizeof(SENSE_DATA));
+
+	status = scsiCall->In(&cmd);
+	if(status) {
+		print("      Request has been rejected\n");
+	}
+
+	print("    Reading 513 bytes of sector 0 with READ LONG (16)\n");
+
+	cmd.Buffer = &buffer;
+	cmd.TransferLen = 513;
+	ReadLong16[12] = 2;
+	ReadLong16[13] = 1;
 
 	memset(&senseData, 0, sizeof(SENSE_DATA));
 
