@@ -1,5 +1,5 @@
 /**********************************/
-/* SCSI Driver/Firmware Test 2.11 */
+/* SCSI Driver/Firmware Test 2.12 */
 /*                                */
 /* (C) 2014-2024 Uwe Seimet       */
 /**********************************/
@@ -167,7 +167,7 @@ main()
 		return -1;
 	}
 
-	print("SCSI Driver and firmware test V2.11\n");
+	print("SCSI Driver and firmware test V2.12\n");
 	print("½ 2014-2024 Uwe Seimet\n\n");
 
 	if(getNvm(&nvm)) {
@@ -812,14 +812,14 @@ testReadCapacity(ULONG *blockSize)
 		}
 	}
 
+	cmd.Buffer = &buffer;
+	cmd.TransferLen = *blockSize;
 
 	print("    Reading last block (%s)\n", maxBlockString);
 
 	if(!maxBlock64.hi) {
 		cmd.Cmd = (void *)&Read10;
 		cmd.CmdLen = (UWORD)sizeof(Read10);
-		cmd.Buffer = &buffer;
-		cmd.TransferLen = *blockSize;
 
 		Read10[2] = (maxBlock64.lo >> 24) & 0xff;
 		Read10[3] = (maxBlock64.lo >> 16) & 0xff;
@@ -829,8 +829,6 @@ testReadCapacity(ULONG *blockSize)
 	else {
 		cmd.Cmd = (void *)&Read16;
 		cmd.CmdLen = (UWORD)sizeof(Read16);
-		cmd.Buffer = &buffer;
-		cmd.TransferLen = *blockSize;
 
 		Read16[2] = (maxBlock64.hi >> 24) & 0xff;
 		Read16[3] = (maxBlock64.hi >> 16) & 0xff;
@@ -855,8 +853,6 @@ testReadCapacity(ULONG *blockSize)
 	if(!capacity64.hi) {
 		cmd.Cmd = (void *)&Read10;
 		cmd.CmdLen = (UWORD)sizeof(Read10);
-		cmd.Buffer = &buffer;
-		cmd.TransferLen = capacity10[1];
 
 		Read10[2] = (capacity64.lo >> 24) & 0xff;
 		Read10[3] = (capacity64.lo >> 16) & 0xff;
@@ -866,8 +862,6 @@ testReadCapacity(ULONG *blockSize)
 	else {
 		cmd.Cmd = (void *)&Read16;
 		cmd.CmdLen = (UWORD)sizeof(Read16);
-		cmd.Buffer = &buffer;
-		cmd.TransferLen = *blockSize;
 
 		Read16[2] = (capacity64.hi >> 24) & 0xff;
 		Read16[3] = (capacity64.hi >> 16) & 0xff;
