@@ -10,7 +10,7 @@ Each folder contains a separate project. There are no dependencies between these
 
 - NF_SCSI - SCSI Driver for Hatari and ARAnyM. See https://www.hddriver.net/en/scsidriver.html for details.
 
-- OUTSIDE - The virtual memory manager. The binary is available on https://www.seimet.de/atari/en.
+- OUTSIDE - The virtual memory manager. The binary is available on https://www.seimet.de/atari/en/.
 
 - ROMSPEED - Copies the TOS ROM to the Fast-RAM and accelerates the system. The binary is available on https://www.seimet.de/atari/en. Also see https://www.stcarchiv.de/stc1991/09/romspeed-und-virtuelle-speicherverwaltung (German only).
 
