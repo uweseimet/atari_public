@@ -6,5 +6,5 @@ or even better is launched as HDDRIVER module HDDRMOD0.SYS. In this case it
 needs to be copied onto the boot partition. This is the same partition on
 which HDDRIVER.SYS has been installed. In addition, ensure that in HDDRUTIL
 the option for launching HDDRIVER modules is enabled before installing
-HDDRIVER. Otherwise modules are not be executed.
+HDDRIVER. Otherwise modules are not executed.
 AB040MMU.PRG or the module, resp., require HDDRIVER 12 or newer.
