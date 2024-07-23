@@ -1,9 +1,9 @@
 /*********************************************************/
-/* HDDRIVER module startup code for Pure C 1.00          */
+/* HDDRIVER module startup code for Pure C 1.01          */
 /*                                                       */
 /* To be added before PCSTART in the Pure C project file */
 /*                                                       */
-/* (C) 2020 Uwe Seimet                                   */
+/* (C) 2020-2024 Uwe Seimet                              */
 /*********************************************************/
 
 	export isHddriverModule		;to be used by module-aware modules
@@ -18,8 +18,6 @@ STACKSIZE	= 400
 
 	bra.w .nomodule						;started as regular program-
 
-	st ismodule								;started as module
-
 	lea $1c(a2),a0						;on startup A2 points to the binary
 	add.l 2(a2),a0
 	add.l 6(a2),a0
@@ -28,6 +26,8 @@ STACKSIZE	= 400
 .loop:	clr.b (a0)+					;clear BSS
 .clrbss:	subq.l #1,d0
 	bpl .loop
+
+	st ismodule								;started as module
 
 	move.l sp,savssp
 	lea stk+STACKSIZE,sp
@@ -118,7 +118,7 @@ isHddriverModule:
 	rts
 
 
-	data
+	bss
 
 savssp: ds.l 1
 
