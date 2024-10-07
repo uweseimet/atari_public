@@ -1,5 +1,5 @@
 /**********************************/
-/* SCSI Driver/Firmware Test 2.11 */
+/* SCSI Driver/Firmware Test 2.20 */
 /*                                */
 /* (C) 2014-2024 Uwe Seimet       */
 /**********************************/
@@ -118,6 +118,7 @@ void printPage7(UBYTE *, int);
 void printPage8(UBYTE *, int);
 void printPage10(UBYTE *, int);
 void printPage12(UBYTE *, int);
+void printPage16(UBYTE *, int);
 void printPage0(UBYTE *, int, int);
 void printPage(UBYTE *, int);
 bool checkRoot(UBYTE *, UBYTE *, ULONG);
@@ -167,7 +168,7 @@ main()
 		return -1;
 	}
 
-	print("SCSI Driver and firmware test V2.11\n");
+	print("SCSI Driver and firmware test V2.20\n");
 	print("½ 2014-2024 Uwe Seimet\n\n");
 
 	if(getNvm(&nvm)) {
@@ -224,47 +225,47 @@ main()
 				switch(deviceType) {
 					case 0x00:
 					case 0x05:
-					case 0x07:
-						{
-							ULONG blockSize;
+					case 0x07: {
+						ULONG blockSize;
 
-							testReadCapacity(&blockSize);
-							if(blockSize) {
-								UBYTE *ptr1, *ptr2, *ptr3;
+						testReadCapacity(&blockSize);
+						if(blockSize) {
+							UBYTE *ptr1, *ptr2, *ptr3;
 
-								ptr1 = malloc(blockSize);
-								ptr2 = malloc(blockSize);
-								ptr3 = malloc(blockSize + 1);
+							ptr1 = malloc(blockSize);
+							ptr2 = malloc(blockSize);
+							ptr3 = malloc(blockSize + 1);
 
-								if(!ptr1 || !ptr2 || !ptr3) {
-									scsiCall->Close(handle);
+							if(!ptr1 || !ptr2 || !ptr3) {
+								scsiCall->Close(handle);
 
-									if(oldstack) {
-										Super((void *)oldstack);
-									}
-
-									print("    Not enough memory\n");
-
-									fclose(out);
-
-									return -1;
+								if(oldstack) {
+									Super((void *)oldstack);
 								}
 
-								testRead(deviceInfos[i].busNo, blockSize, ptr1, ptr2, ptr3 + 1);
+								print("    Not enough memory\n");
 
-								free(ptr3);
-								free(ptr2);
-								free(ptr1);
+								fclose(out);
 
-								testSeek();
-								testModeSense();
-								testReadLong();
-								testGetConfiguration();
+								return -1;
 							}
+
+							testRead(deviceInfos[i].busNo, blockSize, ptr1, ptr2, ptr3 + 1);
+
+							free(ptr3);
+							free(ptr2);
+							free(ptr1);
+
+							testSeek();
+							testModeSense();
+							testReadLong();
+							testGetConfiguration();
 						}
 						break;
+					}
 
 					default:
+						testModeSense();
 						break;
 				}
 
@@ -812,14 +813,14 @@ testReadCapacity(ULONG *blockSize)
 		}
 	}
 
+	cmd.Buffer = &buffer;
+	cmd.TransferLen = *blockSize;
 
 	print("    Reading last block (%s)\n", maxBlockString);
 
 	if(!maxBlock64.hi) {
 		cmd.Cmd = (void *)&Read10;
 		cmd.CmdLen = (UWORD)sizeof(Read10);
-		cmd.Buffer = &buffer;
-		cmd.TransferLen = *blockSize;
 
 		Read10[2] = (maxBlock64.lo >> 24) & 0xff;
 		Read10[3] = (maxBlock64.lo >> 16) & 0xff;
@@ -829,8 +830,6 @@ testReadCapacity(ULONG *blockSize)
 	else {
 		cmd.Cmd = (void *)&Read16;
 		cmd.CmdLen = (UWORD)sizeof(Read16);
-		cmd.Buffer = &buffer;
-		cmd.TransferLen = *blockSize;
 
 		Read16[2] = (maxBlock64.hi >> 24) & 0xff;
 		Read16[3] = (maxBlock64.hi >> 16) & 0xff;
@@ -855,8 +854,6 @@ testReadCapacity(ULONG *blockSize)
 	if(!capacity64.hi) {
 		cmd.Cmd = (void *)&Read10;
 		cmd.CmdLen = (UWORD)sizeof(Read10);
-		cmd.Buffer = &buffer;
-		cmd.TransferLen = capacity10[1];
 
 		Read10[2] = (capacity64.lo >> 24) & 0xff;
 		Read10[3] = (capacity64.lo >> 16) & 0xff;
@@ -866,8 +863,6 @@ testReadCapacity(ULONG *blockSize)
 	else {
 		cmd.Cmd = (void *)&Read16;
 		cmd.CmdLen = (UWORD)sizeof(Read16);
-		cmd.Buffer = &buffer;
-		cmd.TransferLen = *blockSize;
 
 		Read16[2] = (capacity64.hi >> 24) & 0xff;
 		Read16[3] = (capacity64.hi >> 16) & 0xff;
@@ -1103,7 +1098,7 @@ testReadLong()
 	};
 
 	LONG status;
-	UBYTE buffer[513];
+	UBYTE buffer[516];
 
 	if(!(*cmd.Handle & cAllCmds)) {
 		return;
@@ -1125,11 +1120,11 @@ testReadLong()
 		return;
 	}
 
-	print("    Reading 1 byte of sector 0 with READ LONG (10)\n");
+	print("    Reading 4 bytes of sector 0 with READ LONG (10)\n");
 
 	cmd.Buffer = &buffer;
-	cmd.TransferLen = 1;
-	ReadLong10[8] = 1;
+	cmd.TransferLen = 4;
+	ReadLong10[8] = 4;
 
 	memset(&senseData, 0, sizeof(SENSE_DATA));
 
@@ -1153,12 +1148,12 @@ testReadLong()
 	}
 
 
-	print("    Reading 513 bytes of sector 0 with READ LONG (10)\n");
+	print("    Reading 516 bytes of sector 0 with READ LONG (10)\n");
 
 	cmd.Buffer = &buffer;
-	cmd.TransferLen = 513;
+	cmd.TransferLen = 516;
 	ReadLong10[7] = 2;
-	ReadLong10[8] = 1;
+	ReadLong10[8] = 4;
 
 	memset(&senseData, 0, sizeof(SENSE_DATA));
 
@@ -1181,11 +1176,11 @@ testReadLong()
 		return;
 	}
 
-	print("    Reading 1 byte of sector 0 with READ LONG (16)\n");
+	print("    Reading 4 bytes of sector 0 with READ LONG (16)\n");
 
 	cmd.Buffer = &buffer;
 	cmd.TransferLen = 1;
-	ReadLong16[13] = 1;
+	ReadLong16[13] = 4;
 
 	memset(&senseData, 0, sizeof(SENSE_DATA));
 
@@ -1208,12 +1203,12 @@ testReadLong()
 		print("      Request has been rejected\n");
 	}
 
-	print("    Reading 513 bytes of sector 0 with READ LONG (16)\n");
+	print("    Reading 516 bytes of sector 0 with READ LONG (16)\n");
 
 	cmd.Buffer = &buffer;
-	cmd.TransferLen = 513;
+	cmd.TransferLen = 516;
 	ReadLong16[12] = 2;
-	ReadLong16[13] = 1;
+	ReadLong16[13] = 4;
 
 	memset(&senseData, 0, sizeof(SENSE_DATA));
 
@@ -1503,6 +1498,10 @@ printPages(UBYTE *buf, int *pageOffsets, int offsets, int size)
 
 				case 12:
 					printPage12(buf, pageOffsets[i]);
+					break;
+
+				case 16:
+					printPage16(buf, pageOffsets[i]);
 					break;
 
 				default:
@@ -1799,6 +1798,48 @@ printPage12(UBYTE *buf, int offset)
 
 
 void
+printPage16(UBYTE *buf, int offset)
+{
+	printPageHeader(buf, offset, "Device configuration", 14);
+
+	print("          Change active partition (CAP): %d\n",
+		(buf[offset + 2] & 0x40) >> 6);
+	print("          Change active format (CAF): %d\n",
+		(buf[offset + 2] & 0x20) >> 5);
+	print("          Active format: %d\n", buf[offset + 2] & 0x1f);
+	print("          Active partition: %d\n", buf[offset + 3]);
+	print("          Write buffer full ratio: %d\n", buf[offset + 4]);
+	print("          Read buffer full ratio: %d\n", buf[offset + 5]);
+	print("          Write delay time: %u\n",
+		(buf[offset + 6] << 8) + buf[offset + 7]);
+	print("          Data buffer recovery (DBR): %d\n",
+		(buf[offset + 8] & 0x80) >> 7);
+	print("          Block identifiers supported (BIS): %d\n",
+		(buf[offset + 8] & 0x40) >> 6);
+	print("          Report setmarks (RSmk): %d\n",
+		(buf[offset + 8] & 0x20) >> 5);
+	print("          Automatic velocity control (AVC): %d\n",
+		(buf[offset + 8] & 0x10) >> 4);
+	print("          Stop on consecutive filemarks (SOCF): %d\n",
+		(buf[offset + 8] & 0x0c) >> 3);
+	print("          Recover buffer order (RBO): %d\n",
+		(buf[offset + 8] & 0x02) >> 1);
+	print("          Report early-warning (REW): %d\n", buf[offset + 8] & 0x01);
+	print("          Gap size: %u\n", buf[offset + 9]);
+
+	print("          End-of-data defined (EOD defined): %d\n",
+		(buf[offset + 10] & 0xe0) >> 5);
+	print("          Enable EOD generation (EEG): %d\n",
+		(buf[offset + 10] & 0x10) >> 4);
+	print("          Synnchronize at early-warning (SEW): %d\n",
+		(buf[offset + 10] & 0x08) >> 3);
+	print("          Buffer size at early-warning: %u\n",
+		(buf[offset + 11] << 16) + (buf[offset + 12] << 8) + buf[offset + 13]);
+	print("          Select data compression algorithm: %d\n", buf[offset + 14]);
+}
+
+
+void
 printPage0(UBYTE *buf, int offset, int length)
 {
 	int i;
@@ -1825,7 +1866,7 @@ printPage(UBYTE *buf, int offset)
 
 	const int size = buf[offset + 1];
 
-	printPageHeader(buf, offset, "Vendor-specific", size);
+	printPageHeader(buf, offset, "Unknown", size);
 
 	print("          ");
 	for(i = 0; i < size; i++) {
