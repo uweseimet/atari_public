@@ -1,5 +1,5 @@
 /**********************************/
-/* SCSI Driver/Firmware Test 2.20 */
+/* SCSI Driver/Firmware Test 2.30 */
 /*                                */
 /* (C) 2014-2024 Uwe Seimet       */
 /**********************************/
@@ -168,7 +168,7 @@ main()
 		return -1;
 	}
 
-	print("SCSI Driver and firmware test V2.20\n");
+	print("SCSI Driver and firmware test V2.30\n");
 	print("½ 2014-2024 Uwe Seimet\n\n");
 
 	if(getNvm(&nvm)) {
@@ -443,10 +443,13 @@ testInquiry()
 	revision[4] = 0;
 	print("      Device type: %s\n",
 		DEVICE_TYPES[inquiryData.deviceType & 0x1f]);
-	print("      Removable media support: %s\n",
-		inquiryData.RMB ? "Yes" : "No");
 	print("      Device name: '%s'\n", name);
 	print("      Firmware revision: '%s'\n", revision);
+
+	print("      Removable media support: %s\n",
+		inquiryData.RMB ? "Yes" : "No");
+	print("      Linked command support: %s\n",
+		inquiryData.Linked ? "Yes" : "No");
 
 	print("      SCSI/SPC version: ");
 	switch(inquiryData.ANSIVersion) {
