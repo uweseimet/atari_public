@@ -1465,7 +1465,8 @@ testSenseBuffer()
 				localSenseData.addSenseCodeQualifier);
 		}
 		else {
-			if(!localSenseData.senseKey || !localSenseData.addSenseCode) {
+			if(localSenseData.senseKey != senseData.senseKey ||
+				localSenseData.addSenseCode != senseData.addSenseCode) {
 				print("      ERROR: Sense data have not been preserved\n");
 			}
 		}
