@@ -725,6 +725,7 @@ testReadCapacity(ULONG *blockSize)
 	*blockSize = 512;
 
 	if(!(*cmd.Handle & cAllCmds)) {
+		/* READ CAPACITY cannot be used */
 		return;
 	}
 
