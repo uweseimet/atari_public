@@ -1464,6 +1464,11 @@ testSenseBuffer()
 				localSenseData.senseKey, localSenseData.addSenseCode,
 				localSenseData.addSenseCodeQualifier);
 		}
+		else {
+			if(!localSenseData.senseKey || !localSenseData.addSenseCode) {
+				print("      ERROR: Sense data have not been preserved\n");
+			}
+		}
 	}
 
 	cmd.SenseBuffer = (BYTE *)&senseData;
