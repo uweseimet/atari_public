@@ -1454,6 +1454,7 @@ testSenseBuffer()
 		cmd.Cmd = (void *)&RequestSense;
 		cmd.CmdLen = (UWORD)sizeof(RequestSense);
 		cmd.SenseBuffer = (BYTE *)&localSenseData;
+		cmd.TransferLen = sizeof(SENSE_DATA);
 
 		memset(&localSenseData, 0, sizeof(SENSE_DATA));
 
