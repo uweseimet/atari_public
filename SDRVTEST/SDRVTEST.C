@@ -98,6 +98,7 @@ void testCheckDev(UWORD, UWORD);
 void testUnitReady(void);
 UWORD testInquiry(void);
 void testOpenClose(UWORD, UWORD, ULONG);
+void testSenseBuffer(void);
 void testRequestSense(void);
 void testReadCapacity(ULONG *);
 void testRead(UWORD, ULONG, UBYTE *, UBYTE *, UBYTE *);
@@ -220,6 +221,8 @@ main()
 			deviceType = testInquiry();
 
 			testRequestSense();
+
+			testSenseBuffer();
 
 			if(deviceType != 0x1f) {
 				switch(deviceType) {
@@ -1290,7 +1293,6 @@ testModeSense()
 
 	cmd.Cmd = (void *)&ModeSense10;
 	cmd.CmdLen = (UWORD)sizeof(ModeSense10);
-	cmd.Buffer = buf;
 	cmd.TransferLen = 4096;
 
 	if(execute("      MODE SENSE (10)", true)) {
@@ -1407,6 +1409,64 @@ testGetConfiguration()
 
 		print("\n");
 	}
+}
+
+/*
+The following method tests the behavior of the SCSI Driver when the
+sense buffer pointer is NULL. For this test a SCSI command that
+definitely results in an error has to be sent. It is assumed that
+MODE SENSE with a subpage code of 0xff (see SCP-5 spezification) is such
+a command.
+If the device does not report an error for this command the respective
+SCSI Driver test is not executed.
+*/
+void
+testSenseBuffer()
+{
+	BYTE ModeSense6[] = {
+		0x1a, 0x08, 0x3f, 0, 0xff, 0
+	};
+
+	LONG status;
+
+	ModeSense6[3] = 0xff;
+	cmd.Cmd = (void *)&ModeSense6;
+	cmd.CmdLen = (UWORD)sizeof(ModeSense6);
+	cmd.TransferLen = 255;
+
+	status = scsiCall->In(&cmd);
+	if(!status) {
+		/* The command has not been rejected and cannot be used for this test */
+		return;
+	}
+
+	print("    Testing SCSI Driver sense buffer handling\n");
+
+	cmd.SenseBuffer = NULL;
+
+	if(scsiCall->In(&cmd) != status) {
+		print("      ERROR: Status code mismatch\n");
+	}
+	else {
+		BYTE RequestSense[] = { 0x03, 0, 0, 0, sizeof(SENSE_DATA), 0 };
+		SENSE_DATA localSenseData;
+
+		cmd.Cmd = (void *)&RequestSense;
+		cmd.CmdLen = (UWORD)sizeof(RequestSense);
+		cmd.SenseBuffer = (BYTE *)&localSenseData;
+
+		memset(&localSenseData, 0, sizeof(SENSE_DATA));
+
+		status = scsiCall->In(&cmd);
+		if(status) {
+			print("      ERROR: Request failed with status %ld\n", status);
+			print("      Sense Key $%02X, ASC $%02X, ASCQ $%02X\n",
+				localSenseData.senseKey, localSenseData.addSenseCode,
+				localSenseData.addSenseCodeQualifier);
+		}
+	}
+
+	cmd.SenseBuffer = (BYTE *)&senseData;
 }
 
 
