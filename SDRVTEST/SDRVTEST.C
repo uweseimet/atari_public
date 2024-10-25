@@ -1428,10 +1428,12 @@ testSenseBuffer()
 	};
 
 	LONG status;
+	UBYTE buf[256];
 
 	ModeSense6[3] = 0xff;
 	cmd.Cmd = (void *)&ModeSense6;
 	cmd.CmdLen = (UWORD)sizeof(ModeSense6);
+	cmd.Buffer = buf;
 	cmd.TransferLen = 255;
 
 	status = scsiCall->In(&cmd);
