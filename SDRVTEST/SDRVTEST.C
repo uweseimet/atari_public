@@ -1610,15 +1610,15 @@ printPageHeader(UBYTE *buf, int offset, const char *name, int expected)
 	print("\n");
 
 	if(size < expected) {
-		print("          ERROR: Page size is %d bytes, which is less than %d\n",
+		print("          ERROR: Page size: %d bytes, which is less than the expected %d\n",
 			size, expected);
 	}
 	else if(size > expected) {
-		print("          Page size is %d bytes, which is more than %d\n",
+		print("          Page size: %d bytes, which is more than the expected %d\n",
 			size, expected);
 	}
 	else {
-		print("          Page size is %d bytes\n", size);
+		print("          Page size: %d bytes\n", size);
 	}
 }
 
