@@ -1593,10 +1593,21 @@ printPages(UBYTE *buf, int *pageOffsets, int offsets, int size)
 void
 printPageHeader(UBYTE *buf, int offset, const char *name, int expected)
 {
+	int i;
 	const int size = buf[offset + 1];
 
-	print("        Page %d: %s page (current, %s)\n", buf[offset] & 0x3f, name,
+	print("        Page %d: %s page (current, %s)\n", buf[offset], name,
 		buf[offset] & 0x80 ? "savable" : "not savable");
+
+	print("          Raw data: ", buf[offset] & 0x3f);
+
+	for(i = 0; i < size + 2; i++) {
+		if(i) {
+			print(":");
+		}
+		print("%02x", buf[offset + i]);
+	}
+	print("\n");
 
 	if(size < expected) {
 		print("          ERROR: Page size is %d bytes, which is less than %d\n",
@@ -1917,15 +1928,15 @@ printPage0(UBYTE *buf, int offset, int length)
 {
 	int i;
 
-	print("        Page 0 (current, %s)\n",
+	print("        Page 0: Vendor-specific page (current, %s)\n",
 		buf[offset] & 0x80 ? "savable" : "not savable");
 
-	print("          ");
-	for(i = 0; i < length; i++) {
+	print("          Raw data: ");
+	for(i = 0; i <= length; i++) {
 		if(i) {
 			print(":");
 		}
-		print("%02x", buf[offset + 1 + i]);
+		print("%02x", buf[offset + i]);
 	}
 
 	print("\n");
@@ -1941,7 +1952,7 @@ printPage(UBYTE *buf, int offset)
 
 	printPageHeader(buf, offset, "Unknown", size);
 
-	print("          ");
+	print("          Raw data: ");
 	for(i = 0; i < size; i++) {
 		if(i) {
 			print(":");
