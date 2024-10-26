@@ -120,8 +120,8 @@ void printPage8(UBYTE *, int);
 void printPage10(UBYTE *, int);
 void printPage12(UBYTE *, int);
 void printPage16(UBYTE *, int);
+void printPages17_20(UBYTE *, int, int);
 void printPage0(UBYTE *, int, int);
-void printPage(UBYTE *, int);
 bool checkRoot(UBYTE *, UBYTE *, ULONG);
 void initBuffer(UBYTE *, ULONG);
 char * DULongToString(const D_ULONG *);
@@ -1236,7 +1236,7 @@ testModeSense()
 		0x5a, 0x08, 0x3f, 0, 0, 0, 0, 0x10, 0x00, 0
 	};
 
-	UBYTE buf[4096];
+	UBYTE buffer[4096];
 	int pageOffsets[64];
 	int size;
 	int i;
@@ -1252,14 +1252,14 @@ testModeSense()
 
 	cmd.Cmd = (void *)&ModeSense6;
 	cmd.CmdLen = (UWORD)sizeof(ModeSense6);
-	cmd.Buffer = buf;
+	cmd.Buffer = buffer;
 	cmd.TransferLen = 255;
 
 	if(execute("      MODE SENSE (6)", true)) {
 		return;
 	}
 
-	size = buf[0] + 1;
+	size = buffer[0] + 1;
 	print("      Received %d data bytes\n", size);
 
 	if(size > 4) {
@@ -1267,7 +1267,7 @@ testModeSense()
 
 		i = 4;
 		while(i < size) {
-			int page = buf[i] & 0x3f;
+			int page = buffer[i] & 0x3f;
 
 			if(i > 4) {
 				print(", ");
@@ -1276,13 +1276,13 @@ testModeSense()
 
 			pageOffsets[page] = i;
 
-			i += buf[i + 1] + 2;
+			i += buffer[i + 1] + 2;
 		}
 
 		print("\n");
 	}
 
-	printPages(buf, pageOffsets, 64, size);
+	printPages(buffer, pageOffsets, 64, size);
 
 	if(!(*cmd.Handle & cAllCmds)) {
 		return;
@@ -1299,7 +1299,7 @@ testModeSense()
 		return;
 	}
 
-	size = (buf[0] << 8) + buf[1];
+	size = (buffer[0] << 8) + buffer[1];
 	print("      Received %d data bytes\n", size);
 
 
@@ -1312,9 +1312,9 @@ testModeSense()
 				print(", ");
 			}
 
-			print("%d", buf[i] & 0x3f);
+			print("%d", buffer[i] & 0x3f);
 
-			i += buf[i + 1] + 2;
+			i += buffer[i + 1] + 2;
 		}
 
 		print("\n");
@@ -1428,12 +1428,12 @@ testSenseBuffer()
 	};
 
 	LONG status;
-	UBYTE buf[256];
+	UBYTE buffer[256];
 
 	ModeSense6[3] = 0xff;
 	cmd.Cmd = (void *)&ModeSense6;
 	cmd.CmdLen = (UWORD)sizeof(ModeSense6);
-	cmd.Buffer = buf;
+	cmd.Buffer = buffer;
 	cmd.TransferLen = 255;
 
 	status = scsiCall->In(&cmd);
@@ -1577,8 +1577,16 @@ printPages(UBYTE *buf, int *pageOffsets, int offsets, int size)
 					printPage16(buf, pageOffsets[i]);
 					break;
 
+				case 17:
+				case 18:
+				case 19:
+				case 20:
+					printPages17_20(buf, pageOffsets[i], i - 16);
+					break;
+
 				default:
-					printPage(buf, pageOffsets[i]);
+					printPageHeader(buf, pageOffsets[i], "Unknown",
+						buf[pageOffsets[i] + 1]);
 					break;
 			}
 		}
@@ -1611,10 +1619,6 @@ printPageHeader(UBYTE *buf, int offset, const char *name, int expected)
 
 	if(size < expected) {
 		print("          ERROR: Page size: %d bytes, which is less than the expected %d\n",
-			size, expected);
-	}
-	else if(size > expected) {
-		print("          Page size: %d bytes, which is more than the expected %d\n",
 			size, expected);
 	}
 	else {
@@ -1924,6 +1928,33 @@ printPage16(UBYTE *buf, int offset)
 
 
 void
+printPages17_20(UBYTE *buf, int offset, int index)
+{
+	char name[30];
+
+	sprintf(name, "Medium partition(%d)", index);
+	printPageHeader(buf, offset, name, 6);
+
+	print("          Maximum additional partitions: %d\n", buf[offset + 2]);
+	print("          Additional partitions defined: %d\n", buf[offset + 3]);
+	print("          Fixed data partitions (FDP): %d\n",
+		(buf[offset + 4] & 0x80) >> 7);
+	print("          Select data partitions (SDP): %d\n",
+		(buf[offset + 4] & 0x40) >> 6);
+	print("          Initiator-defined partitions (IDP): %d\n",
+		(buf[offset + 4] & 0x20) >> 5);
+	print("          Partition size unit of measure (PSUM): %d\n",
+		(buf[offset + 4] & 0x18) >> 3);
+	print("          Medium format recognition: %d\n", buf[offset + 5]);
+
+	if(buf[offset + 1] >= 10) {
+		print("          Partition size: %d\n",
+			(buf[offset + 8] << 8) + buf[offset + 9]);
+	}
+}
+		
+
+void
 printPage0(UBYTE *buf, int offset, int length)
 {
 	int i;
@@ -1937,27 +1968,6 @@ printPage0(UBYTE *buf, int offset, int length)
 			print(":");
 		}
 		print("%02x", buf[offset + i]);
-	}
-
-	print("\n");
-}
-
-
-void
-printPage(UBYTE *buf, int offset)
-{
-	int i;
-
-	const int size = buf[offset + 1];
-
-	printPageHeader(buf, offset, "Unknown", size);
-
-	print("          Raw data: ");
-	for(i = 0; i < size; i++) {
-		if(i) {
-			print(":");
-		}
-		print("%02x", buf[offset + 2 + i]);
 	}
 
 	print("\n");
