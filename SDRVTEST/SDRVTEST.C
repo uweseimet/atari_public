@@ -122,6 +122,7 @@ void printPage12(UBYTE *, int);
 void printPage16(UBYTE *, int);
 void printPages17_20(UBYTE *, int, int);
 void printPage0(UBYTE *, int, int);
+void printRawData(UBYTE *, int, int);
 bool checkRoot(UBYTE *, UBYTE *, ULONG);
 void initBuffer(UBYTE *, ULONG);
 char * DULongToString(const D_ULONG *);
@@ -1613,21 +1614,12 @@ printPages(UBYTE *buf, int *pageOffsets, int offsets, int size)
 void
 printPageHeader(UBYTE *buf, int offset, const char *name, int expected)
 {
-	int i;
 	const int size = buf[offset + 1];
 
 	print("        Page %d: %s page (current, %s)\n", buf[offset], name,
 		buf[offset] & 0x80 ? "savable" : "not savable");
 
-	print("          Raw data: ", buf[offset] & 0x3f);
-
-	for(i = 0; i < size + 2; i++) {
-		if(i) {
-			print(":");
-		}
-		print("%02x", buf[offset + i]);
-	}
-	print("\n");
+	printRawData(buf, offset, size + 2);
 
 	if(size < expected) {
 		print("          ERROR: Page size: %d bytes, which is less than the expected %d\n",
@@ -1967,15 +1959,23 @@ printPages17_20(UBYTE *buf, int offset, int index)
 		
 
 void
-printPage0(UBYTE *buf, int offset, int length)
+printPage0(UBYTE *buf, int offset, int size)
 {
-	int i;
-
 	print("        Page 0: Vendor-specific page (current, %s)\n",
 		buf[offset] & 0x80 ? "savable" : "not savable");
 
+	printRawData(buf, offset, size + 1);
+}
+
+
+void
+printRawData(UBYTE *buf, int offset, int length)
+{
+	int i;
+
 	print("          Raw data: ");
-	for(i = 0; i <= length; i++) {
+
+	for(i = 0; i < length; i++) {
 		if(i) {
 			print(":");
 		}
