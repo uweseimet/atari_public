@@ -453,6 +453,18 @@ testInquiry()
 		inquiryData.RMB ? "Yes" : "No");
 	print("      Linked command support: %s\n",
 		inquiryData.Linked ? "Yes" : "No");
+	print("      Relative addressing support: %s\n",
+		inquiryData.RelAdr ? "Yes" : "No");
+	print("      Tagged command queuing support: %s\n",
+		inquiryData.CmdQue ? "Yes" : "No");
+	print("      Synchronous data transfer support: %s\n",
+		inquiryData.Sync ? "Yes" : "No");
+	print("      16-bit wide data transfer support: %s\n",
+		inquiryData.WBus16 ? "Yes" : "No");
+	print("      32-bit wide data transfer support: %s\n",
+		inquiryData.WBus32 ? "Yes" : "No");
+	print("      RESET condition behavior: %s\n",
+		inquiryData.SftRe ? "Soft RESET" : "Hard RESET");
 
 	print("      SCSI/SPC version: ");
 	switch(inquiryData.ANSIVersion) {
