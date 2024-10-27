@@ -418,7 +418,7 @@ testInquiry()
 	print("  INQUIRY\n");
 
 
-	print("    Calling with valid data\n");
+	print("    Calling with valid parameters\n");
 
 	cmd.Cmd = (void *)&Inquiry;
 	cmd.CmdLen = 6;
@@ -1978,7 +1978,10 @@ printRawData(UBYTE *buf, int offset, int length, const char *indent)
 	print("%sRaw data: ", indent);
 
 	for(i = 0; i < length; i++) {
-		if(i) {
+		if(i && !(i % 16)) {
+			print("\n          %s", indent);
+		}
+		else if(i) {
 			print(":");
 		}
 		print("%02x", buf[offset + i]);
