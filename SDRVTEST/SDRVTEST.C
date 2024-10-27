@@ -119,6 +119,7 @@ void printPage7(UBYTE *, int);
 void printPage8(UBYTE *, int);
 void printPage10(UBYTE *, int);
 void printPage12(UBYTE *, int);
+void printPage15(UBYTE *, int);
 void printPage16(UBYTE *, int);
 void printPages17_20(UBYTE *, int, int);
 void printPage0(UBYTE *, int, int);
@@ -1588,6 +1589,10 @@ printPages(UBYTE *buf, int *pageOffsets, int offsets, int size)
 					printPage12(buf, pageOffsets[i]);
 					break;
 
+				case 15:
+					printPage15(buf, pageOffsets[i]);
+					break;
+
 				case 16:
 					printPage16(buf, pageOffsets[i]);
 					break;
@@ -1888,6 +1893,28 @@ printPage12(UBYTE *buf, int offset)
 	print("          Pages notched low: %u\n",
 		(buf[offset + 20] << 24) + (buf[offset + 21] << 16) +
 		(buf[offset + 22] << 8) + buf[offset + 23]);
+}
+
+
+void
+printPage15(UBYTE *buf, int offset)
+{
+	printPageHeader(buf, offset, "Data compression", 14);
+
+	print("          Data compression enable (DCE): %d\n",
+		(buf[offset + 2] & 0x80) >> 7);
+	print("          Data compression capable (DCC): %d\n",
+		(buf[offset + 2] & 0x40) >> 6);
+	print("          Data decompression enable (DDE): %d\n",
+		(buf[offset + 3] & 0x80) >> 7);
+	print("          Report exception on decompression (RED): %d\n",
+		(buf[offset + 3] & 0x60) >> 5);
+	print("          Compression algorithm: %u\n",
+		(buf[offset + 4] << 24) + (buf[offset + 5] << 16) +
+		(buf[offset + 6] << 8) + buf[offset + 7]);
+	print("          Decompression algorithm: %u\n",
+		(buf[offset + 8] << 24) + (buf[offset + 9] << 16) +
+		(buf[offset + 10] << 8) + buf[offset + 11]);
 }
 
 
