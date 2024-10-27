@@ -1954,7 +1954,7 @@ printPages17_20(UBYTE *buf, int offset, int index)
 	print("          Medium format recognition: %d\n", buf[offset + 5]);
 
 	if(buf[offset + 1] >= 10) {
-		print("          Partition size: %d\n",
+		print("          Approximate partition size: %d\n",
 			(buf[offset + 8] << 8) + buf[offset + 9]);
 	}
 }
