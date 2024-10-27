@@ -1,5 +1,5 @@
 /**********************************/
-/* SCSI Driver/Firmware Test 2.20 */
+/* SCSI Driver/Firmware Test 2.30 */
 /*                                */
 /* (C) 2014-2024 Uwe Seimet       */
 /**********************************/
@@ -98,6 +98,7 @@ void testCheckDev(UWORD, UWORD);
 void testUnitReady(void);
 UWORD testInquiry(void);
 void testOpenClose(UWORD, UWORD, ULONG);
+void testSenseBuffer(void);
 void testRequestSense(void);
 void testReadCapacity(ULONG *);
 void testRead(UWORD, ULONG, UBYTE *, UBYTE *, UBYTE *);
@@ -118,9 +119,11 @@ void printPage7(UBYTE *, int);
 void printPage8(UBYTE *, int);
 void printPage10(UBYTE *, int);
 void printPage12(UBYTE *, int);
+void printPage15(UBYTE *, int);
 void printPage16(UBYTE *, int);
+void printPages17_20(UBYTE *, int, int);
 void printPage0(UBYTE *, int, int);
-void printPage(UBYTE *, int);
+void printRawData(UBYTE *, int, int, const char *);
 bool checkRoot(UBYTE *, UBYTE *, ULONG);
 void initBuffer(UBYTE *, ULONG);
 char * DULongToString(const D_ULONG *);
@@ -168,7 +171,7 @@ main()
 		return -1;
 	}
 
-	print("SCSI Driver and firmware test V2.20\n");
+	print("SCSI Driver and firmware test V2.30\n");
 	print("½ 2014-2024 Uwe Seimet\n\n");
 
 	if(getNvm(&nvm)) {
@@ -220,6 +223,8 @@ main()
 			deviceType = testInquiry();
 
 			testRequestSense();
+
+			testSenseBuffer();
 
 			if(deviceType != 0x1f) {
 				switch(deviceType) {
@@ -414,7 +419,7 @@ testInquiry()
 	print("  INQUIRY\n");
 
 
-	print("    Calling with valid data\n");
+	print("    Calling with valid parameters\n");
 
 	cmd.Cmd = (void *)&Inquiry;
 	cmd.CmdLen = 6;
@@ -430,6 +435,9 @@ testInquiry()
 		return 0;
 	}
 
+	printRawData((UBYTE *)&inquiryData, 0, inquiryData.additionalLength + 5,
+		"      ");
+
 	deviceType = inquiryData.deviceType;
 	if(inquiryData.deviceType == 0x1f) {
 		print("    ERROR: Unknown or no device type\n");
@@ -443,10 +451,25 @@ testInquiry()
 	revision[4] = 0;
 	print("      Device type: %s\n",
 		DEVICE_TYPES[inquiryData.deviceType & 0x1f]);
-	print("      Removable media support: %s\n",
-		inquiryData.RMB ? "Yes" : "No");
 	print("      Device name: '%s'\n", name);
 	print("      Firmware revision: '%s'\n", revision);
+
+	print("      Removable media support: %s\n",
+		inquiryData.RMB ? "Yes" : "No");
+	print("      Linked command support: %s\n",
+		inquiryData.Linked ? "Yes" : "No");
+	print("      Relative addressing support: %s\n",
+		inquiryData.RelAdr ? "Yes" : "No");
+	print("      Tagged command queuing support: %s\n",
+		inquiryData.CmdQue ? "Yes" : "No");
+	print("      Synchronous data transfer support: %s\n",
+		inquiryData.Sync ? "Yes" : "No");
+	print("      16-bit wide data transfer support: %s\n",
+		inquiryData.WBus16 ? "Yes" : "No");
+	print("      32-bit wide data transfer support: %s\n",
+		inquiryData.WBus32 ? "Yes" : "No");
+	print("      RESET condition behavior: %s\n",
+		inquiryData.SftRe ? "Soft RESET" : "Hard RESET");
 
 	print("      SCSI/SPC version: ");
 	switch(inquiryData.ANSIVersion) {
@@ -722,6 +745,7 @@ testReadCapacity(ULONG *blockSize)
 	*blockSize = 512;
 
 	if(!(*cmd.Handle & cAllCmds)) {
+		/* READ CAPACITY cannot be used */
 		return;
 	}
 
@@ -1229,7 +1253,7 @@ testModeSense()
 		0x5a, 0x08, 0x3f, 0, 0, 0, 0, 0x10, 0x00, 0
 	};
 
-	UBYTE buf[4096];
+	UBYTE buffer[4096];
 	int pageOffsets[64];
 	int size;
 	int i;
@@ -1245,14 +1269,14 @@ testModeSense()
 
 	cmd.Cmd = (void *)&ModeSense6;
 	cmd.CmdLen = (UWORD)sizeof(ModeSense6);
-	cmd.Buffer = buf;
+	cmd.Buffer = buffer;
 	cmd.TransferLen = 255;
 
 	if(execute("      MODE SENSE (6)", true)) {
 		return;
 	}
 
-	size = buf[0] + 1;
+	size = buffer[0] + 1;
 	print("      Received %d data bytes\n", size);
 
 	if(size > 4) {
@@ -1260,7 +1284,7 @@ testModeSense()
 
 		i = 4;
 		while(i < size) {
-			int page = buf[i] & 0x3f;
+			int page = buffer[i] & 0x3f;
 
 			if(i > 4) {
 				print(", ");
@@ -1269,13 +1293,13 @@ testModeSense()
 
 			pageOffsets[page] = i;
 
-			i += buf[i + 1] + 2;
+			i += buffer[i + 1] + 2;
 		}
 
 		print("\n");
 	}
 
-	printPages(buf, pageOffsets, 64, size);
+	printPages(buffer, pageOffsets, 64, size);
 
 	if(!(*cmd.Handle & cAllCmds)) {
 		return;
@@ -1286,14 +1310,13 @@ testModeSense()
 
 	cmd.Cmd = (void *)&ModeSense10;
 	cmd.CmdLen = (UWORD)sizeof(ModeSense10);
-	cmd.Buffer = buf;
 	cmd.TransferLen = 4096;
 
 	if(execute("      MODE SENSE (10)", true)) {
 		return;
 	}
 
-	size = (buf[0] << 8) + buf[1];
+	size = (buffer[0] << 8) + buffer[1];
 	print("      Received %d data bytes\n", size);
 
 
@@ -1306,9 +1329,9 @@ testModeSense()
 				print(", ");
 			}
 
-			print("%d", buf[i] & 0x3f);
+			print("%d", buffer[i] & 0x3f);
 
-			i += buf[i + 1] + 2;
+			i += buffer[i + 1] + 2;
 		}
 
 		print("\n");
@@ -1403,6 +1426,73 @@ testGetConfiguration()
 
 		print("\n");
 	}
+}
+
+/*
+The following method tests the behavior of the SCSI Driver when the
+sense buffer pointer is NULL. For this test a SCSI command that
+definitely results in an error has to be sent. It is assumed that
+MODE SENSE with a subpage code of 0xff (see SCP-5 spezification) is such
+a command.
+If the device does not report an error for this command the respective
+SCSI Driver test is not executed.
+*/
+void
+testSenseBuffer()
+{
+	BYTE ModeSense6[] = {
+		0x1a, 0x08, 0x3f, 0, 0xff, 0
+	};
+
+	LONG status;
+	UBYTE buffer[256];
+
+	ModeSense6[3] = 0xff;
+	cmd.Cmd = (void *)&ModeSense6;
+	cmd.CmdLen = (UWORD)sizeof(ModeSense6);
+	cmd.Buffer = buffer;
+	cmd.TransferLen = 255;
+
+	status = scsiCall->In(&cmd);
+	if(!status) {
+		/* The command has not been rejected and cannot be used for this test */
+		return;
+	}
+
+	print("    Testing SCSI Driver sense buffer handling\n");
+
+	cmd.SenseBuffer = NULL;
+
+	if(scsiCall->In(&cmd) != status) {
+		print("      ERROR: Status code mismatch\n");
+	}
+	else {
+		BYTE RequestSense[] = { 0x03, 0, 0, 0, sizeof(SENSE_DATA), 0 };
+		SENSE_DATA localSenseData;
+
+		cmd.Cmd = (void *)&RequestSense;
+		cmd.CmdLen = (UWORD)sizeof(RequestSense);
+		cmd.Buffer = (BYTE *)&localSenseData;
+		cmd.TransferLen = sizeof(SENSE_DATA);
+
+		memset(&localSenseData, 0, sizeof(SENSE_DATA));
+
+		status = scsiCall->In(&cmd);
+		if(status) {
+			print("      ERROR: Request failed with status %ld\n", status);
+			print("      Sense Key $%02X, ASC $%02X, ASCQ $%02X\n",
+				localSenseData.senseKey, localSenseData.addSenseCode,
+				localSenseData.addSenseCodeQualifier);
+		}
+		else {
+			if(localSenseData.senseKey != senseData.senseKey ||
+				localSenseData.addSenseCode != senseData.addSenseCode) {
+				print("      ERROR: Sense data have not been preserved\n");
+			}
+		}
+	}
+
+	cmd.SenseBuffer = (BYTE *)&senseData;
 }
 
 
@@ -1500,12 +1590,24 @@ printPages(UBYTE *buf, int *pageOffsets, int offsets, int size)
 					printPage12(buf, pageOffsets[i]);
 					break;
 
+				case 15:
+					printPage15(buf, pageOffsets[i]);
+					break;
+
 				case 16:
 					printPage16(buf, pageOffsets[i]);
 					break;
 
+				case 17:
+				case 18:
+				case 19:
+				case 20:
+					printPages17_20(buf, pageOffsets[i], i - 16);
+					break;
+
 				default:
-					printPage(buf, pageOffsets[i]);
+					printPageHeader(buf, pageOffsets[i], "Unknown",
+						buf[pageOffsets[i] + 1]);
 					break;
 			}
 		}
@@ -1522,19 +1624,17 @@ printPageHeader(UBYTE *buf, int offset, const char *name, int expected)
 {
 	const int size = buf[offset + 1];
 
-	print("        Page %d: %s page (current, %s)\n", buf[offset] & 0x3f, name,
+	print("        Page %d: %s page (current, %s)\n", buf[offset], name,
 		buf[offset] & 0x80 ? "savable" : "not savable");
 
+	printRawData(buf, offset, size + 2, "          ");
+
 	if(size < expected) {
-		print("          ERROR: Page size is %d bytes, which is less than %d\n",
-			size, expected);
-	}
-	else if(size > expected) {
-		print("          Page size is %d bytes, which is more than %d\n",
+		print("          ERROR: Page size: %d bytes, which is less than the expected %d\n",
 			size, expected);
 	}
 	else {
-		print("          Page size is %d bytes\n", size);
+		print("          Page size: %d bytes\n", size);
 	}
 }
 
@@ -1798,6 +1898,28 @@ printPage12(UBYTE *buf, int offset)
 
 
 void
+printPage15(UBYTE *buf, int offset)
+{
+	printPageHeader(buf, offset, "Data compression", 14);
+
+	print("          Data compression enable (DCE): %d\n",
+		(buf[offset + 2] & 0x80) >> 7);
+	print("          Data compression capable (DCC): %d\n",
+		(buf[offset + 2] & 0x40) >> 6);
+	print("          Data decompression enable (DDE): %d\n",
+		(buf[offset + 3] & 0x80) >> 7);
+	print("          Report exception on decompression (RED): %d\n",
+		(buf[offset + 3] & 0x60) >> 5);
+	print("          Compression algorithm: %u\n",
+		(buf[offset + 4] << 24) + (buf[offset + 5] << 16) +
+		(buf[offset + 6] << 8) + buf[offset + 7]);
+	print("          Decompression algorithm: %u\n",
+		(buf[offset + 8] << 24) + (buf[offset + 9] << 16) +
+		(buf[offset + 10] << 8) + buf[offset + 11]);
+}
+
+
+void
 printPage16(UBYTE *buf, int offset)
 {
 	printPageHeader(buf, offset, "Device configuration", 14);
@@ -1840,40 +1962,57 @@ printPage16(UBYTE *buf, int offset)
 
 
 void
-printPage0(UBYTE *buf, int offset, int length)
+printPages17_20(UBYTE *buf, int offset, int index)
 {
-	int i;
+	char name[30];
 
-	print("        Page 0 (current, %s)\n",
+	sprintf(name, "Medium partition(%d)", index);
+	printPageHeader(buf, offset, name, 6);
+
+	print("          Maximum additional partitions: %d\n", buf[offset + 2]);
+	print("          Additional partitions defined: %d\n", buf[offset + 3]);
+	print("          Fixed data partitions (FDP): %d\n",
+		(buf[offset + 4] & 0x80) >> 7);
+	print("          Select data partitions (SDP): %d\n",
+		(buf[offset + 4] & 0x40) >> 6);
+	print("          Initiator-defined partitions (IDP): %d\n",
+		(buf[offset + 4] & 0x20) >> 5);
+	print("          Partition size unit of measure (PSUM): %d\n",
+		(buf[offset + 4] & 0x18) >> 3);
+	print("          Medium format recognition: %d\n", buf[offset + 5]);
+
+	if(buf[offset + 1] >= 10) {
+		print("          Approximate partition size in PSUM units: %d\n",
+			(buf[offset + 8] << 8) + buf[offset + 9]);
+	}
+}
+		
+
+void
+printPage0(UBYTE *buf, int offset, int size)
+{
+	print("        Page 0: Vendor-specific page (current, %s)\n",
 		buf[offset] & 0x80 ? "savable" : "not savable");
 
-	print("          ");
-	for(i = 0; i < length; i++) {
-		if(i) {
-			print(":");
-		}
-		print("%02x", buf[offset + 1 + i]);
-	}
-
-	print("\n");
+	printRawData(buf, offset, size + 1, "          ");
 }
 
 
 void
-printPage(UBYTE *buf, int offset)
+printRawData(UBYTE *buf, int offset, int length, const char *indent)
 {
 	int i;
 
-	const int size = buf[offset + 1];
+	print("%sRaw data: ", indent);
 
-	printPageHeader(buf, offset, "Unknown", size);
-
-	print("          ");
-	for(i = 0; i < size; i++) {
-		if(i) {
+	for(i = 0; i < length; i++) {
+		if(i && !(i % 16)) {
+			print("\n          %s", indent);
+		}
+		else if(i) {
 			print(":");
 		}
-		print("%02x", buf[offset + 2 + i]);
+		print("%02x", buf[offset + i]);
 	}
 
 	print("\n");
