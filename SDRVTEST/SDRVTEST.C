@@ -435,7 +435,8 @@ testInquiry()
 		return 0;
 	}
 
-	printRawData((UBYTE *)&inquiryData, 0, (int)sizeof(INQUIRY_DATA), "      ");
+	printRawData((UBYTE *)&inquiryData, 0, inquiryData.additionalLength + 5,
+		"      ");
 
 	deviceType = inquiryData.deviceType;
 	if(inquiryData.deviceType == 0x1f) {
