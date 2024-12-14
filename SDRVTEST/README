@@ -1,6 +1,6 @@
 SDRVTEST is a tool for testing whether a device or a SCSI Driver
 implementation handles certain SCSI commands in compliance with the current
-SCSI specification (http://www.t10.org).
+SCSI specification (https://www.t10.org).
 The device does not necessarily have to be a SCSI device, but can be any
 kind of device supported by a SCSI Driver. HDDRIVER provides SCSI Drivers not
 only for SCSI devices but also for ACSI, IDE, ATAPI and SATA devices.
@@ -22,4 +22,4 @@ The C sources are available on GitHub:
 https://github.com/uweseimet/atari_public.
 
 
-  Uwe.Seimet@seimet.de, 10/27/2024
+  Uwe.Seimet@seimet.de, 12/14/2024
