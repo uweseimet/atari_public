@@ -17,9 +17,9 @@ execute:
 	moveq #0,d0
 	movec d0,cacr
 	nop
-	dc.w $f4d8					;CINVA BC
+	cinva bc
 	nop
-	dc.w $f518					;PFLUSHA
+	pflusha
 	nop
 	move.l #$ffe000,d1
 	dc.w $4e7b,$1004		;MOVEC D1,ITT0
