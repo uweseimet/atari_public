@@ -47,7 +47,8 @@ can properly be executed during the boot process.
 It is sufficient to just add MODSTART as the first item to be linked (e.g.
 before PCSTART) to the Pure C project file. The MODSTART startup code
 automatically detects whether a binary was launched by TOS or as a module.
-Modules using MODSTART must terminate with Pterm0(), Pterm() or Ptermres().
+Modules using MODSTART must terminate with Pterm0(), Pterm() or Ptermres(),
+so that MODSTART can override these methods.
 Their main() method must not be terminated just by a C return statement.
 Modules cannot return any result.
 In case a program needs to know at runtime whether it was launched as a
