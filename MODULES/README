@@ -1,16 +1,16 @@
 HDDRIVER Modules
 ----------------
 
-Since version 11 HDDRIVER supports launching programs, so-called HDDRIVER
+Since version 11 HDDRIVER supports launching executables, called HDDRIVER
 modules, early during the boot sequence, even before the actual driver
 HDDRIVER.SYS. The main difference between modules and AUTO folder programs
 is that a module is launched *before* HDDRIVER.SYS, whereas an AUTO folder
 program is launched *after* HDDRIVER.SYS. A typical module provides
 functionality HDDRIVER can make use of during the boot process, like a SCSI
-Driver providing access to non-standard mass storage interfaces, e.g. USB.
-But modules can also provide other functionality.
-For some programs it can be useful if they can be launched both ways, as a
-module and also from the AUTO folder.
+Driver providing access to non-standard interfaces, e.g. USB. Modules can
+also provide other functionality.
+For some programs it can be useful if they can be launched both as a
+module and from the AUTO folder.
 
 
 Module Execution
@@ -22,15 +22,15 @@ also install HDDRIVER on other drives. Modules run in the same type of RAM
 (ST-RAM or TT-RAM) as HDDRIVER.SYS, depending on the HDDRIVER installation
 settings configured in HDDRUTIL.
 Module filenames have the format "HDDRMODn.SYS", with n being a digit from
-0-9. The value of n determines the module execution order. During the boot
-process (if HDDRIVER was configured accordingly with HDDRUTIL) modules are
-executed until no further module file for an increasing n is found.
-HDDRIVER.SYS is launched after the last module.
+0-9. n determines the module execution order. During the boot process (if
+HDDRIVER was configured accordingly with HDDRUTIL) modules are executed
+until no further module file for an increasing n is found. HDDRIVER.SYS is
+launched after the last module.
 If there are any issues with loading a module, e.g. errors when accessing
-the boot partition where the module files reside, any remaining modules are
-skipped and HDDRIVER.SYS is executed immediately.
-Note that modules cannot dynamically allocate any additional memory. This
-is because of technical reasons imposed by the TOS boot process.
+the boot partition where the module files reside, the next module is
+launched, and finally HDDRIVER.SYS.
+Note that modules cannot dynamically allocate additional memory. This is
+due to technical reasons imposed by the TOS boot process.
 Modules are always run in supervisor mode. MODSTART.S and SAMPLE.C should
 be studied in order to learn more about HDDRIVER modules.
 
@@ -44,23 +44,24 @@ initialization code that enables a program to be executed by TOS and also as
 a module. Please see the comments in the source code for details. In
 particular MODSTART tweaks the memory management of a program, so that it
 can properly be executed during the boot process.
-It is sufficient to just add MODSTART as the first item (e.g. before
-PCSTART) to the Pure C project file. The MODSTART startup code automatically
-detects whether a binary was launched by TOS or as a module.
-Modules implemented in C (using MODSTART) must terminate with Pterm0(),
-Pterm() or Ptermres(). Their main() method must not be terminated just by a
-C return statement. Modules cannot return any result.
+It is sufficient to just add MODSTART as the first item to be linked (e.g.
+before PCSTART) to the Pure C project file. The MODSTART startup code
+automatically detects whether a binary was launched by TOS or as a module.
+Modules using MODSTART must terminate with Pterm0(), Pterm() or Ptermres().
+Their main() method must not be terminated just by a C return statement.
+Modules cannot return any result.
 In case a program needs to know at runtime whether it was launched as a
-module the function isHddriverModule() declared in HDDRMOD.H provides this
+module, the function isHddriverModule() declared in HDDRMOD.H provides this
 information.
 
 
-Modules implemented in assembler
---------------------------------
+Modules implemented in assembler or not using MODSTART
+------------------------------------------------------
 
 Modules implemented in assembler are launched by calling their start
-address + 4. They have to free any unused memory and must terminate with
-RTS. They must not execute any Pterm*() call.
+address + 4. In case they do not use MODSTART they have to free any
+unused memory and must terminate with RTS. They must not execute any
+Pterm*() call. See the comments in MODSTART.S for details.
 The simplest possible module in assembler (effectively doing nothing) is:
 
 	nop             ;the module entry point is the start address + 4
