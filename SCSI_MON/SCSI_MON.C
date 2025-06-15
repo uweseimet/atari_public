@@ -233,8 +233,8 @@ InquireSCSI(WORD what, tBusInfo *info)
 	else {
 		char s[32];
 
-		sprintf(str, "-> BusName \"%s\"  BusNo %d  Features",
-			info->BusName, info->BusNo);
+		sprintf(str, "-> BusIds $%08X  BusName \"%s\"  BusNo %d  Features",
+			info->Private.BusIds, info->BusName, info->BusNo);
 		if(!(info->Features & 0x3f)) {
 			char s[8];
 

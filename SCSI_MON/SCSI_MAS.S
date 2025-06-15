@@ -1,7 +1,7 @@
 /****************************/
-/* SCSI_MON 1.50            */
+/* SCSI_MON 1.51            */
 /*                          */
-/* (C) 1999-2023 Uwe Seimet */
+/* (C) 1999-2025 Uwe Seimet */
 /****************************/
 
 	export conout, auxout, prtout
