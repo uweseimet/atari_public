@@ -174,7 +174,7 @@ main(WORD argc, const char *argv[])
 
 	printf("\n\x1b\x70SCSI Driver for Hatari and ARAnyM V" VERSION
 		"\x1b\x71\n");
-	printf("½ 2016-2023 Uwe Seimet\n");
+	printf("½ 2016-2025 Uwe Seimet\n");
 
 	Ptermres(_PgmSize, 0);
 
