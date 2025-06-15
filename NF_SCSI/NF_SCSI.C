@@ -1,10 +1,10 @@
 /******************************************/
-/* SCSI Driver for Hatari and ARAnyM 1.21 */
+/* SCSI Driver for Hatari and ARAnyM 1.22 */
 /*                                        */
-/* (C) 2016-2023 Uwe Seimet               */
+/* (C) 2016-2025 Uwe Seimet               */
 /******************************************/
 
-#define VERSION "1.21"
+#define VERSION "1.22"
 
 
 #include <stdio.h>
@@ -252,7 +252,7 @@ LONG cdecl
 InquireSCSI(WORD what, tBusInfo *info)
 {
 	if(!what) {
-		memset(&info->Private, 0, (UWORD)sizeof(info->Private));
+		info->Private.BusIds = 0L;
 	}
 
 	if((info->Private.BusIds & (1L << firstBusNo)) &&
