@@ -257,14 +257,13 @@ InquireSCSI(WORD what, tBusInfo *info)
 		info->Private.BusIds = 0L;
 	}
 
-	if((info->Private.BusIds & (1L << busA)) &&
-		(info->Private.BusIds & (1L << (busB)))) {
+	info->BusNo = info->Private.BusIds & (1L << busA) ? busB : busA;
+
+	if(info->Private.BusIds & (1L << info->BusNo)) {
 		return oldScsiCall.InquireSCSI ?
 			oldScsiCall.InquireSCSI(what, info) : EUNDEV;
 	}
 	
-	info->BusNo = info->Private.BusIds & (1L << busA) ?
-		busB : busA;
 	info->Private.BusIds |= 1L << info->BusNo;
 	info->Features = drvBusFeatures;
 	info->MaxLen = drvBusTransferLen;
