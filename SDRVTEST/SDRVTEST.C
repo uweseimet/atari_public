@@ -1,7 +1,7 @@
 /**********************************/
-/* SCSI Driver/Firmware Test 2.40 */
+/* SCSI Driver/Firmware Test 2.50 */
 /*                                */
-/* (C) 2014-2024 Uwe Seimet       */
+/* (C) 2014-2025 Uwe Seimet       */
 /**********************************/
 
 
@@ -89,10 +89,10 @@ typedef struct {
 	UWORD ILI : 1;
 	UWORD : 1;
 	UWORD senseKey : 4;
-	UWORD : 8;
-	UWORD : 8;
-	UWORD : 8;
-	UWORD : 8;
+	UWORD information1 : 8;
+	UWORD information2 : 8;
+	UWORD information3 : 8;
+	UWORD information4 : 8;
 	UWORD addSenseLength : 8;
 	UWORD : 8;
 	UWORD : 8;
@@ -213,7 +213,7 @@ void initBuffer(UBYTE *, ULONG);
 char * DULongToString(const D_ULONG *);
 void print(const char *, ...);
 void printError(LONG);
-void printSenseData(void);
+LONG printSenseData(void);
 void printExpectedSenseData(SENSE_DATA *, UWORD, UWORD);
 LONG execute(const char *, bool);
 bool getCookie(LONG, ULONG *);
@@ -255,8 +255,8 @@ main()
 		return -1;
 	}
 
-	print("SCSI Driver and firmware test V2.40\n");
-	print("½ 2014-2024 Uwe Seimet\n\n");
+	print("SCSI Driver and firmware test V2.50\n");
+	print("½ 2014-2025 Uwe Seimet\n\n");
 
 	if(getNvm(&nvm)) {
 		print("SCSI initiator ID in NVRAM is %d\n", nvm.scsiid & 0x07);
@@ -383,14 +383,24 @@ findDevices()
 {
 	tBusInfo busInfo;
 	LONG busResult;
+	bool busNos[32];
 	UWORD devCount = 0;
 
 	print("\nAvailable buses:\n");
+
+	memset(busNos, false, sizeof(busNos));
 
 	busResult = scsiCall->InquireSCSI(cInqFirst, &busInfo);
 	while(!busResult) {
 		tDevInfo devInfo;
 		LONG result;
+
+		if(busNos[busInfo.BusNo]) {
+				print("  ERROR: Duplicate bus number: %d\n", busInfo.BusNo);
+				break;
+		}
+
+		busNos[busInfo.BusNo] = true;
 
 		result = scsiCall->InquireBus(cInqFirst, busInfo.BusNo, &devInfo);
 		while(!result) {
@@ -1234,19 +1244,6 @@ testReadLong()
 		return;
 	}
 
-	print("    Reading 4 bytes of sector 0 with READ LONG (10)\n");
-
-	cmd.Buffer = &buffer;
-	cmd.TransferLen = 4;
-	ReadLong10[8] = 4;
-
-	memset(&senseData, 0, sizeof(SENSE_DATA));
-
-	status = scsiCall->In(&cmd);
-	if(status) {
-		print("      Request has been rejected\n");
-	}
-
 	print("    Reading 512 bytes of sector 0 with READ LONG (10)\n");
 
 	cmd.Buffer = &buffer;
@@ -1258,7 +1255,12 @@ testReadLong()
 
 	status = scsiCall->In(&cmd);
 	if(status) {
-			print("      Request has been rejected\n");
+		LONG size;
+		print("      Request has been rejected\n");
+		size = printSenseData();
+		if(size) {
+			print("      Available data size is %ld bytes\n", cmd.TransferLen - size);
+		}
 	}
 
 
@@ -1273,7 +1275,12 @@ testReadLong()
 
 	status = scsiCall->In(&cmd);
 	if(status) {
-			print("      Request has been rejected\n");
+		LONG size;
+		print("      Request has been rejected\n");
+		size = printSenseData();
+		if(size) {
+			print("      Available data size is %ld bytes\n", cmd.TransferLen - size);
+		}
 	}
 
 
@@ -1290,19 +1297,6 @@ testReadLong()
 		return;
 	}
 
-	print("    Reading 4 bytes of sector 0 with READ LONG (16)\n");
-
-	cmd.Buffer = &buffer;
-	cmd.TransferLen = 1;
-	ReadLong16[13] = 4;
-
-	memset(&senseData, 0, sizeof(SENSE_DATA));
-
-	status = scsiCall->In(&cmd);
-	if(status) {
-		print("      Request has been rejected\n");
-	}
-
 	print("    Reading 512 bytes of sector 0 with READ LONG (16)\n");
 
 	cmd.Buffer = &buffer;
@@ -1314,7 +1308,12 @@ testReadLong()
 
 	status = scsiCall->In(&cmd);
 	if(status) {
+		LONG size;
 		print("      Request has been rejected\n");
+		size = printSenseData();
+		if(size) {
+			print("      Available data size is %ld bytes\n", cmd.TransferLen - size);
+		}
 	}
 
 	print("    Reading 516 bytes of sector 0 with READ LONG (16)\n");
@@ -1328,7 +1327,12 @@ testReadLong()
 
 	status = scsiCall->In(&cmd);
 	if(status) {
+		LONG size;
 		print("      Request has been rejected\n");
+		size = printSenseData();
+		if(size) {
+			print("      Available data size is %ld bytes\n", cmd.TransferLen - size);
+		}
 	}
 }
 
@@ -2242,13 +2246,24 @@ printError(LONG status)
 }
 
 
-void
+LONG
 printSenseData()
 {
 	if(senseData.errorClass) {
 		print("      Sense Key $%02X, ASC $%02X, ASCQ $%02X\n",
 			senseData.senseKey, senseData.addSenseCode, senseData.addSenseCodeQualifier);
+		
+		if(senseData.valid) {
+			const LONG information = (senseData.information1 << 24) |
+				(senseData.information2 << 16) | (senseData.information3 << 8) |
+				senseData.information4;
+			print("      ILI: %d, Information: %ld\n", senseData.ILI, information);
+
+			return information;
+		}
 	}
+
+	return 0;
 }
 
 
