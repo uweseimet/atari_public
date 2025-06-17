@@ -1,5 +1,5 @@
 /**********************************/
-/* SCSI Driver/Firmware Test 2.50 */
+/* SCSI Driver/Firmware Test 2.51 */
 /*                                */
 /* (C) 2014-2025 Uwe Seimet       */
 /**********************************/
@@ -255,7 +255,7 @@ main()
 		return -1;
 	}
 
-	print("SCSI Driver and firmware test V2.50\n");
+	print("SCSI Driver and firmware test V2.51\n");
 	print("½ 2014-2025 Uwe Seimet\n\n");
 
 	if(getNvm(&nvm)) {
@@ -383,12 +383,12 @@ findDevices()
 {
 	tBusInfo busInfo;
 	LONG busResult;
-	bool busNos[32];
+	UBYTE busNos[32];
 	UWORD devCount = 0;
 
 	print("\nAvailable buses:\n");
 
-	memset(busNos, false, sizeof(busNos));
+	memset(busNos, 0, sizeof(busNos));
 
 	busResult = scsiCall->InquireSCSI(cInqFirst, &busInfo);
 	while(!busResult) {
@@ -400,7 +400,7 @@ findDevices()
 				break;
 		}
 
-		busNos[busInfo.BusNo] = true;
+		busNos[busInfo.BusNo] = 1;
 
 		result = scsiCall->InquireBus(cInqFirst, busInfo.BusNo, &devInfo);
 		while(!result) {
