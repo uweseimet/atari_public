@@ -277,7 +277,7 @@ LONG cdecl
 InquireBus(WORD what, WORD busno, tDevInfo *info)
 {
 	LONG result;
-	UWORD *nextId = (UWORD *)info->Private;
+	ULONG *nextId = (ULONG *)info->Private;
 
 	if(busno != busA && busno != busB) {
 		return oldScsiCall.InquireBus ?
@@ -285,15 +285,15 @@ InquireBus(WORD what, WORD busno, tDevInfo *info)
 	}
 
 	if(!what) {
+		info->SCSIId.hi = 0;
 		nextId[0] = (busno - busA) * 8;
 	}
 
-	result = nfCall(id | SCSI_INQUIRE_BUS, (LONG)nextId[0]);
+	result = nfCall(id | SCSI_INQUIRE_BUS, *nextId);
 	if(result >= 0) {
-		info->SCSIId.hi = 0;
 		info->SCSIId.lo = result - (busno - busA) * 8;
 
-		nextId[0] = (UWORD)++result;
+		*nextId = ++result;
 
 		return info->SCSIId.lo > 7 ? -1 : 0;
 	}
