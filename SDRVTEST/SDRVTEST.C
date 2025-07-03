@@ -1,5 +1,5 @@
 /**********************************/
-/* SCSI Driver/Firmware Test 2.50 */
+/* SCSI Driver/Firmware Test 2.60 */
 /*                                */
 /* (C) 2014-2025 Uwe Seimet       */
 /**********************************/
@@ -255,7 +255,7 @@ main()
 		return -1;
 	}
 
-	print("SCSI Driver and firmware test V2.50\n");
+	print("SCSI Driver and firmware test V2.60\n");
 	print("½ 2014-2025 Uwe Seimet\n\n");
 
 	if(getNvm(&nvm)) {
@@ -383,24 +383,44 @@ findDevices()
 {
 	tBusInfo busInfo;
 	LONG busResult;
-	bool busNos[32];
+	UBYTE busNos[32];
 	UWORD devCount = 0;
+
+/* Manually clearing the bus info must be equivalent to using cInqFirst */
+	memset(&busInfo, 0, sizeof(busInfo));
+	busResult = scsiCall->InquireSCSI(cInqNext, &busInfo);
+	if(!busResult) {
+		UWORD busNo = busInfo.BusNo;
+		
+		busResult = scsiCall->InquireSCSI(cInqFirst, &busInfo);
+		if(busResult || busNo != busInfo.BusNo) {
+			print("  ERROR: Inconsistent handling of cInqFirst/cInqNext\n\n");
+		}
+	}
 
 	print("\nAvailable buses:\n");
 
-	memset(busNos, false, sizeof(busNos));
+	memset(busNos, 0, sizeof(busNos));
+
+/* Deliberately initialize with non-zero data */
+	memset(&busInfo, -1, sizeof(busInfo));
 
 	busResult = scsiCall->InquireSCSI(cInqFirst, &busInfo);
 	while(!busResult) {
 		tDevInfo devInfo;
 		LONG result;
 
+		if(!(busInfo.Private.BusIds & (1L << busInfo.BusNo))) {
+			print("  ERROR: Bus ID vector has not been updated for bus %d\n\n",
+				busInfo.BusNo);
+		}
+
 		if(busNos[busInfo.BusNo]) {
-				print("  ERROR: Duplicate bus number: %d\n", busInfo.BusNo);
+				print("  ERROR: Duplicate bus number: %d\n\n", busInfo.BusNo);
 				break;
 		}
 
-		busNos[busInfo.BusNo] = true;
+		busNos[busInfo.BusNo] = 1;
 
 		result = scsiCall->InquireBus(cInqFirst, busInfo.BusNo, &devInfo);
 		while(!result) {
@@ -466,7 +486,6 @@ testCheckDev(UWORD busNo, UWORD id)
 	if(result != EUNDEV) {
 		print("    ERROR: Invalid bus ID 32 was accepted\n");
 	}
-
 }
 
 

@@ -1,17 +1,17 @@
-SDRVTEST ist ein Tool, mit dem sich testen l„sst, ob ein Ger„t oder eine
-SCSI-Treiber-Implementierung gewisse SCSI-Kommandos in šbereinstimmung
-mit der aktuellen SCSI-Spezifikation (https://www.t10.org) ausfhrt.
+Mit SDRVTEST l„sst sich testen, ob eine SCSI-Treiber-Implementierung die
+SCSI-Treiber-Spezifikation 1.01 korrekt implementiert, und ob ein Ger„t
+gewisse SCSI-Kommandos in šbereinstimmung mit dem SCSI-Standard
+(https://www.t10.org) ausfhrt.
 Das Ger„t muss nicht unbedingt ein SCSI-Ger„t sein, sondern es kann sich um
-ein beliebiges Ger„t handeln, das von einem SCSI-Treiber untersttzt wird.
-HDDRIVER stellt SCSI-Treiber nicht nur fr SCSI- sondern auch fr ACSI-,
-IDE-, ATAPI- und SATA-Ger„te bereit.
-Jeder von SDRVTEST gemeldete Fehler ("ERROR" wird angezeigt) bedeutet mit
-hoher Wahrscheinlichkeit, dass entweder das Ger„t nicht korrekt mit
-SCSI-Kommandos umgeht, oder dass etwas mit der SCSI-Treiber-Implementierung
-fr diesen Bus nicht stimmt. Falls ein optionales SCSI-Kommando nicht
+ein beliebiges Ger„t handeln, das von einem SCSI-Treiber verwalted wird.
+Jeder von SDRVTEST gemeldete Fehler (in der Ausgabe mit "ERROR" markiert)
+bedeutet mit hoher Wahrscheinlichkeit, dass entweder etwas mit der
+SCSI-Treiber-Implementierung fr den jeweiligen Bus nicht stimmt, oder dass
+das Ger„t (oder Ger„teemulation wie SCSI2Pi oder BlueSCSI) SCSI-Kommandos
+nicht korrekt bearbeitet. Falls ein optionales SCSI-Kommando nicht
 untersttzt wird, wird dies nicht als Fehler angesehen.
-Anwendungen funktionieren m”glicherweise nicht korrekt mit Ger„ten oder
-SCSI-Treibern, bei denen die durchgefhrten Tests fehlschlagen.
+Anwendungen/Treiber funktionieren m”glicherweise nicht korrekt mit Ger„ten
+oder SCSI-Treibern, bei denen ein Test fehlschl„gt.
 SDRVTEST sichert die Testergebnisse in einer Datei SDRVTEST.LOG im aktuellen
 Verzeichnis und zeigt die Ergebnisse auch auf dem Bildschirm an.
 HINWEIS: Zur Zeit wird nur LUN 0 getestet.
@@ -19,10 +19,10 @@ HINWEIS: Zur Zeit wird nur LUN 0 getestet.
 MCHGTEST, ERRTEST and SERRTEST testen weitere SCSI-Treiber-Features, die sich
 auf Fehlerbehandlung und Medienwechsel beziehen. Bitte entnehmen Sie Details
 den Quelltexten.
-Bis auf das Schreiben des SDRVTEST-Logfiles schreiben die Tests keine Daten.
+Bis auf das SDRVTEST-Logfile ver„ndern/schreiben die Tests keine Daten.
 
 Die C-Quelltexte sind auf GitHub verfgbar:
 https://github.com/uweseimet/atari_public.
 
 
-  Uwe.Seimet@seimet.de, 16.6.2025
+  Uwe.Seimet@seimet.de, 3.7.2025

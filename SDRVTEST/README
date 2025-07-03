@@ -1,25 +1,25 @@
-SDRVTEST is a tool for testing whether a device or a SCSI Driver
-implementation handles certain SCSI commands in compliance with the current
-SCSI specification (https://www.t10.org).
+With SDRVTEST you can test whether a SCSI Driver implementation is compliant
+with the SCSI Driver specification 1.01, and whether a device handles certain
+SCSI commands in compliance with the SCSI standard (https://www.t10.org).
 The device does not necessarily have to be a SCSI device, but can be any
-kind of device supported by a SCSI Driver. HDDRIVER provides SCSI Drivers not
-only for SCSI devices but also for ACSI, IDE, ATAPI and SATA devices.
-Any error reported by SDRVTEST ("ERROR" is displayed) means that most likely
-something is either wrong with how the device handles SCSI commands, or with
-the SCSI Driver managing the respective bus. If an optional SCSI command is
-not supported this is not considered an error.
-Applications may not work correctly with devices or SCSI Drivers for which
-the executed tests fail.
-SDRVTEST saves the test results in a file SDRVTEST.LOG in the current
+device manage by a SCSI Driver.
+Any error reported by SDRVTEST (flagged in the output with "ERROR") means
+that most likely something is either wrong with the SCSI Driver
+implementation for the respective bus, or that the device (or device
+emulation like SCSI2Pi or BlueSCSI) handles SCSI commands incorrectly. If an
+optional SCSI command is not supported this is not considered an error.
+Applications/drivers may not work correctly with devices or SCSI Drivers for
+which a test fails.
+SDRVTEST saves the test results to a file SDRVTEST.LOG in the current
 directory and also displays the results on the screen.
 NOTE: Currently only LUN 0 is tested.
 
 MCHGTEST, ERRTEST and SERRTEST test other SCSI Driver features, related to
 error handling and media changes. Please refer to the sources for details.
-Except for writing the SDRVTEST logfile the tests do not write any data.
+Except for the SDRVTEST logfile the tests do not change/write any data.
 
 The C sources are available on GitHub:
 https://github.com/uweseimet/atari_public.
 
 
-  Uwe.Seimet@seimet.de, 06/16/2025
+  Uwe.Seimet@seimet.de, 07/03/2025
