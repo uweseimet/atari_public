@@ -1,7 +1,7 @@
 /******************************************/
-/* SCSI Driver for Hatari and ARAnyM 1.10 */
+/* SCSI Driver for Hatari and ARAnyM 1.23 */
 /*                                        */
-/* (C) 2016-2020 Uwe Seimet               */
+/* (C) 2016-2025 Uwe Seimet               */
 /******************************************/
 
 
@@ -21,9 +21,9 @@ getCookie:
 						move.l _p_cookies,d1
 						beq.s .nocookie
 						move.l d1,a1
-.loop:			movem.l (a1)+,d1-d2
-						tst.l d1
+.loop:			move.l (a1)+,d1
 						beq.s .nocookie
+						move.l (a1)+,d2
 						cmp.l d0,d1
 						bne .loop
 						move.l d2,(a0)
