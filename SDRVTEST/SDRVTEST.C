@@ -1,5 +1,5 @@
 /**********************************/
-/* SCSI Driver/Firmware Test 2.60 */
+/* SCSI Driver/Firmware Test 2.61 */
 /*                                */
 /* (C) 2014-2025 Uwe Seimet       */
 /**********************************/
@@ -255,7 +255,7 @@ main()
 		return -1;
 	}
 
-	print("SCSI Driver and firmware test V2.60\n");
+	print("SCSI Driver and firmware test V2.61\n");
 	print("½ 2014-2025 Uwe Seimet\n\n");
 
 	if(getNvm(&nvm)) {
@@ -420,6 +420,10 @@ findDevices()
 				break;
 		}
 
+		if(!scsiCall->InquireBus(cInqFirst, 32, &devInfo)) {
+				print("  ERROR: Invalid bus numer 32 was accepted\n\n");
+		}
+
 		busNos[busInfo.BusNo] = 1;
 
 		result = scsiCall->InquireBus(cInqFirst, busInfo.BusNo, &devInfo);
@@ -433,7 +437,7 @@ findDevices()
 			deviceInfos[devCount].busNo = busInfo.BusNo;
 			deviceInfos[devCount].id = (UWORD)devInfo.SCSIId.lo;
 			deviceInfos[devCount].maxLen = busInfo.MaxLen;
-			deviceInfos[devCount].features = busInfo.Features;
+			deviceInfos[devCount].features = features;
 			strcpy(deviceInfos[devCount].busName, busInfo.BusName);	
 			strcpy(deviceInfos[devCount].deviceBusName, deviceBusName);	
 			devCount++;
