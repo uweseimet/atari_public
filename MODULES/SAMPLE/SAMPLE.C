@@ -1,8 +1,8 @@
-/**************************/
-/* HDDRIVER sample module */
-/*                        */
-/* (C) 2020 Uwe Seimet    */
-/**************************/
+/*******************************/
+/* HDDRIVER sample module      */
+/*                             */
+/* (C) 2020-2025 Uwe Seimet    */
+/*******************************/
 
 #include <tos.h>
 #include "../modstart.h"
@@ -11,7 +11,7 @@ int
 main()
 {
 	if(isHddriverModule()) {
-		Cconws("\r\nSample program was started as an HDDRIVER module");
+		Cconws("\r\nSample program was started as HDDRIVER module");
 	}
 	else {
 		Cconws("\r\nSample program was started as a regular program");
