@@ -1,8 +1,8 @@
-/**************************/
-/* HDDRIVER sample module */
-/*                        */
-/* (C) 2020 Uwe Seimet    */
-/**************************/
+/*******************************/
+/* HDDRIVER sample module      */
+/*                             */
+/* (C) 2020-2025 Uwe Seimet    */
+/*******************************/
 
 #include <tos.h>
 #include "../modstart.h"
