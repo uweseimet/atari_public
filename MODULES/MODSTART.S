@@ -1,9 +1,9 @@
 /*********************************************************/
-/* HDDRIVER module startup code for Pure C 1.01          */
+/* HDDRIVER module startup code for Pure C 2.00          */
 /*                                                       */
 /* To be added before PCSTART in the Pure C project file */
 /*                                                       */
-/* (C) 2020-2024 Uwe Seimet                              */
+/* (C) 2020-2025 Uwe Seimet                              */
 /*********************************************************/
 
 	export isHddriverModule		;to be used by module-aware modules
@@ -18,14 +18,27 @@ STACKSIZE	= 400
 
 	bra.w .nomodule						;started as regular program-
 
+	move.l $5a0,d0
+	beq.s .nocpu							;no cookie jar-
+	move.l d0,a0
+.loop:	move.l (a0)+,d0
+	beq.s .nocpu							;no _CPU cookie-
+	move.l (a0)+,d1
+	cmp.l #"_CPU",d0
+	bne.s .loop
+	cmp #40,d1
+	bcs.s .nocpu
+	dc.w $f4f8								;clear 040/060 cache after relocation
+
+.nocpu:
 	lea $1c(a2),a0						;on startup A2 points to the binary
 	add.l 2(a2),a0
 	add.l 6(a2),a0
 	move.l 10(a2),d0
 	bra.s .clrbss
-.loop:	clr.b (a0)+					;clear BSS
+.clr:	clr.b (a0)+						;clear BSS
 .clrbss:	subq.l #1,d0
-	bpl .loop
+	bpl .clr
 
 	st ismodule								;started as module
 
@@ -109,7 +122,6 @@ Ptermres:
 	move.l d0,-(sp)
 	move #$31,-(sp)						;non-module termination with Ptermres()
 	trap #1
-
 
 *int isHddriverModule(void);
 isHddriverModule:
