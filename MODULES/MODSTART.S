@@ -1,7 +1,7 @@
 /*********************************************************/
-/* HDDRIVER module startup code for Pure C 2.00          */
+/* HDDRIVER module startup code for Pure C, version 2.00 */
 /*                                                       */
-/* To be added before PCSTART in the Pure C project file */
+/* To be added before PCSTART to the Pure C project file */
 /*                                                       */
 /* (C) 2020-2025 Uwe Seimet                              */
 /*********************************************************/
