@@ -11,7 +11,7 @@ int
 main()
 {
 	if(isHddriverModule()) {
-		Cconws("\r\nSample program was started as an HDDRIVER module");
+		Cconws("\r\nSample program was started as HDDRIVER module");
 	}
 	else {
 		Cconws("\r\nSample program was started as a regular program");
