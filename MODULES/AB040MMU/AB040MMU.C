@@ -1,10 +1,10 @@
 /***************************************/
-/* Afterburner040 PMMU fix module 1.00 */
+/* Afterburner040 PMMU fix module 1.01 */
 /*                                     */
-/* (C) 2022-2023 Uwe Seimet            */
+/* (C) 2022-2025 Uwe Seimet            */
 /***************************************/
 
-#define VERSION "1.00"
+#define VERSION "1.01"
 
 #include <tos.h>
 #include "../modstart.h"
