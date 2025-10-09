@@ -504,7 +504,8 @@ testUnitReady()
 
 	cmd.Cmd = (void *)&TestUnitReady;
 	cmd.CmdLen = 6;
-	cmd.Buffer = NULL;
+/* There is no data transfer, i.e. an invalid address must not matter */
+	cmd.Buffer = (void *)0xffffffffL;
 	cmd.TransferLen = 0;
 
 	memset(&senseData, 0, sizeof(SENSE_DATA));
