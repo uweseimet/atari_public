@@ -1,7 +1,7 @@
 /****************************/
-/* XHDI_MON 1.21            */
+/* XHDI_MON 1.22ž           */
 /*                          */
-/* (C) 1999-2017 Uwe Seimet */
+/* (C) 1999-2025 Uwe Seimet */
 /****************************/
 
 
@@ -9,16 +9,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <tos.h>
+#include <atarierr.h>
 #include <portab.h>
-
-
-#define ERROR -1
-#define EDRVNR -2
-#define EWRPRO -13
-#define E_CHNG -14
-#define EINVFN -32
-#define EACCDN -36
-#define EDRIVE -46
 
 
 typedef int bool;
@@ -118,7 +110,7 @@ main(WORD argc, const char *argv[])
 		return;
 	}
 
-	printf("\n\x1b\x70XHDI_MON V1.21\x1b\x71");
+	printf("\n\x1b\x70XHDI_MON V1.22ž\x1b\x71");
 	printf("\n½ 1999-2017 Uwe Seimet\n");
 
 	Ptermres(_PgmSize, 0);
