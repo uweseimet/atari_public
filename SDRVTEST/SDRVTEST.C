@@ -832,9 +832,11 @@ testOpenClose(UWORD busNo, UWORD id, ULONG maxLen)
 
 	while(--i >= 0) {
 		if(handles[i] != (tHandle)-1) { 		
-			result = scsiCall->Close(handles[i]);
-			if(result != 0) {
+			if(scsiCall->Close(handles[i]) != 0) {
 				print("    ERROR: Couldn't close handle %ld\n", handles[i]);
+			}
+			else if(scsiCall->Close(handles[i]) == 0) {
+				print("    ERROR: Handle %ld could be closed twice\n", handles[i]);
 			}
 		}
 	}
