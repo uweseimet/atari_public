@@ -1,8 +1,8 @@
-/**********************************/
-/* SCSI Driver/Firmware Test 2.61 */
-/*                                */
-/* (C) 2014-2025 Uwe Seimet       */
-/**********************************/
+/***********************************/
+/* SCSI Driver/Firmware Test 2.62ž */
+/*                                 */
+/* (C) 2014-2025 Uwe Seimet        */
+/***********************************/
 
 
 #include <string.h>
@@ -255,7 +255,7 @@ main()
 		return -1;
 	}
 
-	print("SCSI Driver and firmware test V2.61\n");
+	print("SCSI Driver and firmware test V2.62ž\n");
 	print("½ 2014-2025 Uwe Seimet\n\n");
 
 	if(getNvm(&nvm)) {
@@ -830,13 +830,17 @@ testOpenClose(UWORD busNo, UWORD id, ULONG maxLen)
 		}
 	}
 
+	if(scsiCall->Close((tHandle)0xfffffffeL) == 0) {
+		print("    ERROR: Invalid handles can be closed\n");
+	}
+
 	while(--i >= 0) {
 		if(handles[i] != (tHandle)-1) { 		
 			if(scsiCall->Close(handles[i]) != 0) {
-				print("    ERROR: Couldn't close handle %ld\n", handles[i]);
+				print("    ERROR: Can't close handle %ld\n", handles[i]);
 			}
 			else if(scsiCall->Close(handles[i]) == 0) {
-				print("    ERROR: Handle %ld could be closed twice\n", handles[i]);
+				print("    ERROR: Handle %ld can be closed twice\n", handles[i]);
 			}
 		}
 	}
