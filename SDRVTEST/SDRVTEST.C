@@ -781,6 +781,7 @@ testOpenClose(UWORD busNo, UWORD id, ULONG maxLen)
 	tHandle handle;
 	ULONG len;
 	LONG result;
+	bool twice = false;
 	int i;
 
 	print("  Open/Close()\n");
@@ -840,9 +841,13 @@ testOpenClose(UWORD busNo, UWORD id, ULONG maxLen)
 				print("    ERROR: Can't close handle %ld\n", handles[i]);
 			}
 			else if(scsiCall->Close(handles[i]) == 0) {
-				print("    ERROR: Handle %ld can be closed twice\n", handles[i]);
+				twice = true;
 			}
 		}
+	}
+
+	if(twice) {
+		print("    ERROR: Handles can be closed more than once\n");
 	}
 }
 
