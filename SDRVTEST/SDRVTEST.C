@@ -1,5 +1,5 @@
 /**********************************/
-/* SCSI Driver/Firmware Test 2.61 */
+/* SCSI Driver/Firmware Test 2.62 */
 /*                                */
 /* (C) 2014-2025 Uwe Seimet       */
 /**********************************/
@@ -255,7 +255,7 @@ main()
 		return -1;
 	}
 
-	print("SCSI Driver and firmware test V2.61\n");
+	print("SCSI Driver and firmware test V2.62\n");
 	print("½ 2014-2025 Uwe Seimet\n\n");
 
 	if(getNvm(&nvm)) {
@@ -504,7 +504,8 @@ testUnitReady()
 
 	cmd.Cmd = (void *)&TestUnitReady;
 	cmd.CmdLen = 6;
-	cmd.Buffer = NULL;
+/* There is no data transfer, i.e. an invalid address must not matter */
+	cmd.Buffer = (void *)0xffffffffL;
 	cmd.TransferLen = 0;
 
 	memset(&senseData, 0, sizeof(SENSE_DATA));
@@ -780,6 +781,7 @@ testOpenClose(UWORD busNo, UWORD id, ULONG maxLen)
 	tHandle handle;
 	ULONG len;
 	LONG result;
+	bool twice = false;
 	int i;
 
 	print("  Open/Close()\n");
@@ -829,13 +831,23 @@ testOpenClose(UWORD busNo, UWORD id, ULONG maxLen)
 		}
 	}
 
+	if(scsiCall->Close((tHandle)0xfffffffeL) == 0) {
+		print("    ERROR: Invalid handles can be closed\n");
+	}
+
 	while(--i >= 0) {
 		if(handles[i] != (tHandle)-1) { 		
-			result = scsiCall->Close(handles[i]);
-			if(result != 0) {
-				print("    ERROR: Couldn't close handle %ld\n", handles[i]);
+			if(scsiCall->Close(handles[i]) != 0) {
+				print("    ERROR: Can't close handle %ld\n", handles[i]);
+			}
+			else if(scsiCall->Close(handles[i]) == 0) {
+				twice = true;
 			}
 		}
+	}
+
+	if(twice) {
+		print("    ERROR: Handles can be closed more than once\n");
 	}
 }
 
