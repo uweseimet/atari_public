@@ -431,6 +431,7 @@ findDevices()
 			char deviceBusName[20];
 			UWORD features;
 
+			deviceBusName[0] = 0;
 			scsiCall->CheckDev(busInfo.BusNo, &devInfo.SCSIId,
 				deviceBusName, &features);
 
