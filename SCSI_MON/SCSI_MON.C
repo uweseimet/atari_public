@@ -1,7 +1,7 @@
 /****************************/
-/* SCSI_MON 1.50            */
+/* SCSI_MON 1.52            */
 /*                          */
-/* (C) 1999-2023 Uwe Seimet */
+/* (C) 1999-2025 Uwe Seimet */
 /****************************/
 
 
@@ -231,10 +231,16 @@ InquireSCSI(WORD what, tBusInfo *info)
 		prerr(res);
 	}
 	else {
-		char s[32];
+		char s[33];
+		int i;
 
-		sprintf(str, "-> BusIds $%08X  BusName \"%s\"  BusNo %d  Features",
-			info->Private.BusIds, info->BusName, info->BusNo);
+		for(i = 0; i < 32; i++) {
+			s[31 - i] = (info->Private.BusIds & (1L << i)) ? '1' : '0';
+		}
+		s[32] = '\0';
+
+		sprintf(str, "-> BusIds %%%s  BusName \"%s\"  BusNo %d  Features",
+			s, info->BusName, info->BusNo);
 		if(!(info->Features & 0x3f)) {
 			char s[8];
 
