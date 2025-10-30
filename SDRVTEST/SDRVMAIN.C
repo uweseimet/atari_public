@@ -17,15 +17,13 @@
 DEVICEINFO deviceInfos[32];
 
 
+bool testDevice(DEVICEINFO *);
 UWORD findDevices(void);
 
 
 int
 main()
 {
-	DLONG scsiId;
-	ULONG maxLen;
-	tHandle handle;
 	LONG oldstack = 0;
 	UWORD devCount;
 	NVM nvm;
@@ -75,88 +73,8 @@ main()
 	devCount = findDevices();
 
 	for(i = 0; i < devCount; i++) {
-		print("\nTesting device ID %d on bus %d '%s'\n",
-			deviceInfos[i].id, deviceInfos[i].busNo, deviceInfos[i].deviceBusName);
-
-		printFeatures(deviceInfos[i].features);
-
-		testCheckDev(deviceInfos[i].busNo, deviceInfos[i].id);
-		testOpenClose(deviceInfos[i].busNo, deviceInfos[i].id, deviceInfos[i].maxLen);
-
-		scsiId.hi = 0;
-		scsiId.lo = deviceInfos[i].id;
-
-		handle = (tHandle)scsiCall->Open(deviceInfos[i].busNo, &scsiId,
-			&maxLen);
-		if(((LONG)handle & 0xff000000L) == 0xff000000L) {
-			print("    ERROR: No handle\n");
-		}
-		else {
-			UWORD deviceType;
-
-			cmd.Handle = handle;
-
-			testUnitReady();
-
-			deviceType = testInquiry();
-
-			testRequestSense();
-
-			testSenseBuffer();
-
-			if(deviceType != 0x1f) {
-				switch(deviceType) {
-					case 0x00:
-					case 0x05:
-					case 0x07: {
-						ULONG blockSize;
-
-						testReadCapacity(&blockSize);
-						if(blockSize) {
-							UBYTE *ptr1, *ptr2, *ptr3;
-
-							ptr1 = malloc(blockSize);
-							ptr2 = malloc(blockSize);
-							ptr3 = malloc(blockSize + 1);
-
-							if(!ptr1 || !ptr2 || !ptr3) {
-								scsiCall->Close(handle);
-
-								if(oldstack) {
-									Super((void *)oldstack);
-								}
-
-								print("    Not enough memory\n");
-
-								fclose(out);
-
-								return -1;
-							}
-
-							testRead(deviceInfos[i].busNo, blockSize, ptr1, ptr2, ptr3 + 1);
-
-							free(ptr3);
-							free(ptr2);
-							free(ptr1);
-
-							testSeek();
-							testModeSense();
-							testReadLong();
-							testReadFormatCapacities();
-						}
-						testGetConfiguration();
-						break;
-					}
-
-					default:
-						testModeSense();
-						break;
-				}
-
-				testReportLuns();
-			}
-
-			scsiCall->Close(handle);
+		if(!testDevice(&deviceInfos[i])) {
+			break;
 		}
 	}
 
@@ -169,6 +87,95 @@ main()
 	Cconin();
 
 	return 0;
+}
+
+
+bool
+testDevice(DEVICEINFO *deviceInfo)
+{
+	DLONG scsiId;
+	ULONG maxLen;
+	tHandle handle;
+
+	print("\nTesting device ID %d on bus %d '%s'\n",
+		deviceInfo->id, deviceInfo->busNo, deviceInfo->deviceBusName);
+
+	printFeatures(deviceInfo->features);
+
+	testCheckDev(deviceInfo->busNo, deviceInfo->id);
+	testOpenClose(deviceInfo->busNo, deviceInfo->id, deviceInfo->maxLen);
+
+	scsiId.hi = 0;
+	scsiId.lo = deviceInfo->id;
+
+	handle = (tHandle)scsiCall->Open(deviceInfo->busNo, &scsiId,
+		&maxLen);
+	if(((LONG)handle & 0xff000000L) == 0xff000000L) {
+		print("    ERROR: No handle\n");
+	}
+	else {
+		UWORD deviceType;
+
+		cmd.Handle = handle;
+
+		testUnitReady();
+
+		deviceType = testInquiry();
+
+		testRequestSense();
+
+		testSenseBuffer();
+
+		if(deviceType != 0x1f) {
+			switch(deviceType) {
+				case 0x00:
+				case 0x05:
+				case 0x07: {
+					ULONG blockSize;
+
+					testReadCapacity(&blockSize);
+					if(blockSize) {
+						UBYTE *ptr1, *ptr2, *ptr3;
+
+						ptr1 = malloc(blockSize);
+						ptr2 = malloc(blockSize);
+						ptr3 = malloc(blockSize + 1);
+
+						if(!ptr1 || !ptr2 || !ptr3) {
+							scsiCall->Close(handle);
+
+							print("    Not enough memory\n");
+
+							return false;
+						}
+
+						testRead(deviceInfo->busNo, blockSize, ptr1, ptr2, ptr3 + 1);
+
+						free(ptr3);
+						free(ptr2);
+						free(ptr1);
+
+						testSeek();
+						testModeSense();
+						testReadLong();
+						testReadFormatCapacities();
+					}
+					testGetConfiguration();
+					break;
+				}
+
+				default:
+					testModeSense();
+					break;
+			}
+
+			testReportLuns();
+		}
+
+		scsiCall->Close(handle);
+	}
+
+	return true;
 }
 
 
