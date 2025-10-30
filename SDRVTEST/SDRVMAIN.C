@@ -11,6 +11,7 @@
 #include <tos.h>
 #include <scsidrv/scsidefs.h>
 #include "sdrvtest.h"
+#include "sdrvprt.h"
 
 
 DEVICEINFO deviceInfos[32];

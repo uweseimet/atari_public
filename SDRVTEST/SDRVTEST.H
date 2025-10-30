@@ -117,7 +117,6 @@ LONG execute(const char *, bool);
 bool getCookie(LONG, ULONG *);
 bool getNvm(NVM *nvm);
 
-extern FILE *out;
 extern tSCSICmd cmd;
 extern tpScsiCall scsiCall;
 extern SENSE_DATA senseData;
