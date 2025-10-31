@@ -10,10 +10,8 @@
 #include <stdio.h>
 #include <scsidrv/scsidefs.h>
 #include "sdrvtest.h"
+#include "sdrvio.h"
 #include "sdrvprt.h"
-
-
-FILE *out;
 
 
 void
@@ -25,8 +23,7 @@ print(const char *msg, ...)
 	va_start(args, msg);
 	vsprintf(s, msg, args);
 	va_end(args);
-	printf(s);
-	fprintf(out, s);
+	output(s);
 }
 
 
@@ -96,6 +93,5 @@ printError(UWORD blanks, const char *msg, ...)
 	va_start(args, msg);
 	vsprintf(s, msg, args);
 	va_end(args);
-	printf(s);
-	fprintf(out, s);
+	output(s);
 }

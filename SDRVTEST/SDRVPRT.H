@@ -14,6 +14,4 @@ LONG printSenseData(void);
 void printExpectedSenseData(SENSE_DATA *, UWORD, UWORD);
 void printError(UWORD, const char *, ...);
 
-extern FILE *out;
-
 #endif

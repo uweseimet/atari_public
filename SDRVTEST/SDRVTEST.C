@@ -1922,7 +1922,7 @@ execute(const char *msg, bool reportError)
 		}
 		else if(senseData.errorClass && senseData.senseKey == 0x02 &&
 			senseData.addSenseCode == 0x3a) {
-			printf("      Medium not present, test skipped\n");
+			print("      Medium not present, test skipped\n");
 		}			
 		else if(reportError) {
 			printStatus(status);
