@@ -11,7 +11,6 @@
 #include <tos.h>
 #include <scsidrv/scsidefs.h>
 #include "sdrvtest.h"
-#include "sdrvprt.h"
 #include "sdrvio.h"
 
 
