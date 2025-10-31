@@ -7,8 +7,6 @@
 
 #include <string.h>
 #include <stdio.h>
-#include <stdlib.h>
-#include <tos.h>
 #include <scsidrv/scsidefs.h>
 #include "sdrvtest.h"
 #include "sdrvprt.h"
