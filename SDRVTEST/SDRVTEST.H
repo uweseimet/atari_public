@@ -80,6 +80,11 @@ void checkRoot(UBYTE *, UBYTE *, ULONG);
 void initBuffer(UBYTE *, ULONG);
 char *DULongToString(const D_ULONG *);
 LONG execute(const char *, bool);
+void print(const char *, ...);
+void printStatus(LONG);
+LONG printSenseData(void);
+void printExpectedSenseData(SENSE_DATA *, UWORD, UWORD);
+void printError(UWORD, const char *, ...);
 
 extern tSCSICmd cmd;
 extern tpScsiCall scsiCall;
