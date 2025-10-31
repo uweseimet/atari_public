@@ -114,8 +114,6 @@ void printError(LONG);
 LONG printSenseData(void);
 void printExpectedSenseData(SENSE_DATA *, UWORD, UWORD);
 LONG execute(const char *, bool);
-bool getCookie(LONG, ULONG *);
-bool getNvm(NVM *nvm);
 
 extern tSCSICmd cmd;
 extern tpScsiCall scsiCall;

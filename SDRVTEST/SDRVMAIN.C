@@ -19,6 +19,8 @@ DEVICEINFO deviceInfos[32];
 
 bool testDevice(DEVICEINFO *);
 UWORD findDevices(void);
+bool getCookie(LONG, ULONG *);
+bool getNvm(NVM *nvm);
 
 
 int
@@ -260,4 +262,48 @@ findDevices()
 	}
 
 	return devCount;
+}
+
+
+LONG
+cookieptr()
+{
+	return *((LONG *)0x5a0);
+}
+
+
+bool
+getCookie(LONG cookie, ULONG *p_value)
+{
+	LONG *cookiejar = (LONG *)Supexec(cookieptr);
+
+	if(!cookiejar) {
+		return false;
+	}
+
+	do {
+		if(cookiejar[0] == cookie) {
+			if (p_value) *p_value = (ULONG)cookiejar[1];
+			return true;
+		}
+		else
+			cookiejar = &(cookiejar[2]);
+	} while(cookiejar[-2]);
+
+	return false;
+}
+
+
+bool
+getNvm(NVM *nvm)
+{
+	ULONG cookie;
+
+	if(getCookie('_MCH', &cookie) && cookie >= 0x00020000L) {
+		int nvmSize = getCookie('_MIL', NULL) ? NVMSIZE_MILAN : NVMSIZE;
+
+		return !NVMaccess(0, 0, nvmSize, nvm);
+	}
+	
+	return false;
 }

@@ -7,8 +7,6 @@
 
 #include <string.h>
 #include <stdio.h>
-#include <stdlib.h>
-#include <tos.h>
 #include <scsidrv/scsidefs.h>
 #include "sdrvtest.h"
 
@@ -1933,48 +1931,4 @@ execute(const char *msg, bool reportError)
 	}
 
 	return status;
-}
-	
-
-LONG
-cookieptr()
-{
-	return *((LONG *)0x5a0);
-}
-
-
-bool
-getCookie(LONG cookie, ULONG *p_value)
-{
-	LONG *cookiejar = (LONG *)Supexec(cookieptr);
-
-	if(!cookiejar) {
-		return false;
-	}
-
-	do {
-		if(cookiejar[0] == cookie) {
-			if (p_value) *p_value = (ULONG)cookiejar[1];
-			return true;
-		}
-		else
-			cookiejar = &(cookiejar[2]);
-	} while(cookiejar[-2]);
-
-	return false;
-}
-
-
-bool
-getNvm(NVM *nvm)
-{
-	ULONG cookie;
-
-	if(getCookie('_MCH', &cookie) && cookie >= 0x00020000L) {
-		int nvmSize = getCookie('_MIL', NULL) ? NVMSIZE_MILAN : NVMSIZE;
-
-		return !NVMaccess(0, 0, nvmSize, nvm);
-	}
-	
-	return false;
 }
