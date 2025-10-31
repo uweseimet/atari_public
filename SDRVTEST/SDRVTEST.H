@@ -1,5 +1,5 @@
 /***********************************/
-/* SCSI Driver/Firmware Test 2.63ž */
+/* SCSI Driver/Firmware Test 2.70ž */
 /*                                 */
 /* (C) 2014-2025 Uwe Seimet        */
 /***********************************/
@@ -12,29 +12,6 @@ typedef struct {
 	ULONG hi;
 	ULONG lo;
 } D_ULONG;
-
-typedef struct {
-  unsigned int bootpref;
-  char reserved1[4];
-  unsigned char language;
-  unsigned char keyboard;
-  unsigned char datetime;
-  char separator;
-  unsigned char bootdelay;
-  char reserved2[3];
-  unsigned int vmode;
-  unsigned char scsiid;
-  char reserved_for_us;
-} NVM;
-
-typedef struct {
-	UWORD busNo;
-	UWORD id;
-	ULONG maxLen;
-	UWORD features;
-	char busName[20];
-	char deviceBusName[20];
-} DEVICEINFO;
 
 typedef struct {
 	UWORD valid : 1;
@@ -67,13 +44,6 @@ typedef struct {
 typedef int bool;
 #define true TRUE
 #define false FALSE
-
-#define NVMSIZE 18
-#define NVMSIZE_MILAN 224
-
-#define EUNDEV -15L
-#define ENHNDL -35L
-#define EACCDN -36L
 
 void testCheckDev(UWORD, UWORD);
 void testUnitReady(void);
@@ -109,10 +79,6 @@ void printRawData(UBYTE *, int, int, const char *);
 void checkRoot(UBYTE *, UBYTE *, ULONG);
 void initBuffer(UBYTE *, ULONG);
 char *DULongToString(const D_ULONG *);
-void print(const char *, ...);
-void printError(LONG);
-LONG printSenseData(void);
-void printExpectedSenseData(SENSE_DATA *, UWORD, UWORD);
 LONG execute(const char *, bool);
 
 extern tSCSICmd cmd;

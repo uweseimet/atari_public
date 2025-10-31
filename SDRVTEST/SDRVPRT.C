@@ -1,15 +1,17 @@
 /***********************************/
-/* SCSI Driver/Firmware Test 2.63ž */
+/* SCSI Driver/Firmware Test 2.70ž */
 /*                                 */
 /* (C) 2014-2025 Uwe Seimet        */
 /***********************************/
 
 
+#include <assert.h>
 #include <string.h>
 #include <stdio.h>
 #include <scsidrv/scsidefs.h>
 #include "sdrvtest.h"
 #include "sdrvprt.h"
+
 
 FILE *out;
 
@@ -29,9 +31,9 @@ print(const char *msg, ...)
 
 
 void
-printError(LONG status)
+printStatus(LONG status)
 {
-	print("      ERROR: Request failed with status %ld\n", status);
+	printError(6, "Request failed with status %ld\n", status);
 	printSenseData();
 }
 
@@ -60,10 +62,40 @@ printSenseData()
 void
 printExpectedSenseData(SENSE_DATA *senseData, UWORD senseKey, UWORD addSenseCode)
 {
-	print("      ERROR: Request was not correctly rejected\n");
+	printError(6, "Request was not correctly rejected\n");
 	if(senseData->errorClass) {
 		print("        Expected: Sense Key $%02X (got $%02X),"
 			" ASC $%02X (got $%02X)\n",
 			senseKey, senseData->senseKey, addSenseCode, senseData->addSenseCode);
 	}
+}
+
+
+void
+printError(UWORD blanks, const char *msg, ...)
+{
+	va_list args;
+	char s[161];
+
+	switch(blanks) {
+		case 4:	print("    ");
+						break;
+
+		case 6:	print("      ");
+						break;
+
+		case 10:	print("          ");
+							break;
+
+		default:	assert(false);
+							break;
+	}
+
+	print("ERROR: ");
+
+	va_start(args, msg);
+	vsprintf(s, msg, args);
+	va_end(args);
+	printf(s);
+	fprintf(out, s);
 }

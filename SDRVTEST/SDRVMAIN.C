@@ -1,5 +1,5 @@
 /***********************************/
-/* SCSI Driver/Firmware Test 2.63ž */
+/* SCSI Driver/Firmware Test 2.70ž */
 /*                                 */
 /* (C) 2014-2025 Uwe Seimet        */
 /***********************************/
@@ -12,6 +12,34 @@
 #include <scsidrv/scsidefs.h>
 #include "sdrvtest.h"
 #include "sdrvprt.h"
+
+
+#define NVMSIZE 18
+#define NVMSIZE_MILAN 224
+
+
+typedef struct {
+  unsigned int bootpref;
+  char reserved1[4];
+  unsigned char language;
+  unsigned char keyboard;
+  unsigned char datetime;
+  char separator;
+  unsigned char bootdelay;
+  char reserved2[3];
+  unsigned int vmode;
+  unsigned char scsiid;
+  char reserved_for_us;
+} NVM;
+
+typedef struct {
+	UWORD busNo;
+	UWORD id;
+	ULONG maxLen;
+	UWORD features;
+	char busName[20];
+	char deviceBusName[20];
+} DEVICEINFO;
 
 
 DEVICEINFO deviceInfos[32];
@@ -49,7 +77,7 @@ main()
 		return -1;
 	}
 
-	print("SCSI Driver and firmware test V2.63ž\n");
+	print("SCSI Driver and firmware test V2.70ž\n");
 	print("½ 2014-2025 Uwe Seimet\n\n");
 
 	if(getNvm(&nvm)) {
