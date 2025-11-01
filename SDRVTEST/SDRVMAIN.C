@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include <tos.h>
 #include <scsidrv/scsidefs.h>
+#include "scsi3.h"
 #include "std.h"
 #include "sdrvtest.h"
 #include "sdrvio.h"

@@ -10,6 +10,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <scsidrv/scsidefs.h>
+#include "scsi3.h"
 #include "std.h"
 #include "sdrvtest.h"
 #include "sdrvio.h"
@@ -37,15 +38,15 @@ const char *DEVICE_TYPES[] = {
 	"Automation/Drive Interface",
 	"Security Manager",
 	"Host Managed Zoned Block",
-	"Reserved Device Type",
-	"Reserved Device Type",
-	"Reserved Device Type",
-	"Reserved Device Type",
-	"Reserved Device Type",
-	"Reserved Device Type",
-	"Reserved Device Type",
-	"Reserved Device Type",
-	"Reserved Device Type",
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
 	"Well Known Logical Unit"
 };
 
@@ -53,48 +54,6 @@ const char* STATUS_CODES = {
 	"Direct Access"
 };
 
-
-typedef struct {
-	UWORD peripheralQualifier : 3;
-	UWORD deviceType : 5;
-	UWORD RMB : 1;
-	UWORD deviceTypeModifier : 7;
-	UWORD ISOVersion : 2;
-	UWORD ECMAVersion : 3;
-	UWORD ANSIVersion : 3;
-	UWORD AENC : 1;
-	UWORD TrmIOP : 1;
-	UWORD : 2;
-	UWORD responseDataFormat : 4;
-	UBYTE additionalLength;
-	UBYTE res;
-	UWORD : 8;
-	UWORD RelAdr : 1;
-	UWORD WBus32 : 1;
-	UWORD WBus16 : 1;
-	UWORD Sync : 1;
-	UWORD Linked : 1;
-	UWORD : 1;
-	UWORD CmdQue : 1;
-	UWORD SftRe : 1;
-	char vendor[8];
-	char product[16];
-	char revision[4];
-} INQUIRY_DATA;	
-
-typedef struct {
-	UWORD opcode : 8;
-	UWORD lun : 3;
-	UWORD flags : 5;
-	UWORD PC : 2;
-	UWORD pagecode : 6;
-	UWORD : 8;
-	UWORD length : 8;
-	UWORD vu : 1;
-	UWORD : 5;
-	UWORD flag : 1;
-	UWORD link : 1;
-} SENSE_BLK;
 
 typedef struct
 {
@@ -118,7 +77,7 @@ runTest(UWORD busNo, const char *busName, UWORD id, UWORD lun,
 {
 	UWORD deviceType;
 
-	print("Testing bus %d '%s', device %d, LUN %d\n", busNo, busName, id, lun);
+	print("Testing bus %d \"%s\", device %d, LUN %d\n", busNo, busName, id, lun);
 
 	testUnitReady(lun);
 
@@ -271,8 +230,8 @@ testInquiry(UWORD lun, UWORD nonExistingLun)
 	printRawData((UBYTE *)&inquiryData, 0, inquiryData.additionalLength + 5,
 		"      ");
 
-	deviceType = inquiryData.deviceType;
-	if(inquiryData.deviceType == 0x1f) {
+	deviceType = inquiryData.deviceType & 0x1f;
+	if(deviceType == 0x1f) {
 		printDeviceError(4, "Unknown or no device type\n");
 
 		return 0;
@@ -282,8 +241,8 @@ testInquiry(UWORD lun, UWORD nonExistingLun)
 	strncpy(revision, inquiryData.revision, 4);
 	name[24] = 0;
 	revision[4] = 0;
-	print("      Device type: %s\n",
-		DEVICE_TYPES[inquiryData.deviceType & 0x1f]);
+	print("      Device type: %s\n", DEVICE_TYPES[deviceType] ?
+		DEVICE_TYPES[deviceType] : "Reserved Device Type");
 	print("      Device name: '%s'\n", name);
 	print("      Firmware revision: '%s'\n", revision);
 
@@ -1413,7 +1372,7 @@ testSenseBuffer(UWORD lun)
 void
 printDevice(UWORD busNo, UWORD id, UWORD features, const char *busName)
 {
-	print("Testing device %d on bus %d '%s'\n", id, busNo, busName);
+	print("Testing bus %d \"%s\", device %d\n", busNo, busName, id, busNo);
 
 	printFeatures(features);
 }

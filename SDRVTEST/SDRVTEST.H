@@ -13,34 +13,6 @@ typedef struct {
 	ULONG lo;
 } D_ULONG;
 
-typedef struct {
-	UWORD valid : 1;
-	UWORD errorClass : 3;
-	UWORD errorCode : 4;
-	UWORD segmentNumber : 8;
-	UWORD fileMark : 1;
-	UWORD EOM : 1;
-	UWORD ILI : 1;
-	UWORD : 1;
-	UWORD senseKey : 4;
-	UWORD information1 : 8;
-	UWORD information2 : 8;
-	UWORD information3 : 8;
-	UWORD information4 : 8;
-	UWORD addSenseLength : 8;
-	UWORD : 8;
-	UWORD : 8;
-	UWORD : 8;
-	UWORD : 8;
-	UWORD addSenseCode : 8;
-	UWORD addSenseCodeQualifier : 8;
-	UWORD fieldReplUnitCode : 8;
-	UWORD sksv : 1;
-	UWORD senseKeySpecific0 : 7;
-	UWORD senseKeySpecific1 : 8;
-	UWORD senseKeySpecific2 : 8;
-} SENSE_DATA;
-
 bool runTest(UWORD, const char *, UWORD, UWORD, UWORD);
 void testCheckDev(UWORD, UWORD);
 ULONG testReportLuns(void);
@@ -89,5 +61,6 @@ void printDriverError(UWORD, const char *, ...);
 extern tSCSICmd cmd;
 extern tpScsiCall scsiCall;
 extern SENSE_DATA localSenseData;
+extern const char *DEVICE_TYPES[];
 
 #endif
