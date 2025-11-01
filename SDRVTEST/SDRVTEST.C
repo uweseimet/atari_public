@@ -130,7 +130,7 @@ testCheckDev(UWORD busNo, UWORD id)
 	scsiId.lo = id;
 	result = scsiCall->CheckDev(busNo, &scsiId, name, &features);
 	if(result < 0) {
-		printError(4, "Valid bus ID %d was rejected with error code %ld\n",
+		printDriverError(4, "Valid bus ID %d was rejected with error code %ld\n",
 			busNo, result);
 	}
 
@@ -140,7 +140,7 @@ testCheckDev(UWORD busNo, UWORD id)
 	scsiId.lo = 0;
 	result = scsiCall->CheckDev(32, &scsiId, name, &features);
 	if(result != EUNDEV) {
-		printError(4, "Invalid bus ID 32 was accepted\n");
+		printDriverError(4, "Invalid bus ID 32 was accepted\n");
 	}
 }
 
@@ -211,7 +211,7 @@ testInquiry()
 
 	deviceType = inquiryData.deviceType;
 	if(inquiryData.deviceType == 0x1f) {
-		printError(4, "Unknown or no device type\n");
+		printDeviceError(4, "Unknown or no device type\n");
 
 		return 0;
 	}
@@ -296,7 +296,7 @@ testInquiry()
 
 	print("      Additional length: $%02X\n", inquiryData.additionalLength);
 	if(inquiryData.additionalLength < 0x1f) {
-		printError(6, "Additional length must be at least $1F\n");
+		printDeviceError(6, "Additional length must be at least $1F\n");
 	}
 
 	print("    Calling with non-existing LUN 7\n");
@@ -311,7 +311,7 @@ testInquiry()
 	}
 	else if(inquiryData.peripheralQualifier != 0x03 ||
 		inquiryData.deviceType != 0x1f) {
-		printError(6, "Request was not correctly rejected\n");
+		printDeviceError(6, "Request was not correctly rejected\n");
 		print("        Expected: Peripheral Qualifier $03  (got $%02X),"
 			" Device Type $1F (got $%02X)\n",
 			inquiryData.peripheralQualifier, inquiryData.deviceType);
@@ -333,7 +333,7 @@ testInquiry()
 	else {
 		UBYTE *data = (UBYTE *)&inquiryData;
 		if(data[10] != 0x44 || data[11] != 0x44) {
-			printError(4, "More than 10 requested bytes were returned\n");
+			printDeviceError(4, "More than 10 requested bytes were returned\n");
 		}
 	}
 
@@ -364,7 +364,7 @@ testRequestSense()
 	status = scsiCall->In(&cmd);
 
 	if(status) {
-		printError(6, "Request failed with status %ld\n", status);
+		printDeviceError(6, "Request failed with status %ld\n", status);
 		if(!senseData.errorClass) {
 			print("      Device uses SCSI-1 4 byte legacy sense data format\n");
 		}
@@ -378,7 +378,7 @@ testRequestSense()
 		print("      Additional sense length: $%02X\n",
 			senseData.addSenseLength);
 		if(senseData.addSenseLength < 0x0a) {
-			printError(6, "Additional sense length must be at least $0A\n");
+			printDeviceError(6, "Additional sense length must be at least $0A\n");
 		}
 	}
 
@@ -392,7 +392,7 @@ testRequestSense()
 
 	status = scsiCall->In(&cmd);
 	if(status) {
-		printError(6, "Request failed with status %ld\n", status);
+		printDeviceError(6, "Request failed with status %ld\n", status);
 		if(senseData.errorClass) {
 			print("      Sense Key $%02X, ASC $%02X, ASCQ $%02X\n",
 				senseData.senseKey, senseData.addSenseCode,
@@ -415,7 +415,7 @@ testRequestSense()
 
 	status = scsiCall->In(&cmd);
 	if(status) {
-		printError(6, "Request failed with status %ld\n", status);
+		printDeviceError(6, "Request failed with status %ld\n", status);
 		if(senseData.errorClass) {
 			print("      Sense Key $%02X, ASC $%02X, ASCQ $%02X\n",
 				senseData.senseKey, senseData.addSenseCode,
@@ -446,7 +446,7 @@ testOpenClose(UWORD busNo, UWORD id, ULONG maxLen)
 		handle = (tHandle)scsiCall->Open(busNo, &scsiId, &len);
 
 		if(len != maxLen) {
-			printError(4, "Transfer length mismatch: $%lX\n", len);
+			printDeviceError(4, "Transfer length mismatch: $%lX\n", len);
 
 			break;
 		}
@@ -484,13 +484,13 @@ testOpenClose(UWORD busNo, UWORD id, ULONG maxLen)
 	}
 
 	if(scsiCall->Close((tHandle)0xfffffffeL) == 0) {
-		printError(4, "Invalid handles can be closed\n");
+		printDeviceError(4, "SCSU Driver: Invalid handles can be closed\n");
 	}
 
 	while(--i >= 0) {
 		if(handles[i] != (tHandle)-1) { 		
 			if(scsiCall->Close(handles[i]) != 0) {
-				printError(4, "Can't close handle %ld\n", handles[i]);
+				printDriverError(4, "Can't close handle %ld\n", handles[i]);
 			}
 			else if(scsiCall->Close(handles[i]) == 0) {
 				twice = true;
@@ -499,7 +499,7 @@ testOpenClose(UWORD busNo, UWORD id, ULONG maxLen)
 	}
 
 	if(twice) {
-		printError(4, "Handles can be closed more than once\n");
+		printDriverError(4, "Handles can be closed more than once\n");
 	}
 }
 
@@ -568,7 +568,7 @@ testReadCapacity(ULONG *blockSize)
 	capacity64.lo = maxBlock64.lo + 1;
 
 	if(!maxBlock64.lo) {
-		printError(4, "Wrong maximum block number '0'\n");
+		printDeviceError(4, "Wrong maximum block number '0'\n");
 
 		return;
 	}
@@ -604,7 +604,7 @@ testReadCapacity(ULONG *blockSize)
 		ratio = (UWORD)(capacity16[3] >> 16) & 0x0f;
 
 		if(!maxBlock64.hi && !maxBlock64.lo) {
-			printError(6, "Illegal maximum block number '0'\n");
+			printDeviceError(6, "Illegal maximum block number '0'\n");
 
 			return;
 		}
@@ -690,7 +690,7 @@ testReadCapacity(ULONG *blockSize)
 	status = scsiCall->In(&cmd);
 	if(status != 2 || senseData.senseKey != 0x05 ||
 		senseData.addSenseCode != 0x21) {
-		printError(6, "Request for last block + 1 was not rejected\n");
+		printDeviceError(6, "Request for last block + 1 was not rejected\n");
 		printExpectedSenseData(&senseData, 0x05, 0x21);
 	}
 }
@@ -793,7 +793,7 @@ testRead(UWORD busNo, ULONG blockSize, UBYTE *ptr1, UBYTE* ptr2, UBYTE* ptr3)
 
 				status = scsiCall->In(&cmd);
 				if(!status) {
-					printError(4, "IDE block 281474976710656 is not supposed to be readable\n");
+					printDeviceError(4, "IDE block 281474976710656 is not supposed to be readable\n");
 
 					Read16[3] = 0;
 				}
@@ -834,7 +834,7 @@ testRead(UWORD busNo, ULONG blockSize, UBYTE *ptr1, UBYTE* ptr2, UBYTE* ptr3)
 	}
 
 	if(i != blockSize) {
-		printError(6, "Block data differ at offset %d\n", i);
+		printDeviceError(6, "Block data differ at offset %d\n", i);
 	}
 
 
@@ -1198,7 +1198,7 @@ testReadFormatCapacities()
 
 		int length = capacityList->length;
 		if(length < 8) {
-			printError(4, "Invalid format capacities list length: %d\n", length);
+			printDeviceError(4, "Invalid format capacities list length: %d\n", length);
 			return;
 		}
 
@@ -1309,7 +1309,7 @@ testSenseBuffer()
 	cmd.SenseBuffer = NULL;
 
 	if(scsiCall->In(&cmd) != status) {
-		printError(6, "Status code mismatch\n");
+		printDeviceError(6, "Status code mismatch\n");
 	}
 	else {
 		UBYTE RequestSense[] = { 0x03, 0, 0, 0, sizeof(SENSE_DATA), 0 };
@@ -1325,7 +1325,7 @@ testSenseBuffer()
 
 		status = scsiCall->In(&cmd);
 		if(status) {
-			printError(6, "Request failed with status %ld\n", status);
+			printDeviceError(6, "Request failed with status %ld\n", status);
 			print("      Sense Key $%02X, ASC $%02X, ASCQ $%02X\n",
 				localSenseData.senseKey, localSenseData.addSenseCode,
 				localSenseData.addSenseCodeQualifier);
@@ -1333,7 +1333,7 @@ testSenseBuffer()
 		else {
 			if(localSenseData.senseKey != senseData.senseKey ||
 				localSenseData.addSenseCode != senseData.addSenseCode) {
-				printError(6, "Sense data have not been preserved\n");
+				printDeviceError(6, "Sense data have not been preserved\n");
 			}
 		}
 	}
@@ -1476,7 +1476,7 @@ printPageHeader(UBYTE *buf, int offset, const char *name, int expected)
 	printRawData(buf, offset, size + 2, "          ");
 
 	if(size < expected) {
-		printError(10, "Page size: %d bytes, which is less than the expected %d\n",
+		printDeviceError(10, "Page size: %d bytes, which is less than the expected %d\n",
 			size, expected);
 	}
 	else {
@@ -1877,7 +1877,7 @@ checkRoot(UBYTE *root, UBYTE *buffer, ULONG blockSize)
 	}
 
 	if(i != blockSize) {
-		printError(6, "Block data differ at offset %d\n", i);
+		printDeviceError(6, "Block data differ at offset %d\n", i);
 	}
 }
 
@@ -1938,22 +1938,9 @@ execute(const char *msg, bool reportError)
 
 
 void
-print(const char *msg, ...)
-{
-	va_list args;
-	char s[161];
-
-	va_start(args, msg);
-	vsprintf(s, msg, args);
-	va_end(args);
-	output(s);
-}
-
-
-void
 printStatus(LONG status)
 {
-	printError(6, "Request failed with status %ld\n", status);
+	printDeviceError(6, "Request failed with status %ld\n", status);
 	printSenseData();
 }
 
@@ -1982,7 +1969,7 @@ printSenseData()
 void
 printExpectedSenseData(SENSE_DATA *senseData, UWORD senseKey, UWORD addSenseCode)
 {
-	printError(6, "Request was not correctly rejected\n");
+	printDeviceError(6, "Request was not correctly rejected\n");
 	if(senseData->errorClass) {
 		print("        Expected: Sense Key $%02X (got $%02X),"
 			" ASC $%02X (got $%02X)\n",
@@ -1992,29 +1979,41 @@ printExpectedSenseData(SENSE_DATA *senseData, UWORD senseKey, UWORD addSenseCode
 
 
 void
-printError(UWORD blanks, const char *msg, ...)
+print(const char *msg, ...)
 {
 	va_list args;
 	char s[161];
-
-	switch(blanks) {
-		case 4:	print("    ");
-						break;
-
-		case 6:	print("      ");
-						break;
-
-		case 10:	print("          ");
-							break;
-
-		default:	assert(false);
-							break;
-	}
-
-	print("ERROR: ");
 
 	va_start(args, msg);
 	vsprintf(s, msg, args);
 	va_end(args);
 	output(s);
+}
+
+
+void
+printDeviceError(UWORD blanks, const char *msg, ...)
+{
+	int i;
+
+	for(i = 0; i < blanks / 2; i++) {
+		print("  ");
+	}
+
+	print("ERROR: ");
+	print(msg);
+}
+
+
+void
+printDriverError(UWORD blanks, const char *msg, ...)
+{
+	int i;
+
+	for(i = 0; i < blanks / 2; i++) {
+		print("  ");
+	}
+
+	print("ERROR: SCSI Driver: ");
+	print(msg);
 }

@@ -141,7 +141,7 @@ testDevice(DEVICEINFO *deviceInfo)
 	handle = (tHandle)scsiCall->Open(deviceInfo->busNo, &scsiId,
 		&maxLen);
 	if(((LONG)handle & 0xff000000L) == 0xff000000L) {
-		print("    ERROR: No handle\n");
+		printDeviceError(4, "No SCSI Driver handle\n");
 	}
 	else {
 		UWORD deviceType;
@@ -215,6 +215,7 @@ findDevices()
 	tBusInfo busInfo;
 	LONG busResult;
 	UBYTE busNos[32];
+	UWORD busCount = 0;
 	UWORD devCount = 0;
 
 /* Manually clearing the bus info must be equivalent to using cInqFirst */
@@ -225,7 +226,7 @@ findDevices()
 		
 		busResult = scsiCall->InquireSCSI(cInqFirst, &busInfo);
 		if(busResult || busNo != busInfo.BusNo) {
-			print("  ERROR: Inconsistent handling of cInqFirst/cInqNext\n\n");
+			printDriverError(2, "Inconsistent handling of cInqFirst/cInqNext\n\n");
 		}
 	}
 
@@ -240,19 +241,33 @@ findDevices()
 	while(!busResult) {
 		tDevInfo devInfo;
 		LONG result;
+		int i;
+		int bitCount = 0;
+
+		busCount++;
 
 		if(!(busInfo.Private.BusIds & (1L << busInfo.BusNo))) {
-			print("  ERROR: Bus ID vector has not been updated for bus %d\n\n",
+			printDriverError(2, "Bus ID vector has not been updated for bus %d\n\n",
+				busInfo.BusNo);
+		}
+
+		for(i = busInfo.BusNo; i < 32; i++) {
+			if(busInfo.Private.BusIds & (1L << i)) {
+				bitCount++;
+			}
+		}
+		if(bitCount > busCount) {
+			printDriverError(2, "Bus ID vector mismatch for bus %d\n\n",
 				busInfo.BusNo);
 		}
 
 		if(busNos[busInfo.BusNo]) {
-				print("  ERROR: Duplicate bus number: %d\n\n", busInfo.BusNo);
-				break;
+			printDriverError(2, "Duplicate bus number: %d\n\n", busInfo.BusNo);
+			break;
 		}
 
 		if(!scsiCall->InquireBus(cInqFirst, 32, &devInfo)) {
-				print("  ERROR: Invalid bus numer 32 was accepted\n\n");
+			printDriverError(2, "Invalid bus numer 32 was accepted\n\n");
 		}
 
 		busNos[busInfo.BusNo] = 1;
