@@ -10,6 +10,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <scsidrv/scsidefs.h>
+#include "std.h"
 #include "sdrvtest.h"
 #include "sdrvio.h"
 
@@ -110,7 +111,6 @@ typedef struct
 
 tpScsiCall scsiCall;
 tSCSICmd cmd;
-SENSE_DATA senseData;
 
 
 void
@@ -1345,6 +1345,15 @@ testSenseBuffer(UWORD lun)
 	}
 
 	cmd.SenseBuffer = (BYTE *)&senseData;
+}
+
+
+void
+printDevice(UWORD busNo, UWORD id, UWORD features, const char *busName)
+{
+	print("\nTesting device ID %d on bus %d '%s'\n", id, busNo, busName);
+
+	printFeatures(features);
 }
 
 

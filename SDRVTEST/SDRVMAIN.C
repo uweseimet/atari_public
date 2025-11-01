@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include <tos.h>
 #include <scsidrv/scsidefs.h>
+#include "std.h"
 #include "sdrvtest.h"
 #include "sdrvio.h"
 
@@ -43,9 +44,10 @@ typedef struct {
 
 
 static DEVICEINFO deviceInfos[32];
+SENSE_DATA senseData;
 
 
-bool testDevice(DEVICEINFO *);
+bool testDevice(UWORD, UWORD, ULONG);
 UWORD findDevices(void);
 bool getCookie(LONG, ULONG *);
 bool getNvm(NVM *nvm);
@@ -103,7 +105,13 @@ main()
 	devCount = findDevices();
 
 	for(i = 0; i < devCount; i++) {
-		if(!testDevice(&deviceInfos[i])) {
+		DEVICEINFO *deviceInfo = &deviceInfos[i];
+
+		printDevice(deviceInfo->busNo, deviceInfo->id, deviceInfo->features,
+			deviceInfo->busName);
+
+		if(!testDevice(deviceInfo->busNo, deviceInfo->id,
+			deviceInfo->maxLen)) {
 			break;
 		}
 	}
@@ -121,29 +129,22 @@ main()
 
 
 bool
-testDevice(DEVICEINFO *deviceInfo)
+testDevice(UWORD busNo, UWORD id, ULONG maxLen)
 {
 	DLONG scsiId;
-	ULONG maxLen;
 	tHandle handle;
 	UWORD deviceType;
 	ULONG lunVector;
 	UWORD lun;
 	UWORD nonExistingLun = 0;
 
-	print("\nTesting device ID %d on bus %d '%s'\n",
-		deviceInfo->id, deviceInfo->busNo, deviceInfo->deviceBusName);
-
-	printFeatures(deviceInfo->features);
-
-	testCheckDev(deviceInfo->busNo, deviceInfo->id);
-	testOpenClose(deviceInfo->busNo, deviceInfo->id, deviceInfo->maxLen);
+	testCheckDev(busNo, id);
+	testOpenClose(busNo, id, maxLen);
 
 	scsiId.hi = 0;
-	scsiId.lo = deviceInfo->id;
+	scsiId.lo = id;
 
-	handle = (tHandle)scsiCall->Open(deviceInfo->busNo, &scsiId,
-		&maxLen);
+	handle = (tHandle)scsiCall->Open(busNo, &scsiId, &maxLen);
 	if(((LONG)handle & 0xff000000L) == 0xff000000L) {
 		printDriverError(4, "No free SCSI Driver handle\n");
 		return false;
@@ -198,8 +199,8 @@ testDevice(DEVICEINFO *deviceInfo)
 							return false;
 						}
 	
-						testRead(lun, nonExistingLun, deviceInfo->busNo,
-							blockSize, ptr1, ptr2, ptr3 + 1);
+						testRead(lun, nonExistingLun, busNo, blockSize,
+							ptr1, ptr2, ptr3 + 1);
 	
 						free(ptr3);
 						free(ptr2);

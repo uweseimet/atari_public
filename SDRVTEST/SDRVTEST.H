@@ -41,10 +41,6 @@ typedef struct {
 	UWORD senseKeySpecific2 : 8;
 } SENSE_DATA;
 
-typedef int bool;
-#define true TRUE
-#define false FALSE
-
 void testCheckDev(UWORD, UWORD);
 ULONG testReportLuns(void);
 void testUnitReady(UWORD);
@@ -59,6 +55,7 @@ void testReadLong(UWORD);
 void testModeSense(UWORD);
 void testReadFormatCapacities(UWORD);
 void testGetConfiguration(UWORD);
+void printDevice(UWORD, UWORD, UWORD, const char *);
 void printFeatures(UWORD);
 void printPageHeader(UBYTE *, int, const char *, int);
 void printPages(UBYTE *, int *, int, int);
