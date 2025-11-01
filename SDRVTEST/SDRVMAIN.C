@@ -1,5 +1,5 @@
 /***********************************/
-/* SCSI Driver/Firmware Test 2.70ž */
+/* SCSI Driver/Firmware Test 3.00ž */
 /*                                 */
 /* (C) 2014-2025 Uwe Seimet        */
 /***********************************/
@@ -42,7 +42,8 @@ typedef struct {
 } DEVICEINFO;
 
 
-DEVICEINFO deviceInfos[32];
+static DEVICEINFO deviceInfos[32];
+static UWORD lunList[32];
 
 
 bool testDevice(DEVICEINFO *);
@@ -77,7 +78,7 @@ main()
 		return -1;
 	}
 
-	print("SCSI Driver and firmware test V2.70ž\n");
+	print("SCSI Driver and firmware test V3.00ž\n");
 	print("½ 2014-2025 Uwe Seimet\n\n");
 
 	if(getNvm(&nvm)) {
@@ -128,6 +129,7 @@ testDevice(DEVICEINFO *deviceInfo)
 	tHandle handle;
 	UWORD deviceType;
 	UWORD luns;
+	UWORD nonExistingLun = 0;
 	int i;
 
 	print("\nTesting device ID %d on bus %d '%s'\n",
@@ -150,20 +152,35 @@ testDevice(DEVICEINFO *deviceInfo)
 
 	cmd.Handle = handle;
 
-	luns = testReportLuns();
+	luns = testReportLuns(lunList);
+
+	for(i = 1; i < 8; i++) {
+		int j;
+
+		for(j = 0; j < luns; j++) {
+			if(lunList[j] != i) {
+				nonExistingLun = i;
+				break;
+			}
+		}
+
+		if(nonExistingLun) {
+			break;
+		}
+	}
 
 	for(i = 0; i < luns; i++) {
-		lun =lunList[i];
+		UWORD lun = lunList[i];
 
 		print("Testing LUN %d\n", lun);
 
-		testUnitReady();
+		testUnitReady(lun);
 	
-		deviceType = testInquiry();
+		deviceType = testInquiry(lun, nonExistingLun);
 	
-		testRequestSense();
+		testRequestSense(lun, nonExistingLun);
 	
-		testSenseBuffer();
+		testSenseBuffer(lun);
 	
 		if(deviceType != 0x1f) {
 			switch(deviceType) {
@@ -172,7 +189,7 @@ testDevice(DEVICEINFO *deviceInfo)
 				case 0x07: {
 					ULONG blockSize;
 	
-					testReadCapacity(&blockSize);
+					testReadCapacity(lun, &blockSize);
 					if(blockSize) {
 						UBYTE *ptr1, *ptr2, *ptr3;
 	
@@ -188,23 +205,24 @@ testDevice(DEVICEINFO *deviceInfo)
 							return false;
 						}
 	
-						testRead(deviceInfo->busNo, blockSize, ptr1, ptr2, ptr3 + 1);
+						testRead(lun, nonExistingLun, deviceInfo->busNo,
+							blockSize, ptr1, ptr2, ptr3 + 1);
 	
 						free(ptr3);
 						free(ptr2);
 						free(ptr1);
 	
-						testSeek();
-						testModeSense();
-						testReadLong();
-						testReadFormatCapacities();
+						testSeek(lun);
+						testModeSense(lun);
+						testReadLong(lun);
+						testReadFormatCapacities(lun);
 					}
-					testGetConfiguration();
+					testGetConfiguration(lun);
 					break;
 				}
 	
 				default:
-					testModeSense();
+					testModeSense(lun);
 					break;
 			}
 		}

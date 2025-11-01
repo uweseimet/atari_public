@@ -1,5 +1,5 @@
 /***********************************/
-/* SCSI Driver/Firmware Test 2.70ž */
+/* SCSI Driver/Firmware Test 3.00ž */
 /*                                 */
 /* (C) 2014-2025 Uwe Seimet        */
 /***********************************/
@@ -46,19 +46,19 @@ typedef int bool;
 #define false FALSE
 
 void testCheckDev(UWORD, UWORD);
-void testUnitReady(void);
-UWORD testInquiry(void);
+UWORD testReportLuns(UWORD *);
+void testUnitReady(UWORD);
+UWORD testInquiry(UWORD, UWORD);
 void testOpenClose(UWORD, UWORD, ULONG);
-void testSenseBuffer(void);
-void testRequestSense(void);
-void testReadCapacity(ULONG *);
-void testRead(UWORD, ULONG, UBYTE *, UBYTE *, UBYTE *);
-void testSeek(void);
-void testReadLong(void);
-void testModeSense(void);
-UWORD testReportLuns(void);
-void testReadFormatCapacities(void);
-void testGetConfiguration(void);
+void testSenseBuffer(UWORD);
+void testRequestSense(UWORD, UWORD);
+void testReadCapacity(UWORD, ULONG *);
+void testRead(UWORD, UWORD, UWORD, ULONG, UBYTE *, UBYTE *, UBYTE *);
+void testSeek(UWORD);
+void testReadLong(UWORD);
+void testModeSense(UWORD);
+void testReadFormatCapacities(UWORD);
+void testGetConfiguration(UWORD);
 void printFeatures(UWORD);
 void printPageHeader(UBYTE *, int, const char *, int);
 void printPages(UBYTE *, int *, int, int);
@@ -78,8 +78,8 @@ void printPage0(UBYTE *, int, int);
 void printRawData(UBYTE *, int, int, const char *);
 void checkRoot(UBYTE *, UBYTE *, ULONG);
 void initBuffer(UBYTE *, ULONG);
-LONG callIn(tpSCSICmd, UWORD);
-LONG execute(const char *, bool);
+LONG callInWithLun(tpSCSICmd, UWORD);
+LONG execute(UWORD, const char *, bool);
 char *DULongToString(const D_ULONG *);
 void printStatus(LONG);
 LONG printSenseData(void);
@@ -91,7 +91,5 @@ void printDriverError(UWORD, const char *, ...);
 extern tSCSICmd cmd;
 extern tpScsiCall scsiCall;
 extern SENSE_DATA senseData;
-extern UWORD lunList[32];
-extern UWORD lun;
 
 #endif
