@@ -43,7 +43,6 @@ typedef struct {
 
 
 static DEVICEINFO deviceInfos[32];
-static UWORD lunList[32];
 
 
 bool testDevice(DEVICEINFO *);
@@ -128,9 +127,9 @@ testDevice(DEVICEINFO *deviceInfo)
 	ULONG maxLen;
 	tHandle handle;
 	UWORD deviceType;
-	UWORD luns;
+	ULONG lunVector;
+	UWORD lun;
 	UWORD nonExistingLun = 0;
-	int i;
 
 	print("\nTesting device ID %d on bus %d '%s'\n",
 		deviceInfo->id, deviceInfo->busNo, deviceInfo->deviceBusName);
@@ -152,25 +151,19 @@ testDevice(DEVICEINFO *deviceInfo)
 
 	cmd.Handle = handle;
 
-	luns = testReportLuns(lunList);
+	lunVector = testReportLuns();
 
-	for(i = 1; i < 8; i++) {
-		int j;
-
-		for(j = 0; j < luns; j++) {
-			if(lunList[j] != i) {
-				nonExistingLun = i;
-				break;
-			}
-		}
-
-		if(nonExistingLun) {
+	for(lun = 1; lun < 8; lun++) {
+		if(!(lunVector & (1L << lun))) {
+			nonExistingLun = lun;
 			break;
 		}
 	}
 
-	for(i = 0; i < luns; i++) {
-		UWORD lun = lunList[i];
+	for(lun = 0; lun < 32; lun++) {
+		if(!(lunVector & (1L << lun))) {
+			continue;
+		}
 
 		print("Testing LUN %d\n", lun);
 

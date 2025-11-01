@@ -1114,20 +1114,18 @@ testModeSense(UWORD lun)
 }
 
 
-UWORD
-testReportLuns(UWORD *lunList)
+ULONG
+testReportLuns()
 {
 	UBYTE ReportLuns[] = { 0xa0, 0, 0, 0, 0, 0, 0, 0, 0x01, 0x08, 0, 0 };
 
 	ULONG luns;
-	UWORD lunCount = 0;
+	ULONG lunVector = 0;
 	ULONG i;
 	ULONG buffer[264];
 
-	lunList[0] = 0;
-
 	if(!(*cmd.Handle & cAllCmds)) {
-		return 1;
+		return 0x01;
 	}
 
 	memset(buffer, 0, sizeof(buffer));
@@ -1142,7 +1140,7 @@ testReportLuns(UWORD *lunList)
 	memset(&senseData, 0, sizeof(SENSE_DATA));
 
 	if(execute(0, "    REPORT LUNS", true)) {
-		return 1;
+		return 0x01;
 	}
 
 	luns = buffer[0] / 8;
@@ -1152,12 +1150,12 @@ testReportLuns(UWORD *lunList)
 	if(luns) {
 		print("          LUN list: ");
 
-		for(i = 0; i < luns && i < sizeof(buffer) - 8; i++) {
+		for(i = 0; i < luns && i < 32 && i < sizeof(buffer) - 8; i++) {
 			UWORD lun = (UWORD)buffer[2 * i + 3];
 
 /* Only add LUNS > 7 to LUN list if the SCSI Driver supports 32 LUNs */
 			if(lun < 8 || *((UWORD *)cmd.Handle) & 0x40) {
-				lunList[lunCount++] = lun;
+				lunVector |= (1L << lun);
 			}
 
 			if(i) {
@@ -1170,7 +1168,7 @@ testReportLuns(UWORD *lunList)
 		print("\n");
 	}
 
-	return lunCount;
+	return lunVector;
 }
 
 

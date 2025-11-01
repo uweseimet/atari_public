@@ -46,7 +46,7 @@ typedef int bool;
 #define false FALSE
 
 void testCheckDev(UWORD, UWORD);
-UWORD testReportLuns(UWORD *);
+ULONG testReportLuns(void);
 void testUnitReady(UWORD);
 UWORD testInquiry(UWORD, UWORD);
 void testOpenClose(UWORD, UWORD, ULONG);
