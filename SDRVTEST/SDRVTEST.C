@@ -109,8 +109,70 @@ typedef struct
 } CAPACITY_LIST;
 
 
-tpScsiCall scsiCall;
 tSCSICmd cmd;
+
+
+bool
+runTest(UWORD busNo, const char *busName, UWORD id, UWORD lun,
+	UWORD nonExistingLun)
+{
+	UWORD deviceType;
+
+	print("Testing bus %d '%s', device %d, LUN %d\n", busNo, busName, id, lun);
+
+	testUnitReady(lun);
+
+	deviceType = testInquiry(lun, nonExistingLun);
+
+	testRequestSense(lun, nonExistingLun);
+
+	testSenseBuffer(lun);
+
+	if(deviceType != 0x1f) {
+		switch(deviceType) {
+			case 0x00:
+			case 0x05:
+			case 0x07: {
+				ULONG blockSize;
+
+				testReadCapacity(lun, &blockSize);
+				if(blockSize) {
+					UBYTE *ptr1, *ptr2, *ptr3;
+
+					ptr1 = malloc(blockSize);
+					ptr2 = malloc(blockSize);
+					ptr3 = malloc(blockSize + 1);
+
+					if(!ptr1 || !ptr2 || !ptr3) {
+						print("    Not enough memory\n");
+
+						return false;
+					}
+
+					testRead(lun, nonExistingLun, busNo, blockSize,
+						ptr1, ptr2, ptr3 + 1);
+
+					free(ptr3);
+					free(ptr2);
+					free(ptr1);
+
+					testSeek(lun);
+					testModeSense(lun);
+					testReadLong(lun);
+					testReadFormatCapacities(lun);
+				}
+				testGetConfiguration(lun);
+				break;
+			}
+
+			default:
+				testModeSense(lun);
+				break;
+		}
+	}
+
+	return true;
+}
 
 
 void
@@ -160,12 +222,12 @@ testUnitReady(UWORD lun)
 	cmd.Buffer = (void *)0xffffffffL;
 	cmd.TransferLen = 0;
 
-	memset(&senseData, 0, sizeof(SENSE_DATA));
+	memset(&localSenseData, 0, sizeof(SENSE_DATA));
 
 	status = callInWithLun(&cmd, lun);
 	if(status) {
-		if(status == 2 && senseData.senseKey == 0x02 &&
-			senseData.addSenseCode == 0x3a) {
+		if(status == 2 && localSenseData.senseKey == 0x02 &&
+			localSenseData.addSenseCode == 0x3a) {
 			print("    Medium not present\n");
 		}
 
@@ -357,25 +419,25 @@ testRequestSense(UWORD lun, UWORD nonExistingLun)
 	cmd.Buffer = &buffer;
 	cmd.TransferLen = sizeof(SENSE_DATA);
 
-	memset(&senseData, 0, sizeof(SENSE_DATA));
+	memset(&localSenseData, 0, sizeof(SENSE_DATA));
 
 	status = callInWithLun(&cmd, lun);
 
 	if(status) {
 		printDeviceError(6, "Request failed with status %ld\n", status);
-		if(!senseData.errorClass) {
+		if(!localSenseData.errorClass) {
 			print("      Device uses SCSI-1 4 byte legacy sense data format\n");
 		}
 		else {
 			print("      Sense Key $%02X, ASC $%02X, ASCQ $%02X\n",
-				senseData.senseKey, senseData.addSenseCode,
-				senseData.addSenseCodeQualifier);
+				localSenseData.senseKey, localSenseData.addSenseCode,
+				localSenseData.addSenseCodeQualifier);
 		}
 	}
-	else if(senseData.errorClass) {
+	else if(localSenseData.errorClass) {
 		print("      Additional sense length: $%02X\n",
-			senseData.addSenseLength);
-		if(senseData.addSenseLength < 0x0a) {
+			localSenseData.addSenseLength);
+		if(localSenseData.addSenseLength < 0x0a) {
 			printDeviceError(6, "Additional sense length must be at least $0A\n");
 		}
 	}
@@ -383,36 +445,36 @@ testRequestSense(UWORD lun, UWORD nonExistingLun)
 	if(nonExistingLun) {
 		print("    Calling REQUEST SENSE for non-existing LUN %d\n", nonExistingLun);
 	
-		memset(&senseData, 0, sizeof(SENSE_DATA));
+		memset(&localSenseData, 0, sizeof(SENSE_DATA));
 	
 		status = callInWithLun(&cmd, nonExistingLun);
 		if(status) {
 			printDeviceError(6, "Request failed with status %ld\n", status);
-			if(senseData.errorClass) {
+			if(localSenseData.errorClass) {
 				print("      Sense Key $%02X, ASC $%02X, ASCQ $%02X\n",
-					senseData.senseKey, senseData.addSenseCode,
-					senseData.addSenseCodeQualifier);
+					localSenseData.senseKey, localSenseData.addSenseCode,
+					localSenseData.addSenseCodeQualifier);
 			}
 		}
-		else if(senseData.errorClass) {
+		else if(localSenseData.errorClass) {
 	/* Even though GOOD was returned Sense Key and ASC must be set */
-			if(senseData.senseKey != 0x05 || senseData.addSenseCode != 0x25) {
-				printExpectedSenseData(&senseData, 0x05, 0x25);
+			if(localSenseData.senseKey != 0x05 || localSenseData.addSenseCode != 0x25) {
+				printExpectedSenseData(&localSenseData, 0x05, 0x25);
 			}
 		}
 	
 	
 		print("    Calling REQUEST SENSE again for existing LUN %d\n", lun);
 	
-		memset(&senseData, 0, sizeof(SENSE_DATA));
+		memset(&localSenseData, 0, sizeof(SENSE_DATA));
 	
 		status = callInWithLun(&cmd, lun);
 		if(status) {
 			printDeviceError(6, "Request failed with status %ld\n", status);
-			if(senseData.errorClass) {
+			if(localSenseData.errorClass) {
 				print("      Sense Key $%02X, ASC $%02X, ASCQ $%02X\n",
-					senseData.senseKey, senseData.addSenseCode,
-					senseData.addSenseCodeQualifier);
+					localSenseData.senseKey, localSenseData.addSenseCode,
+					localSenseData.addSenseCodeQualifier);
 			}
 		}
 	}
@@ -544,8 +606,8 @@ testReadCapacity(UWORD lun, ULONG *blockSize)
 	cmd.TransferLen = sizeof(capacity10);
 
 	status = callInWithLun(&cmd, lun);
-	if(status == 2 && senseData.senseKey == 0x02 &&
-		senseData.addSenseCode == 0x3a) {
+	if(status == 2 && localSenseData.senseKey == 0x02 &&
+		localSenseData.addSenseCode == 0x3a) {
 		print("    Medium not present\n");
 
 		return;
@@ -679,13 +741,13 @@ testReadCapacity(UWORD lun, ULONG *blockSize)
 		Read16[9] = capacity64.lo & 0xff;
 	}
 
-	memset(&senseData, 0, sizeof(SENSE_DATA));
+	memset(&localSenseData, 0, sizeof(SENSE_DATA));
 
 	status = callInWithLun(&cmd, lun);
-	if(status != 2 || senseData.senseKey != 0x05 ||
-		senseData.addSenseCode != 0x21) {
+	if(status != 2 || localSenseData.senseKey != 0x05 ||
+		localSenseData.addSenseCode != 0x21) {
 		printDeviceError(6, "Request for last block + 1 was not rejected\n");
-		printExpectedSenseData(&senseData, 0x05, 0x21);
+		printExpectedSenseData(&localSenseData, 0x05, 0x21);
 	}
 }
 
@@ -849,12 +911,12 @@ testRead(UWORD lun, UWORD nonExistingLun, UWORD busNo, ULONG blockSize,
 		cmd.TransferLen = blockSize;
 		initBuffer(ptr3, blockSize);
 	
-		memset(&senseData, 0, sizeof(SENSE_DATA));
+		memset(&localSenseData, 0, sizeof(SENSE_DATA));
 	
 		status = callInWithLun(&cmd, nonExistingLun);
-		if(status != 2 || senseData.senseKey != 0x05 ||
-			senseData.addSenseCode != 0x25) {
-			printExpectedSenseData(&senseData, 0x05, 0x25);
+		if(status != 2 || localSenseData.senseKey != 0x05 ||
+			localSenseData.addSenseCode != 0x25) {
+			printExpectedSenseData(&localSenseData, 0x05, 0x25);
 		}
 	}
 }
@@ -919,7 +981,7 @@ testReadLong(UWORD lun)
 	cmd.Buffer = NULL;
 	cmd.TransferLen = 0;
 
-	memset(&senseData, 0, sizeof(SENSE_DATA));
+	memset(&localSenseData, 0, sizeof(SENSE_DATA));
 
 	if(execute(lun, "      READ LONG (10)", true)) {
 		return;
@@ -932,7 +994,7 @@ testReadLong(UWORD lun)
 	ReadLong10[7] = 2;
 	ReadLong10[8] = 0;
 
-	memset(&senseData, 0, sizeof(SENSE_DATA));
+	memset(&localSenseData, 0, sizeof(SENSE_DATA));
 
 	status = callInWithLun(&cmd, lun);
 	if(status) {
@@ -952,7 +1014,7 @@ testReadLong(UWORD lun)
 	ReadLong10[7] = 2;
 	ReadLong10[8] = 4;
 
-	memset(&senseData, 0, sizeof(SENSE_DATA));
+	memset(&localSenseData, 0, sizeof(SENSE_DATA));
 
 	status = callInWithLun(&cmd, lun);
 	if(status) {
@@ -972,7 +1034,7 @@ testReadLong(UWORD lun)
 	cmd.Buffer = NULL;
 	cmd.TransferLen = 0;
 
-	memset(&senseData, 0, sizeof(SENSE_DATA));
+	memset(&localSenseData, 0, sizeof(SENSE_DATA));
 
 	if(execute(lun, "      READ LONG (16)", true)) {
 		return;
@@ -985,7 +1047,7 @@ testReadLong(UWORD lun)
 	ReadLong16[12] = 2;
 	ReadLong16[13] = 0;
 
-	memset(&senseData, 0, sizeof(SENSE_DATA));
+	memset(&localSenseData, 0, sizeof(SENSE_DATA));
 
 	status = callInWithLun(&cmd, lun);
 	if(status) {
@@ -1004,7 +1066,7 @@ testReadLong(UWORD lun)
 	ReadLong16[12] = 2;
 	ReadLong16[13] = 4;
 
-	memset(&senseData, 0, sizeof(SENSE_DATA));
+	memset(&localSenseData, 0, sizeof(SENSE_DATA));
 
 	status = callInWithLun(&cmd, lun);
 	if(status) {
@@ -1137,7 +1199,7 @@ testReportLuns()
 	cmd.Buffer = &buffer;
 	cmd.TransferLen = sizeof(buffer);
 
-	memset(&senseData, 0, sizeof(SENSE_DATA));
+	memset(&localSenseData, 0, sizeof(SENSE_DATA));
 
 	if(execute(0, "    REPORT LUNS", true)) {
 		return 0x01;
@@ -1196,7 +1258,7 @@ testReadFormatCapacities(UWORD lun)
 	cmd.Buffer = &capacityData;
 	cmd.TransferLen = sizeof(capacityData);
 
-	memset(&senseData, 0, sizeof(SENSE_DATA));
+	memset(&localSenseData, 0, sizeof(SENSE_DATA));
 
 	status = execute(lun, "    READ FORMAT CAPACITIES", true);
 	if(!status) {
@@ -1249,7 +1311,7 @@ testGetConfiguration(UWORD lun)
 	cmd.Buffer = &profileData;
 	cmd.TransferLen = sizeof(profileData);
 
-	memset(&senseData, 0, sizeof(SENSE_DATA));
+	memset(&localSenseData, 0, sizeof(SENSE_DATA));
 
 	status = execute(lun, "    GET CONFIGURATION", true);
 	if(!status) {
@@ -1305,7 +1367,7 @@ testSenseBuffer(UWORD lun)
 	cmd.TransferLen = 255;
 
 	status = callInWithLun(&cmd, lun);
-	if(!status || senseData.senseKey != 0x05 ||	senseData.addSenseCode != 0x20) {
+	if(!status || localSenseData.senseKey != 0x05 ||	localSenseData.addSenseCode != 0x20) {
 		/* The command has not been rejected and cannot be used for this test */
 		return;
 	}
@@ -1337,21 +1399,21 @@ testSenseBuffer(UWORD lun)
 				localSenseData.addSenseCodeQualifier);
 		}
 		else {
-			if(localSenseData.senseKey != senseData.senseKey ||
-				localSenseData.addSenseCode != senseData.addSenseCode) {
+			if(localSenseData.senseKey != localSenseData.senseKey ||
+				localSenseData.addSenseCode != localSenseData.addSenseCode) {
 				printDeviceError(6, "Sense data have not been preserved\n");
 			}
 		}
 	}
 
-	cmd.SenseBuffer = (BYTE *)&senseData;
+	cmd.SenseBuffer = (BYTE *)&localSenseData;
 }
 
 
 void
 printDevice(UWORD busNo, UWORD id, UWORD features, const char *busName)
 {
-	print("\nTesting device ID %d on bus %d '%s'\n", id, busNo, busName);
+	print("Testing device %d on bus %d '%s'\n", id, busNo, busName);
 
 	printFeatures(features);
 }
@@ -1948,13 +2010,13 @@ execute(UWORD lun, const char *msg, bool reportError)
 {
 	LONG status = callInWithLun(&cmd, lun);
 	if(status == 2 || status == 4) {
-		if(senseData.errorClass && senseData.senseKey == 0x05 &&
-			senseData.addSenseCode == 0x20) {
+		if(localSenseData.errorClass && localSenseData.senseKey == 0x05 &&
+			localSenseData.addSenseCode == 0x20) {
 			print(msg);
 			print(" is not supported by device\n");
 		}
-		else if(senseData.errorClass && senseData.senseKey == 0x02 &&
-			senseData.addSenseCode == 0x3a) {
+		else if(localSenseData.errorClass && localSenseData.senseKey == 0x02 &&
+			localSenseData.addSenseCode == 0x3a) {
 			print("      Medium not present, test skipped\n");
 		}			
 		else if(reportError) {
@@ -1980,15 +2042,15 @@ printStatus(LONG status)
 LONG
 printSenseData()
 {
-	if(senseData.errorClass) {
+	if(localSenseData.errorClass) {
 		print("      Sense Key $%02X, ASC $%02X, ASCQ $%02X\n",
-			senseData.senseKey, senseData.addSenseCode, senseData.addSenseCodeQualifier);
+			localSenseData.senseKey, localSenseData.addSenseCode, localSenseData.addSenseCodeQualifier);
 		
-		if(senseData.valid) {
-			const LONG information = (senseData.information1 << 24) |
-				(senseData.information2 << 16) | (senseData.information3 << 8) |
-				senseData.information4;
-			print("      ILI: %d, Information: %ld\n", senseData.ILI, information);
+		if(localSenseData.valid) {
+			const LONG information = (localSenseData.information1 << 24) |
+				(localSenseData.information2 << 16) | (localSenseData.information3 << 8) |
+				localSenseData.information4;
+			print("      ILI: %d, Information: %ld\n", localSenseData.ILI, information);
 
 			return information;
 		}
@@ -1999,13 +2061,13 @@ printSenseData()
 
 
 void
-printExpectedSenseData(SENSE_DATA *senseData, UWORD senseKey, UWORD addSenseCode)
+printExpectedSenseData(SENSE_DATA *localSenseData, UWORD senseKey, UWORD addSenseCode)
 {
 	printDeviceError(6, "Request was not correctly rejected\n");
-	if(senseData->errorClass) {
+	if(localSenseData->errorClass) {
 		print("        Expected: Sense Key $%02X (got $%02X),"
 			" ASC $%02X (got $%02X)\n",
-			senseKey, senseData->senseKey, addSenseCode, senseData->addSenseCode);
+			senseKey, localSenseData->senseKey, addSenseCode, localSenseData->addSenseCode);
 	}
 }
 
@@ -2019,7 +2081,7 @@ print(const char *msg, ...)
 	va_start(args, msg);
 	vsprintf(s, msg, args);
 	va_end(args);
-	output(s);
+	logMsg(s);
 }
 
 

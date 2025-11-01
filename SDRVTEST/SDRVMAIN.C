@@ -44,10 +44,11 @@ typedef struct {
 
 
 static DEVICEINFO deviceInfos[32];
-SENSE_DATA senseData;
+SENSE_DATA localSenseData;
+tpScsiCall scsiCall;
 
 
-bool testDevice(UWORD, UWORD, ULONG);
+bool testDevice(UWORD, const char *, UWORD, ULONG);
 UWORD findDevices(void);
 bool getCookie(LONG, ULONG *);
 bool getNvm(NVM *nvm);
@@ -95,7 +96,7 @@ main()
 		scsiCall->Version & 0xff);
 
 	cmd.Flags = 0;
-	cmd.SenseBuffer = (BYTE *)&senseData;
+	cmd.SenseBuffer = (BYTE *)&localSenseData;
 	cmd.Timeout = 5000;
 
 	if(!Super((void *)1L)) {
@@ -107,11 +108,12 @@ main()
 	for(i = 0; i < devCount; i++) {
 		DEVICEINFO *deviceInfo = &deviceInfos[i];
 
-		printDevice(deviceInfo->busNo, deviceInfo->id, deviceInfo->features,
-			deviceInfo->busName);
+		print("\n");
+		printDevice(deviceInfo->busNo, deviceInfo->id,
+			deviceInfo->features, deviceInfo->busName);
 
-		if(!testDevice(deviceInfo->busNo, deviceInfo->id,
-			deviceInfo->maxLen)) {
+		if(!testDevice(deviceInfo->busNo, deviceInfo->busName,
+			deviceInfo->id, deviceInfo->maxLen)) {
 			break;
 		}
 	}
@@ -129,11 +131,10 @@ main()
 
 
 bool
-testDevice(UWORD busNo, UWORD id, ULONG maxLen)
+testDevice(UWORD busNo, const char *busName, UWORD id, ULONG maxLen)
 {
 	DLONG scsiId;
 	tHandle handle;
-	UWORD deviceType;
 	ULONG lunVector;
 	UWORD lun;
 	UWORD nonExistingLun = 0;
@@ -154,73 +155,20 @@ testDevice(UWORD busNo, UWORD id, ULONG maxLen)
 
 	lunVector = testReportLuns();
 
-	for(lun = 1; lun < 8; lun++) {
+	for(lun = 0; lun < 8; lun++) {
 		if(!(lunVector & (1L << lun))) {
+			break;
+		}
+	}
+
+	for(lun = 1; lun < 8; lun++) {
+		if(lunVector & (1L << lun)) {
 			nonExistingLun = lun;
 			break;
 		}
 	}
 
-	for(lun = 0; lun < 32; lun++) {
-		if(!(lunVector & (1L << lun))) {
-			continue;
-		}
-
-		print("Testing LUN %d\n", lun);
-
-		testUnitReady(lun);
-	
-		deviceType = testInquiry(lun, nonExistingLun);
-	
-		testRequestSense(lun, nonExistingLun);
-	
-		testSenseBuffer(lun);
-	
-		if(deviceType != 0x1f) {
-			switch(deviceType) {
-				case 0x00:
-				case 0x05:
-				case 0x07: {
-					ULONG blockSize;
-	
-					testReadCapacity(lun, &blockSize);
-					if(blockSize) {
-						UBYTE *ptr1, *ptr2, *ptr3;
-	
-						ptr1 = malloc(blockSize);
-						ptr2 = malloc(blockSize);
-						ptr3 = malloc(blockSize + 1);
-	
-						if(!ptr1 || !ptr2 || !ptr3) {
-							scsiCall->Close(handle);
-	
-							print("    Not enough memory\n");
-	
-							return false;
-						}
-	
-						testRead(lun, nonExistingLun, busNo, blockSize,
-							ptr1, ptr2, ptr3 + 1);
-	
-						free(ptr3);
-						free(ptr2);
-						free(ptr1);
-	
-						testSeek(lun);
-						testModeSense(lun);
-						testReadLong(lun);
-						testReadFormatCapacities(lun);
-					}
-					testGetConfiguration(lun);
-					break;
-				}
-	
-				default:
-					testModeSense(lun);
-					break;
-			}
-		}
-	}
+	runTest(busNo, busName, id, lun, nonExistingLun);
 
 	scsiCall->Close(handle);
 

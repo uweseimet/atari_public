@@ -8,7 +8,7 @@
 #ifndef __sdrvio_h
 #define __sdrvio_h
 
-void output(const char *);
+void logMsg(const char *);
 
 extern FILE *out;
 

@@ -13,7 +13,7 @@ FILE *out;
 
 
 void
-output(const char *msg)
+logMsg(const char *msg)
 {
 	printf(msg);
 	fprintf(out, msg);

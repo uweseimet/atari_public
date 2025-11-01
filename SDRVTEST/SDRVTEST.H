@@ -41,6 +41,7 @@ typedef struct {
 	UWORD senseKeySpecific2 : 8;
 } SENSE_DATA;
 
+bool runTest(UWORD, const char *, UWORD, UWORD, UWORD);
 void testCheckDev(UWORD, UWORD);
 ULONG testReportLuns(void);
 void testUnitReady(UWORD);
@@ -87,6 +88,6 @@ void printDriverError(UWORD, const char *, ...);
 
 extern tSCSICmd cmd;
 extern tpScsiCall scsiCall;
-extern SENSE_DATA senseData;
+extern SENSE_DATA localSenseData;
 
 #endif
