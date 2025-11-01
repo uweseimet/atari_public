@@ -56,7 +56,7 @@ void testRead(UWORD, ULONG, UBYTE *, UBYTE *, UBYTE *);
 void testSeek(void);
 void testReadLong(void);
 void testModeSense(void);
-void testReportLuns(void);
+UWORD testReportLuns(void);
 void testReadFormatCapacities(void);
 void testGetConfiguration(void);
 void printFeatures(UWORD);
@@ -78,8 +78,9 @@ void printPage0(UBYTE *, int, int);
 void printRawData(UBYTE *, int, int, const char *);
 void checkRoot(UBYTE *, UBYTE *, ULONG);
 void initBuffer(UBYTE *, ULONG);
-char *DULongToString(const D_ULONG *);
+LONG callIn(tpSCSICmd, UWORD);
 LONG execute(const char *, bool);
+char *DULongToString(const D_ULONG *);
 void printStatus(LONG);
 LONG printSenseData(void);
 void printExpectedSenseData(SENSE_DATA *, UWORD, UWORD);
@@ -90,5 +91,7 @@ void printDriverError(UWORD, const char *, ...);
 extern tSCSICmd cmd;
 extern tpScsiCall scsiCall;
 extern SENSE_DATA senseData;
+extern UWORD lunList[32];
+extern UWORD lun;
 
 #endif

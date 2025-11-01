@@ -111,6 +111,8 @@ typedef struct
 tpScsiCall scsiCall;
 tSCSICmd cmd;
 SENSE_DATA senseData;
+UWORD lunList[32];
+UWORD lun;
 
 
 void
@@ -162,7 +164,7 @@ testUnitReady()
 
 	memset(&senseData, 0, sizeof(SENSE_DATA));
 
-	status = scsiCall->In(&cmd);
+	status = callIn(&cmd, lun);
 	if(status) {
 		if(status == 2 && senseData.senseKey == 0x02 &&
 			senseData.addSenseCode == 0x3a) {
@@ -199,7 +201,7 @@ testInquiry()
 
 	memset(&inquiryData, 0, sizeof(INQUIRY_DATA));
 
-	status = scsiCall->In(&cmd);
+	status = callIn(&cmd, lun);
 	if(status) {
 		printStatus(status);
 
@@ -305,7 +307,7 @@ testInquiry()
 
 	memset(&inquiryData, 0, sizeof(INQUIRY_DATA));
 
-	status = scsiCall->In(&cmd);
+	status = callIn(&cmd, Inquiry.lun);
 	if(status) {
 		printStatus(status);
 	}
@@ -326,7 +328,7 @@ testInquiry()
 
 	memset(&inquiryData, 0x44, sizeof(INQUIRY_DATA));
 
-	status = scsiCall->In(&cmd);
+	status = callIn(&cmd, Inquiry.lun);
 	if(status) {
 		printStatus(status);
 	}
@@ -361,7 +363,7 @@ testRequestSense()
 
 	memset(&senseData, 0, sizeof(SENSE_DATA));
 
-	status = scsiCall->In(&cmd);
+	status = callIn(&cmd, 0);
 
 	if(status) {
 		printDeviceError(6, "Request failed with status %ld\n", status);
@@ -390,7 +392,7 @@ testRequestSense()
 
 	memset(&senseData, 0, sizeof(SENSE_DATA));
 
-	status = scsiCall->In(&cmd);
+	status = callIn(&cmd, 7);
 	if(status) {
 		printDeviceError(6, "Request failed with status %ld\n", status);
 		if(senseData.errorClass) {
@@ -413,7 +415,7 @@ testRequestSense()
 
 	memset(&senseData, 0, sizeof(SENSE_DATA));
 
-	status = scsiCall->In(&cmd);
+	status = callIn(&cmd, 0);
 	if(status) {
 		printDeviceError(6, "Request failed with status %ld\n", status);
 		if(senseData.errorClass) {
@@ -549,7 +551,7 @@ testReadCapacity(ULONG *blockSize)
 	cmd.Buffer = capacity10;
 	cmd.TransferLen = sizeof(capacity10);
 
-	status = scsiCall->In(&cmd);
+	status = callIn(&cmd, lun);
 	if(status == 2 && senseData.senseKey == 0x02 &&
 		senseData.addSenseCode == 0x3a) {
 		print("    Medium not present\n");
@@ -652,7 +654,7 @@ testReadCapacity(ULONG *blockSize)
 		Read16[9] = maxBlock64.lo & 0xff;
 	}
 
-	status = scsiCall->In(&cmd);
+	status = callIn(&cmd, lun);
 	if(status) {
 		printStatus(status);
 
@@ -687,7 +689,7 @@ testReadCapacity(ULONG *blockSize)
 
 	memset(&senseData, 0, sizeof(SENSE_DATA));
 
-	status = scsiCall->In(&cmd);
+	status = callIn(&cmd, lun);
 	if(status != 2 || senseData.senseKey != 0x05 ||
 		senseData.addSenseCode != 0x21) {
 		printDeviceError(6, "Request for last block + 1 was not rejected\n");
@@ -738,7 +740,7 @@ testRead(UWORD busNo, ULONG blockSize, UBYTE *ptr1, UBYTE* ptr2, UBYTE* ptr3)
 		cmd.TransferLen = blockSize;
 		initBuffer(ptr2, blockSize);
 
-		status = scsiCall->In(&cmd);
+		status = callIn(&cmd, lun);
 		if(status) {
 			printStatus(status);
 
@@ -791,7 +793,7 @@ testRead(UWORD busNo, ULONG blockSize, UBYTE *ptr1, UBYTE* ptr2, UBYTE* ptr3)
 
 				Read16[3] = 1;
 
-				status = scsiCall->In(&cmd);
+				status = callIn(&cmd, lun);
 				if(!status) {
 					printDeviceError(4, "IDE block 281474976710656 is not supposed to be readable\n");
 
@@ -822,7 +824,7 @@ testRead(UWORD busNo, ULONG blockSize, UBYTE *ptr1, UBYTE* ptr2, UBYTE* ptr3)
 	cmd.TransferLen = blockSize;
 	initBuffer(ptr3, blockSize);
 
-	status = scsiCall->In(&cmd);
+	status = callIn(&cmd, lun);
 	if(status) {
 		printStatus(status);
 	}
@@ -858,7 +860,7 @@ testRead(UWORD busNo, ULONG blockSize, UBYTE *ptr1, UBYTE* ptr2, UBYTE* ptr3)
 
 	memset(&senseData, 0, sizeof(SENSE_DATA));
 
-	status = scsiCall->In(&cmd);
+	status = callIn(&cmd, 7);
 	if(status != 2 || senseData.senseKey != 0x05 ||
 		senseData.addSenseCode != 0x25) {
 		printExpectedSenseData(&senseData, 0x05, 0x25);
@@ -940,7 +942,7 @@ testReadLong()
 
 	memset(&senseData, 0, sizeof(SENSE_DATA));
 
-	status = scsiCall->In(&cmd);
+	status = callIn(&cmd, lun);
 	if(status) {
 		LONG size;
 		print("      Request has been rejected\n");
@@ -960,7 +962,7 @@ testReadLong()
 
 	memset(&senseData, 0, sizeof(SENSE_DATA));
 
-	status = scsiCall->In(&cmd);
+	status = callIn(&cmd, lun);
 	if(status) {
 		LONG size;
 		print("      Request has been rejected\n");
@@ -993,7 +995,7 @@ testReadLong()
 
 	memset(&senseData, 0, sizeof(SENSE_DATA));
 
-	status = scsiCall->In(&cmd);
+	status = callIn(&cmd, lun);
 	if(status) {
 		LONG size;
 		print("      Request has been rejected\n");
@@ -1012,7 +1014,7 @@ testReadLong()
 
 	memset(&senseData, 0, sizeof(SENSE_DATA));
 
-	status = scsiCall->In(&cmd);
+	status = callIn(&cmd, lun);
 	if(status) {
 		LONG size;
 		print("      Request has been rejected\n");
@@ -1120,23 +1122,27 @@ testModeSense()
 }
 
 
-void
+UWORD
 testReportLuns()
 {
 	UBYTE ReportLuns[] = { 0xa0, 0, 0, 0, 0, 0, 0, 0, 0x01, 0x08, 0, 0 };
 
+	ULONG luns;
+	UWORD lunCount = 0;
 	ULONG i;
 	ULONG buffer[264];
 
-	if(!(*cmd.Handle & cAllCmds)) {
-		return;
-	}
+	lunList[0] = 0;
 
+	if(!(*cmd.Handle & cAllCmds)) {
+		return 1;
+	}
 
 	memset(buffer, 0, sizeof(buffer));
 
 	print("  REPORT LUNS\n");
 
+	lun = 0;
 	cmd.Cmd = (void *)&ReportLuns;
 	cmd.CmdLen = (UWORD)sizeof(ReportLuns);
 	cmd.Buffer = &buffer;
@@ -1145,24 +1151,35 @@ testReportLuns()
 	memset(&senseData, 0, sizeof(SENSE_DATA));
 
 	if(execute("    REPORT LUNS", true)) {
-		return;
+		return 1;
 	}
 
-	print("    Number of LUNs: %lu\n", buffer[0] / 8);
+	luns = buffer[0] / 8;
 
-	if(buffer[0] / 8) {
+	print("    Number of LUNs: %lu\n", luns);
+
+	if(luns) {
 		print("          LUN list: ");
 
-		for(i = 0; i < buffer[0] / 8 && i < sizeof(buffer) - 8; i++) {
+		for(i = 0; i < luns && i < sizeof(buffer) - 8; i++) {
+			UWORD lun = (UWORD)buffer[2 * i + 3];
+
+/* Only add LUNS > 7 to LUN list if the SCSI Driver supports 32 LUNs */
+			if(lun < 8 || *((UWORD *)cmd.Handle) & 0x40) {
+				lunList[lunCount++] = lun;
+			}
+
 			if(i) {
 				print(", ");
 			}
 
-			print("%lu", buffer[2 * i + 3]);
+			print("%u", lun);
 		}
 
 		print("\n");
 	}
+
+	return lunCount;
 }
 
 
@@ -1298,7 +1315,7 @@ testSenseBuffer()
 	cmd.Buffer = buffer;
 	cmd.TransferLen = 255;
 
-	status = scsiCall->In(&cmd);
+	status = callIn(&cmd, lun);
 	if(!status || senseData.senseKey != 0x05 ||	senseData.addSenseCode != 0x20) {
 		/* The command has not been rejected and cannot be used for this test */
 		return;
@@ -1308,7 +1325,7 @@ testSenseBuffer()
 
 	cmd.SenseBuffer = NULL;
 
-	if(scsiCall->In(&cmd) != status) {
+	if(callIn(&cmd, lun) != status) {
 		printDeviceError(6, "Status code mismatch\n");
 	}
 	else {
@@ -1323,7 +1340,7 @@ testSenseBuffer()
 
 		memset(&localSenseData, 0, sizeof(SENSE_DATA));
 
-		status = scsiCall->In(&cmd);
+		status = callIn(&cmd, lun);
 		if(status) {
 			printDeviceError(6, "Request failed with status %ld\n", status);
 			print("      Sense Key $%02X, ASC $%02X, ASCQ $%02X\n",
@@ -1912,9 +1929,26 @@ DULongToString(const D_ULONG *value)
 
 
 LONG
+callIn(tpSCSICmd c, UWORD l)
+{
+	c->Cmd[1] &= 0x1f;
+	if(l < 8) {
+		c->Cmd[1] |= l << 5;
+	}
+
+/* Encode LUN in flags if 32 LUNs are supported */
+	if(*((UWORD *)c->Handle) & 0x40) {
+		c->Flags = (l << 8) | 0x40;
+	}
+
+	return scsiCall->In(c);
+}
+
+
+LONG
 execute(const char *msg, bool reportError)
 {
-	LONG status = scsiCall->In(&cmd);
+	LONG status = callIn(&cmd, lun);
 	if(status == 2 || status == 4) {
 		if(senseData.errorClass && senseData.senseKey == 0x05 &&
 			senseData.addSenseCode == 0x20) {

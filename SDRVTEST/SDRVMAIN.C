@@ -126,6 +126,9 @@ testDevice(DEVICEINFO *deviceInfo)
 	DLONG scsiId;
 	ULONG maxLen;
 	tHandle handle;
+	UWORD deviceType;
+	UWORD luns;
+	int i;
 
 	print("\nTesting device ID %d on bus %d '%s'\n",
 		deviceInfo->id, deviceInfo->busNo, deviceInfo->deviceBusName);
@@ -141,50 +144,56 @@ testDevice(DEVICEINFO *deviceInfo)
 	handle = (tHandle)scsiCall->Open(deviceInfo->busNo, &scsiId,
 		&maxLen);
 	if(((LONG)handle & 0xff000000L) == 0xff000000L) {
-		printDeviceError(4, "No SCSI Driver handle\n");
+		printDriverError(4, "No free SCSI Driver handle\n");
+		return false;
 	}
-	else {
-		UWORD deviceType;
 
-		cmd.Handle = handle;
+	cmd.Handle = handle;
+
+	luns = testReportLuns();
+
+	for(i = 0; i < luns; i++) {
+		lun =lunList[i];
+
+		print("Testing LUN %d\n", lun);
 
 		testUnitReady();
-
+	
 		deviceType = testInquiry();
-
+	
 		testRequestSense();
-
+	
 		testSenseBuffer();
-
+	
 		if(deviceType != 0x1f) {
 			switch(deviceType) {
 				case 0x00:
 				case 0x05:
 				case 0x07: {
 					ULONG blockSize;
-
+	
 					testReadCapacity(&blockSize);
 					if(blockSize) {
 						UBYTE *ptr1, *ptr2, *ptr3;
-
+	
 						ptr1 = malloc(blockSize);
 						ptr2 = malloc(blockSize);
 						ptr3 = malloc(blockSize + 1);
-
+	
 						if(!ptr1 || !ptr2 || !ptr3) {
 							scsiCall->Close(handle);
-
+	
 							print("    Not enough memory\n");
-
+	
 							return false;
 						}
-
+	
 						testRead(deviceInfo->busNo, blockSize, ptr1, ptr2, ptr3 + 1);
-
+	
 						free(ptr3);
 						free(ptr2);
 						free(ptr1);
-
+	
 						testSeek();
 						testModeSense();
 						testReadLong();
@@ -193,17 +202,15 @@ testDevice(DEVICEINFO *deviceInfo)
 					testGetConfiguration();
 					break;
 				}
-
+	
 				default:
 					testModeSense();
 					break;
 			}
-
-			testReportLuns();
 		}
-
-		scsiCall->Close(handle);
 	}
+
+	scsiCall->Close(handle);
 
 	return true;
 }
