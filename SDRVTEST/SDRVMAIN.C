@@ -169,9 +169,16 @@ testDevice(UWORD busNo, const char *busName, UWORD id, ULONG maxLen)
 		}
 	}
 
+	scsiDriverErrors = 0;
+	deviceErrors = 0;
 	runTest(busNo, busName, id, lun, nonExistingLun);
 
 	scsiCall->Close(handle);
+
+	print("\nTest result summary:\n"
+		"There are %d SCSI Driver specification violations\n"
+		"and %d SCSI standard violations.\n",
+		scsiDriverErrors, deviceErrors);
 
 	return true;
 }

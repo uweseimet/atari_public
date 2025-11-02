@@ -70,6 +70,9 @@ typedef struct
 
 tSCSICmd cmd;
 
+UWORD scsiDriverErrors;
+UWORD deviceErrors;
+
 
 bool
 runTest(UWORD busNo, const char *busName, UWORD id, UWORD lun,
@@ -77,7 +80,7 @@ runTest(UWORD busNo, const char *busName, UWORD id, UWORD lun,
 {
 	UWORD deviceType;
 
-	print("Testing bus %d \"%s\", device %d, LUN %d\n", busNo, busName, id, lun);
+	print("Testing bus %d '%s', device %d, LUN %d\n", busNo, busName, id, lun);
 
 	testUnitReady(lun);
 
@@ -1372,7 +1375,7 @@ testSenseBuffer(UWORD lun)
 void
 printDevice(UWORD busNo, UWORD id, UWORD features, const char *busName)
 {
-	print("Testing bus %d \"%s\", device %d\n", busNo, busName, id, busNo);
+	print("Testing bus %d %s', device %d\n", busNo, busName, id, busNo);
 
 	printFeatures(features);
 }
@@ -2053,7 +2056,7 @@ printDeviceError(UWORD blanks, const char *msg, ...)
 		print("  ");
 	}
 
-	print("ERROR: ");
+	print("ERROR (Device): ");
 	print(msg);
 }
 
@@ -2067,6 +2070,6 @@ printDriverError(UWORD blanks, const char *msg, ...)
 		print("  ");
 	}
 
-	print("ERROR: SCSI Driver: ");
+	print("ERROR (SCSI Driver): ");
 	print(msg);
 }

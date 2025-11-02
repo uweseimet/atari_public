@@ -62,5 +62,7 @@ extern tSCSICmd cmd;
 extern tpScsiCall scsiCall;
 extern SENSE_DATA localSenseData;
 extern const char *DEVICE_TYPES[];
+extern UWORD scsiDriverErrors;
+extern UWORD deviceErrors;
 
 #endif
