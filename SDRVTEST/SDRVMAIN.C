@@ -177,9 +177,23 @@ testDevice(UWORD busNo, const char *busName, UWORD id, ULONG maxLen)
 	scsiCall->Close(handle);
 
 	print("\nTest result summary:\n"
-		"There are %d SCSI Driver specification violations\n"
-		"and %d SCSI standard violations.\n",
+		"SCSI Driver specification violations: %d, "
+		"SCSI standard violations: %d.\n",
 		scsiDriverErrors, deviceErrors);
+
+	if(scsiDriverErrors || deviceErrors) {
+		print("Issues have been marked with 'ERROR'.\n");
+
+		if(scsiDriverErrors) {
+			print("For SCSI Driver issues contact the maintainers\n"
+				"of the SCSI Driver for the respective bus.\n");
+		}
+
+		if(deviceErrors) {
+			print("For device issues contact the maintainers\n"
+				"of the device or the device emulation firmware.\n");
+		}
+	}
 
 	return true;
 }
