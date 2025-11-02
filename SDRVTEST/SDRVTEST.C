@@ -2058,6 +2058,8 @@ printDeviceError(UWORD blanks, const char *msg, ...)
 
 	print("ERROR (Device): ");
 	print(msg);
+
+	deviceErrors++;
 }
 
 
@@ -2072,4 +2074,6 @@ printDriverError(UWORD blanks, const char *msg, ...)
 
 	print("ERROR (SCSI Driver): ");
 	print(msg);
+
+	scsiDriverErrors++;
 }
