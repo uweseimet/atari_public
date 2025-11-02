@@ -139,6 +139,7 @@ testDevice(UWORD busNo, const char *busName, UWORD id, ULONG maxLen)
 	ULONG lunVector;
 	UWORD lun;
 	UWORD nonExistingLun = 0;
+	int i;
 
 	testCheckDev(busNo, id);
 	testOpenClose(busNo, id, maxLen);
@@ -157,14 +158,14 @@ testDevice(UWORD busNo, const char *busName, UWORD id, ULONG maxLen)
 	lunVector = testReportLuns();
 
 	for(lun = 0; lun < 8; lun++) {
-		if(!(lunVector & (1L << lun))) {
+		if(lunVector & (1L << lun)) {
 			break;
 		}
 	}
 
-	for(lun = 1; lun < 8; lun++) {
-		if(lunVector & (1L << lun)) {
-			nonExistingLun = lun;
+	for(i = 1; i < 8; i++) {
+		if(!(lunVector & (1L << i))) {
+			nonExistingLun = i;
 			break;
 		}
 	}
