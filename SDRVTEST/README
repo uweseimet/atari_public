@@ -13,6 +13,9 @@ which a test fails.
 SDRVTEST saves the test results to a file SDRVTEST.LOG in the current
 directory and also displays the results on the screen.
 
+Please contact me if you find a test where the result expected by SDRVTEST
+does not comply with the SCSI Driver specification or the SCSI standard. 
+
 MCHGTEST, ERRTEST and SERRTEST test other SCSI Driver features, related to
 error handling and media changes. Please refer to the sources for details.
 Except for the SDRVTEST logfile the tests do not change/write any data.
@@ -21,4 +24,4 @@ The C sources are available on GitHub:
 https://github.com/uweseimet/atari_public.
 
 
-  Uwe.Seimet@seimet.de, 11/1/2025
+  Uwe.Seimet@seimet.de, 11/2/2025

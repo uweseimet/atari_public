@@ -1373,15 +1373,6 @@ testSenseBuffer(UWORD lun)
 
 
 void
-printDevice(UWORD busNo, UWORD id, UWORD features, const char *busName)
-{
-	print("Testing bus %d %s', device %d\n", busNo, busName, id, busNo);
-
-	printFeatures(features);
-}
-
-
-void
 printFeatures(UWORD features)
 {
 	bool hasFeature = false;

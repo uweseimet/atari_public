@@ -109,9 +109,9 @@ main()
 	for(i = 0; i < devCount; i++) {
 		DEVICEINFO *deviceInfo = &deviceInfos[i];
 
-		print("\n");
-		printDevice(deviceInfo->busNo, deviceInfo->id,
-			deviceInfo->features, deviceInfo->busName);
+		print("\nTesting bus %d %s', device %d\n", deviceInfo->busNo,
+			deviceInfo->busName, deviceInfo->id);
+		printFeatures(deviceInfo->features);
 
 		if(!testDevice(deviceInfo->busNo, deviceInfo->busName,
 			deviceInfo->id, deviceInfo->maxLen)) {
