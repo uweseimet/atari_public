@@ -1,7 +1,7 @@
 /***********************************/
 /* SCSI Driver/Firmware Test 3.00ž */
 /*                                 */
-/* (C) 2014-2025 Uwe Seimet        */
+/* (C) 2014-2026 Uwe Seimet        */
 /***********************************/
 
 
@@ -178,7 +178,7 @@ testDevice(UWORD busNo, const char *busName, UWORD id, ULONG maxLen)
 
 	print("\nTest result summary:\n"
 		"SCSI Driver specification violations: %d, "
-		"SCSI standard violations: %d.\n",
+		"SCSI standard violations: %d\n",
 		scsiDriverErrors, deviceErrors);
 
 	if(scsiDriverErrors || deviceErrors) {

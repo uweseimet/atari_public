@@ -1,7 +1,7 @@
 /***********************************/
 /* SCSI Driver/Firmware Test 3.00ž */
 /*                                 */
-/* (C) 2014-2025 Uwe Seimet        */
+/* (C) 2014-2026 Uwe Seimet        */
 /***********************************/
 
 
@@ -341,6 +341,7 @@ testInquiry(UWORD lun, UWORD nonExistingLun)
 		}
 	}
 
+
 	print("    Testing with requested byte count of 10\n");
 
 	Inquiry.length = 10;
@@ -354,8 +355,27 @@ testInquiry(UWORD lun, UWORD nonExistingLun)
 	}
 	else {
 		UBYTE *data = (UBYTE *)&inquiryData;
-		if(data[10] != 0x44 || data[11] != 0x44) {
+		if(data[10] != 0x44 || data[10] != 0x44) {
 			printDeviceError(4, "More than 10 requested bytes were returned\n");
+		}
+	}
+
+
+	print("    Testing with requested byte count of 0\n");
+
+	Inquiry.length = 0;
+	cmd.TransferLen = Inquiry.length;
+
+	memset(&inquiryData, 0x44, sizeof(INQUIRY_DATA));
+
+	status = callInWithLun(&cmd, lun);
+	if(status) {
+		printStatus(status);
+	}
+	else {
+		UBYTE *data = (UBYTE *)&inquiryData;
+		if(data[0] != 0x44 || data[1] != 0x44) {
+			printDeviceError(4, "More than 0 requested bytes were returned\n");
 		}
 	}
 
