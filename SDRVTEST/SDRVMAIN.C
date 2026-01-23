@@ -82,7 +82,7 @@ main()
 	}
 
 	print("SCSI Driver and firmware test V3.00ž\n");
-	print("½ 2014-2025 Uwe Seimet\n\n");
+	print("½ 2014-2026 Uwe Seimet\n\n");
 
 	if(getNvm(&nvm)) {
 		print("SCSI initiator ID in NVRAM is %d\n", nvm.scsiid & 0x07);
@@ -111,7 +111,7 @@ main()
 
 		print("\nTesting bus %d %s', device %d\n", deviceInfo->busNo,
 			deviceInfo->busName, deviceInfo->id);
-		printFeatures(deviceInfo->features);
+		printFeatures(deviceInfo->features, "device");
 
 		if(!testDevice(deviceInfo->busNo, deviceInfo->busName,
 			deviceInfo->id, deviceInfo->maxLen)) {
@@ -287,7 +287,11 @@ findDevices()
 		print("  Maximum transfer length: %lu ($%lX)\n", busInfo.MaxLen,
 			busInfo.MaxLen);
 
-		printFeatures(busInfo.Features);
+		printFeatures(busInfo.Features, "bus");
+
+		if(!busInfo.BusNo && busInfo.Features & cAllCmds) {
+			print("    WARNING: Only ICD compatible adapters/devices are supported\n");
+		}
 
 		print("\n");
 

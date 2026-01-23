@@ -28,7 +28,7 @@ void testReadLong(UWORD);
 void testModeSense(UWORD);
 void testReadFormatCapacities(UWORD);
 void testGetConfiguration(UWORD);
-void printFeatures(UWORD);
+void printFeatures(UWORD, const char *);
 void printPageHeader(UBYTE *, int, const char *, int);
 void printPages(UBYTE *, int *, int, int);
 void printPage1(UBYTE *, int);

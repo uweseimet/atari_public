@@ -208,6 +208,7 @@ testInquiry(UWORD lun, UWORD nonExistingLun)
 	LONG status;
 	UWORD deviceType;
 	INQUIRY_DATA inquiryData;
+	INQUIRY_DATA fullInquiryData;
 	char name[25];
 	char revision[5];
 
@@ -239,6 +240,8 @@ testInquiry(UWORD lun, UWORD nonExistingLun)
 
 		return 0;
 	}
+
+	memcpy(&fullInquiryData, &inquiryData, sizeof(INQUIRY_DATA));
 
 	strncpy(name, inquiryData.vendor, 24);
 	strncpy(revision, inquiryData.revision, 4);
@@ -356,8 +359,12 @@ testInquiry(UWORD lun, UWORD nonExistingLun)
 	else {
 		UBYTE *data = (UBYTE *)&inquiryData;
 		if(data[10] != 0x44 || data[10] != 0x44) {
-			printDeviceError(4, "More than 10 requested bytes were returned\n");
+			printDriverError(4, "More than 10 requested bytes were returned\n");
 		}
+	}
+
+	if(memcmp(&fullInquiryData, &inquiryData, 10)) {
+		printDriverError(4, "INQUIRY data mismatch\n");
 	}
 
 
@@ -1393,11 +1400,11 @@ testSenseBuffer(UWORD lun)
 
 
 void
-printFeatures(UWORD features)
+printFeatures(UWORD features, const char *type)
 {
 	bool hasFeature = false;
 
-	print("  Supported SCSI Driver features:\n");
+	print("  Supported SCSI Driver features on %s level:\n", type);
 
 	if(features & cArbit) {
 		print("    Arbitration\n");
