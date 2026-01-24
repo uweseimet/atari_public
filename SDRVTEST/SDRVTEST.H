@@ -13,7 +13,7 @@ typedef struct {
 	ULONG lo;
 } D_ULONG;
 
-bool runTest(UWORD, const char *, UWORD, UWORD, UWORD);
+bool runTest(UWORD, UWORD, UWORD);
 void testCheckDev(UWORD, UWORD);
 ULONG testReportLuns(void);
 void testUnitReady(UWORD);

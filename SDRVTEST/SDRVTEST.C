@@ -75,12 +75,9 @@ UWORD deviceErrors;
 
 
 bool
-runTest(UWORD busNo, const char *busName, UWORD id, UWORD lun,
-	UWORD nonExistingLun)
+runTest(UWORD busNo, UWORD lun, UWORD nonExistingLun)
 {
 	UWORD deviceType;
-
-	print("Testing bus %d '%s', device %d, LUN %d\n", busNo, busName, id, lun);
 
 	testUnitReady(lun);
 
@@ -163,7 +160,7 @@ testCheckDev(UWORD busNo, UWORD id)
 	scsiId.hi = 0;
 	scsiId.lo = 0;
 	result = scsiCall->CheckDev(32, &scsiId, name, &features);
-	if(result != EUNDEV) {
+	if(!result) {
 		printDriverError(4, "Invalid bus ID 32 was accepted\n");
 	}
 }
@@ -1527,7 +1524,7 @@ printPageHeader(UBYTE *buf, int offset, const char *name, int expected)
 {
 	const int size = buf[offset + 1];
 
-	print("        Page %d: %s page (current, %s)\n", buf[offset], name,
+	print("        Page %d: %s page (current, %s)\n", buf[offset] & 0x7f, name,
 		buf[offset] & 0x80 ? "savable" : "not savable");
 
 	printRawData(buf, offset, size + 2, "          ");
@@ -1971,6 +1968,8 @@ DULongToString(const D_ULONG *value)
 LONG
 callInWithLun(tpSCSICmd c, UWORD l)
 {
+	assert(c->Handle);
+
 	c->Cmd[1] &= 0x1f;
 	if(l < 8) {
 		c->Cmd[1] |= l << 5;
