@@ -50,10 +50,6 @@ const char *DEVICE_TYPES[] = {
 	"Well Known Logical Unit"
 };
 
-const char* STATUS_CODES = {
-	"Direct Access"
-};
-
 
 typedef struct
 {
@@ -764,7 +760,7 @@ testRead(UWORD lun, UWORD nonExistingLun, UWORD busNo, ULONG blockSize,
 	cmd.TransferLen = blockSize;
 	initBuffer(ptr1, blockSize);
 
-	status = execute(lun, "    READ (6)", true);
+	status = execute(lun, "      READ (6)", true);
 	if(status) {
 		hasRW6 = false;
 	}
@@ -2003,7 +1999,49 @@ execute(UWORD lun, const char *msg, bool reportError)
 		}
 	}
 	else if(status) {
-		print("      Device reported status code %ld\n", status);
+		print("      Device reported status code %ld", status);
+
+		if(status == SELECTERROR) {
+				print(" (SELECTERROR)");
+		}
+		else if(status == STATUSERROR) {
+				print(" (STATUSERROR)");
+		}
+		else if(status == PHASEERROR) {
+				print(" (PHASEERROR)");
+		}
+		else if(status == BSYERROR) {
+				print(" (BSYERROR)");
+		}
+		else if(status == BUSERROR) {
+				print(" (BUSERROR)");
+		}
+		else if(status == TRANSERROR) {
+				print(" (TRANSERROR)");
+		}
+		else if(status == FREEERROR) {
+				print(" (FREEERROR)");
+		}
+		else if(status == TIMEOUTERROR) {
+				print(" (TIMEOUTERROR)");
+		}
+		else if(status == DATATOOLONG) {
+				print(" (DATATOOLONG)");
+		}
+		else if(status == LINKERROR) {
+				print(" (LINKERROR)");
+		}
+		else if(status == TIMEOUTARBIT) {
+				print(" (TIMEOUTARBIT)");
+		}
+		else if(status == PENDINGERROR) {
+				print(" (PENDINGERROR)");
+		}
+		else if(status == PARITYERROR) {
+				print(" (PARITYERROR)");
+		}
+
+		print("\n");
 	}
 
 	return status;
