@@ -77,7 +77,7 @@ runTest(UWORD busNo, UWORD lun, UWORD nonExistingLun)
 
 	testUnitReady(lun);
 
-	deviceType = testInquiry(lun, nonExistingLun);
+	deviceType = testInquiry(busNo, lun, nonExistingLun);
 
 	testRequestSense(lun, nonExistingLun);
 
@@ -192,7 +192,7 @@ testUnitReady(UWORD lun)
 
 
 UWORD
-testInquiry(UWORD lun, UWORD nonExistingLun)
+testInquiry(UWORD busNo, UWORD lun, UWORD nonExistingLun)
 {
 	SENSE_BLK Inquiry = {
 		0x12, 0x00, 0x00, 0x00, 0x00, (UBYTE)sizeof(INQUIRY_DATA), 0x00, 0x00, 0x00
@@ -289,6 +289,11 @@ testInquiry(UWORD lun, UWORD nonExistingLun)
 			}
 	}
 	print("\n");
+
+	/* For ACSI and SCSI the device must support a well-defined SCSI/SPC version */
+	if(!inquiryData.ANSIVersion && busNo < 2) {
+		printDeviceError(6, "Invalid SCSI/SPC version\n");
+	}
 
 	print("      Response data format: ");
 	switch(inquiryData.responseDataFormat) {
@@ -439,7 +444,7 @@ testRequestSense(UWORD lun, UWORD nonExistingLun)
 			}
 		}
 		else if(localSenseData.errorClass) {
-	/* Even though GOOD was returned Sense Key and ASC must be set */
+			/* Even though GOOD was returned Sense Key and ASC must be set */
 			if(localSenseData.senseKey != 0x05 || localSenseData.addSenseCode != 0x25) {
 				printExpectedSenseData(&localSenseData, 0x05, 0x25);
 			}
