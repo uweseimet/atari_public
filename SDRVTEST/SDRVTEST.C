@@ -1080,6 +1080,7 @@ testModeSense(UWORD lun)
 	UBYTE buffer6[512];
 	UBYTE buffer10[4096];
 	bool hasModeSense10 = false;
+	int size;
 	LONG status;
 
 	print("  MODE SENSE\n");
@@ -1090,12 +1091,16 @@ testModeSense(UWORD lun)
 		cmd.Buffer = buffer10;
 		cmd.Cmd = (void *)&ModeSense10;
 		cmd.CmdLen = (UWORD)sizeof(ModeSense10);
-		cmd.TransferLen = 4096;
+		cmd.TransferLen = sizeof(buffer10);
 
 		if(!execute(lun, "      MODE SENSE (10)", true)) {
 			hasModeSense10 = true;
 
-			printPages(buffer10, (buffer10[0] << 8) + buffer10[1], 8);
+			size = (buffer10[0] << 8) + buffer10[1];
+
+			print("      Received %d data bytes\n", size);
+
+			printPages(buffer10, size, 8);
 		}
 	}
 
@@ -1104,12 +1109,11 @@ testModeSense(UWORD lun)
 	cmd.Buffer = buffer6;
 	cmd.Cmd = (void *)&ModeSense6;
 	cmd.CmdLen = (UWORD)sizeof(ModeSense6);
-	cmd.TransferLen = 255;
+	cmd.TransferLen = sizeof(buffer6);
 
 	status = execute(lun, "      MODE SENSE (6)", false);
 	if(status) {
-		if(localSenseData.errorClass && (localSenseData.senseKey != 0x02 ||
-			localSenseData.addSenseCode != 0x24)) {
+		if(localSenseData.senseKey != 0x02 || localSenseData.addSenseCode != 0x24) {
 			printStatus(status);
 		}
 		else {
@@ -1119,15 +1123,22 @@ testModeSense(UWORD lun)
 		return;
 	}
 
-	if(hasModeSense10) {
-		if(memcmp(buffer6 + 4, buffer10 + 8, buffer6[0])) {
-			printDeviceError(6,"MODE SENSE (6) and MODE SENSE (10) data differ\n");
+	size = buffer6[0];
 
-			printPages(buffer6, buffer6[0], 4);
+	print("      Received %d data bytes\n", size);
+
+	if(hasModeSense10) {
+		if(memcmp(buffer6 + 4, buffer10 + 8, size - 4)) {
+			printDeviceError(6,"MODE SENSE (6) and MODE SENSE (10) page data differ\n");
+
+			printPages(buffer6, size, 4);
 		}
 		else {
-			print("      MODE SENSE (6) and MODE SENSE (10) data are identical\n");
+			print("      MODE SENSE (6) and MODE SENSE (10) page data are identical\n");
 		}
+	}
+	else {
+		printPages(buffer6, size, 4);
 	}
 }
 
@@ -1427,8 +1438,6 @@ printPages(UBYTE *buf, int size, int minSize)
 			size, minSize + 1);
 		return;
 	}
-
-	print("      Received %d data bytes\n", size);
 
 	print("        Available pages list: ");
 
