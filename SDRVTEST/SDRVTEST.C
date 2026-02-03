@@ -140,7 +140,7 @@ testCheckDev(UWORD busNo, UWORD id)
 	char name[20];
 	UWORD features;
 
-	print("  CheckDev()\n");
+	print("  SCSI Driver CheckDev()\n");
 
 
 	print("    Testing with valid bus ID %d\n", busNo);
@@ -488,7 +488,7 @@ testOpenClose(UWORD busNo, UWORD id, ULONG maxLen)
 	bool twice = false;
 	int i;
 
-	print("  Open/Close()\n");
+	print("  SCSI Driver Open/Close()\n");
 
 	scsiId.hi = 0;
 	scsiId.lo = id;

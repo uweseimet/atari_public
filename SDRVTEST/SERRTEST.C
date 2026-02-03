@@ -1,8 +1,8 @@
-/**************************************/
-/* SCSI Driver Error Status Test 1.00 */
-/*                                    */
-/* (C) 2021 Uwe Seimet                */
-/**************************************/
+/***************************************/
+/* SCSI Driver Error Status Test 1.01ž */
+/*                                     */
+/* (C) 2021-2026 Uwe Seimet            */
+/***************************************/
 
 
 #include <string.h>
@@ -14,7 +14,7 @@
 #include <scsidrv/scsidefs.h>
 
 
-void ReadCapacity(tSCSICmd *, UWORD);
+int sortBuses(const void *, const void *);
 bool getCookie(LONG, ULONG *);
 
 
@@ -27,12 +27,16 @@ SENSE_DATA senseData;
 void
 main(WORD argc, const char *argv[])
 {
-	UWORD bus, device;
+	UWORD bus;
+	UWORD device;
 	tBusInfo busInfo;
+	tBusInfo busInfos[32];
 	DLONG scsiId;
 	ULONG maxLen;
+	UWORD busCount = 0;
 	LONG oldstack = 0;
 	LONG result;
+	int i;
 
 	getCookie('SCSI', (ULONG *)&scsiCall);
 	if(!scsiCall) {
@@ -41,8 +45,8 @@ main(WORD argc, const char *argv[])
 		goto error;
 	}
 
-	printf("SCSI Driver Error Status Test V1.00\n");
-	printf("½ 2021 Uwe Seimet\n\n");
+	printf("SCSI Driver Error Status Test V1.01ž\n");
+	printf("½ 2021-2026 Uwe Seimet\n\n");
 
 	printf("Found SCSI Driver version %d.%02d\n\n", scsiCall->Version >> 8,
 		scsiCall->Version & 0xff);
@@ -57,10 +61,17 @@ main(WORD argc, const char *argv[])
 	if(!Super((void *)1L)) oldstack = Super(0L);
 
 	result = scsiCall->InquireSCSI(cInqFirst, &busInfo);
-	while(!result) {
-		printf("Bus ID: %d, Bus name: '%s'\n", busInfo.BusNo, busInfo.BusName);
+	while(!result && busCount < 32) {
+		memcpy(&busInfos[busCount++], &busInfo, sizeof(tBusInfo));
 
 		result = scsiCall->InquireSCSI(cInqNext, &busInfo);
+	}
+
+	qsort(busInfos, busCount, sizeof(tBusInfo), sortBuses);
+
+	for(i = 0; i < busCount; i++) {
+		printf("Bus ID: %d, Bus name: '%s'\n",
+			busInfos[i].BusNo, busInfos[i].BusName);
 	}
 
 	printf("\nEnter bus ID, device ID: ");
@@ -83,9 +94,6 @@ main(WORD argc, const char *argv[])
 
 		goto error;
 	}
-
-/*	ReadCapacity(&cmd1, 3);*/
-	ReadCapacity(&cmd2, 3);
 
 	printf("\nSetting error status for handle 1\n");
 	scsiCall->Error(cmd1.Handle, cErrWrite, cErrMediach);
@@ -127,40 +135,13 @@ error:
 #pragma warn .par
 
 
-void
-ReadCapacity(tSCSICmd *cmd, UWORD lun)
+int
+sortBuses(const void *b1, const void *b2)
 {
-	BYTE ReadCapacityCmd[10] = {
-		0x25, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0, 0x00
-	};
+	const tBusInfo *i1 = b1;
+	const tBusInfo *i2 = b2;
 
-	LONG status;
-	ULONG capacity[] = { 0L, 0L };
-
-	ReadCapacityCmd[1] = lun << 5;
-	cmd->Cmd = (void *)&ReadCapacityCmd;
-	cmd->CmdLen = (UWORD)sizeof(ReadCapacityCmd);
-	cmd->Buffer = capacity;
-	cmd->TransferLen = sizeof(capacity);
-
-	status = scsiCall->In(cmd);
-	if(status) {
-		printf("READ CAPACITY failed: %ld\n", status);
-
-		return;
-	}
-
-	if(!capacity[0]) {
-		printf("Wrong capacity '0'\n");
-
-		return;
-	}
-
-	if(!capacity[1]) {
-		printf("Wrong block size '0'\n");
-
-		return;
-	}
+	return i1->BusNo - i2->BusNo;
 }
 
 
