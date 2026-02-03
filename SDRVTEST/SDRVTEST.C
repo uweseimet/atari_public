@@ -536,7 +536,7 @@ testOpenClose(UWORD busNo, UWORD id, ULONG maxLen)
 	}
 
 	if(scsiCall->Close((tHandle)0xfffffffeL) == 0) {
-		printDeviceError(4, "SCSU Driver: Invalid handles can be closed\n");
+		printDriverError(4, "Invalid handles can be closed\n");
 	}
 
 	while(--i >= 0) {
