@@ -1078,88 +1078,44 @@ testModeSense(UWORD lun)
 	};
 
 	UBYTE buffer[4096];
-	int pageOffsets[64];
-	int size;
-	int i;
+	LONG status;
 
-	for(i = 0; i < 64; i++) {
-		pageOffsets[i] = -1;
-	}
+	cmd.Buffer = buffer;
 
 	print("  MODE SENSE\n");
 
+	if(*cmd.Handle & cAllCmds) {
+		print("    Reading all mode pages with MODE SENSE (10)\n");
+
+		cmd.Cmd = (void *)&ModeSense10;
+		cmd.CmdLen = (UWORD)sizeof(ModeSense10);
+		cmd.TransferLen = 4096;
+
+		if(!execute(lun, "      MODE SENSE (10)", true)) {
+			printPages(buffer, (buffer[0] << 8) + buffer[1], 8);
+		}
+	}
 
 	print("    Reading all mode pages with MODE SENSE (6)\n");
 
 	cmd.Cmd = (void *)&ModeSense6;
 	cmd.CmdLen = (UWORD)sizeof(ModeSense6);
-	cmd.Buffer = buffer;
 	cmd.TransferLen = 255;
 
-	if(execute(lun, "      MODE SENSE (6)", true)) {
-		return;
-	}
-
-	size = buffer[0] + 1;
-	print("      Received %d data bytes\n", size);
-
-	if(size > 4) {
-		print("        Available pages list: ");
-
-		i = 4;
-		while(i < size) {
-			int page = buffer[i] & 0x3f;
-
-			if(i > 4) {
-				print(", ");
-			}
-			print("%d", page);
-
-			pageOffsets[page] = i;
-
-			i += buffer[i + 1] + 2;
+	status = execute(lun, "      MODE SENSE (6)", false);
+	if(status) {
+		if(localSenseData.errorClass && (localSenseData.senseKey != 0x02 ||
+			localSenseData.addSenseCode != 0x24)) {
+			printStatus(status);
+		}
+		else {
+			print("    MODE SENSE (10) is required (more than 255 data bytes)\n");
 		}
 
-		print("\n");
-	}
-
-	printPages(buffer, pageOffsets, 64, size);
-
-	if(!(*cmd.Handle & cAllCmds)) {
 		return;
 	}
 
-
-	print("    Reading all mode pages with MODE SENSE (10)\n");
-
-	cmd.Cmd = (void *)&ModeSense10;
-	cmd.CmdLen = (UWORD)sizeof(ModeSense10);
-	cmd.TransferLen = 4096;
-
-	if(execute(lun, "      MODE SENSE (10)", true)) {
-		return;
-	}
-
-	size = (buffer[0] << 8) + buffer[1];
-	print("      Received %d data bytes\n", size);
-
-
-	if(size > 8) {
-		print("        Available pages list: ");
-
-		i = 8;
-		while(i < size) {
-			if(i > 8) {
-				print(", ");
-			}
-
-			print("%d", buffer[i] & 0x3f);
-
-			i += buffer[i + 1] + 2;
-		}
-
-		print("\n");
-	}
+	printPages(buffer, buffer[0], 4);
 }
 
 
@@ -1448,11 +1404,42 @@ printFeatures(UWORD features, const char *type)
 
 
 void
-printPages(UBYTE *buf, int *pageOffsets, int offsets, int size)
+printPages(UBYTE *buf, int size, int minSize)
 {
+	int pageOffsets[64];
 	int i;
 
-	for(i = 1; i < offsets; i++) {
+	if(size <= minSize) {
+		printDeviceError(6, "Received %d data bytes, expected at least %d\n",
+			size, minSize + 1);
+		return;
+	}
+
+	print("      Received %d data bytes\n", size);
+
+	print("        Available pages list: ");
+
+	for(i = 0; i < 64; i++) {
+		pageOffsets[i] = -1;
+	}
+
+	i = minSize;
+	while(i < size) {
+		int page = buf[i] & 0x3f;
+
+		if(i > minSize) {
+			print(", ");
+		}
+		print("%d", page);
+
+		pageOffsets[page] = i;
+
+		i += buf[i + 1] + 2;
+	}
+
+	print("\n");
+
+	for(i = 1; i < sizeof(pageOffsets) / sizeof(int); i++) {
 		if(pageOffsets[i] != -1) {
 			switch(i) {
 				case 1:

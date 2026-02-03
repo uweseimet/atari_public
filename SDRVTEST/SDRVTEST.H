@@ -30,7 +30,7 @@ void testReadFormatCapacities(UWORD);
 void testGetConfiguration(UWORD);
 void printFeatures(UWORD, const char *);
 void printPageHeader(UBYTE *, int, const char *, int);
-void printPages(UBYTE *, int *, int, int);
+void printPages(UBYTE *, int, int);
 void printPage1(UBYTE *, int);
 void printPage2(UBYTE *, int);
 void printPage3(UBYTE *, int);
