@@ -1077,27 +1077,31 @@ testModeSense(UWORD lun)
 		0x5a, 0x08, 0x3f, 0, 0, 0, 0, 0x10, 0x00, 0
 	};
 
-	UBYTE buffer[4096];
+	UBYTE buffer6[512];
+	UBYTE buffer10[4096];
+	bool hasModeSense10 = false;
 	LONG status;
-
-	cmd.Buffer = buffer;
 
 	print("  MODE SENSE\n");
 
 	if(*cmd.Handle & cAllCmds) {
 		print("    Reading all mode pages with MODE SENSE (10)\n");
 
+		cmd.Buffer = buffer10;
 		cmd.Cmd = (void *)&ModeSense10;
 		cmd.CmdLen = (UWORD)sizeof(ModeSense10);
 		cmd.TransferLen = 4096;
 
 		if(!execute(lun, "      MODE SENSE (10)", true)) {
-			printPages(buffer, (buffer[0] << 8) + buffer[1], 8);
+			hasModeSense10 = true;
+
+			printPages(buffer10, (buffer10[0] << 8) + buffer10[1], 8);
 		}
 	}
 
 	print("    Reading all mode pages with MODE SENSE (6)\n");
 
+	cmd.Buffer = buffer6;
 	cmd.Cmd = (void *)&ModeSense6;
 	cmd.CmdLen = (UWORD)sizeof(ModeSense6);
 	cmd.TransferLen = 255;
@@ -1109,13 +1113,22 @@ testModeSense(UWORD lun)
 			printStatus(status);
 		}
 		else {
-			print("    MODE SENSE (10) is required (more than 255 data bytes)\n");
+			print("      MODE SENSE (10) is required (more than 255 data bytes)\n");
 		}
 
 		return;
 	}
 
-	printPages(buffer, buffer[0], 4);
+	if(hasModeSense10) {
+		if(memcmp(buffer6 + 4, buffer10 + 8, buffer6[0])) {
+			printDeviceError(6,"MODE SENSE (6) and MODE SENSE (10) data differ\n");
+
+			printPages(buffer6, buffer6[0], 4);
+		}
+		else {
+			print("      MODE SENSE (6) and MODE SENSE (10) data are identical\n");
+		}
+	}
 }
 
 
