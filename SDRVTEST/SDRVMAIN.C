@@ -19,6 +19,8 @@
 #define NVMSIZE 18
 #define NVMSIZE_MILAN 224
 
+#define MAX_DEVICES 64
+
 
 typedef struct {
   unsigned int bootpref;
@@ -44,13 +46,14 @@ typedef struct {
 } DEVICEINFO;
 
 
-static DEVICEINFO deviceInfos[32];
+static DEVICEINFO deviceInfos[MAX_DEVICES];
 SENSE_DATA localSenseData;
 tpScsiCall scsiCall;
 
 
 bool testDevice(UWORD, const char *, UWORD, ULONG);
 UWORD findDevices(void);
+int sortBuses(const void *, const void *);
 bool getCookie(LONG, ULONG *);
 bool getNvm(NVM *nvm);
 
@@ -106,7 +109,7 @@ main()
 
 	devCount = findDevices();
 
-	for(i = 0; i < devCount; i++) {
+	for(i = 0; i < devCount && i < MAX_DEVICES; i++) {
 		DEVICEINFO *deviceInfo = &deviceInfos[i];
 
 		print("\nTesting bus %d %s', device %d\n", deviceInfo->busNo,
@@ -205,39 +208,38 @@ testDevice(UWORD busNo, const char *busName, UWORD id, ULONG maxLen)
 UWORD
 findDevices()
 {
+	tBusInfo busInfos[32];
 	tBusInfo busInfo;
-	LONG busResult;
+	tDevInfo devInfo;
+	LONG result;
 	UBYTE busNos[32];
 	UWORD busCount = 0;
 	UWORD devCount = 0;
+	int i;
 
 /* Manually clearing the bus info must be equivalent to using cInqFirst */
 	memset(&busInfo, 0, sizeof(busInfo));
-	busResult = scsiCall->InquireSCSI(cInqNext, &busInfo);
-	if(!busResult) {
+	result = scsiCall->InquireSCSI(cInqNext, &busInfo);
+	if(!result) {
 		UWORD busNo = busInfo.BusNo;
 		
-		busResult = scsiCall->InquireSCSI(cInqFirst, &busInfo);
-		if(busResult || busNo != busInfo.BusNo) {
+		result = scsiCall->InquireSCSI(cInqFirst, &busInfo);
+		if(result || busNo != busInfo.BusNo) {
 			printDriverError(2, "Inconsistent handling of cInqFirst/cInqNext\n\n");
 		}
 	}
-
-	print("\nAvailable buses:\n");
 
 	memset(busNos, 0, sizeof(busNos));
 
 /* Deliberately initialize with non-zero data */
 	memset(&busInfo, -1, sizeof(busInfo));
 
-	busResult = scsiCall->InquireSCSI(cInqFirst, &busInfo);
-	while(!busResult) {
-		tDevInfo devInfo;
-		LONG result;
-		int i;
+	result = scsiCall->InquireSCSI(cInqFirst, &busInfo);
+	while(!result && busCount < 32) {
 		int bitCount = 0;
+		int i;
 
-		busCount++;
+		memcpy(&busInfos[busCount++], &busInfo, sizeof(tBusInfo));
 
 		if(!(busInfo.Private.BusIds & (1L << busInfo.BusNo))) {
 			printDriverError(2, "Bus ID vector has not been updated for bus %d\n\n",
@@ -265,43 +267,61 @@ findDevices()
 
 		busNos[busInfo.BusNo] = 1;
 
-		result = scsiCall->InquireBus(cInqFirst, busInfo.BusNo, &devInfo);
-		while(!result) {
-			char deviceBusName[20];
-			UWORD features;
+		result = scsiCall->InquireSCSI(cInqNext, &busInfo);
+	}
 
-			deviceBusName[0] = 0;
-			scsiCall->CheckDev(busInfo.BusNo, &devInfo.SCSIId,
-				deviceBusName, &features);
+	qsort(busInfos, busCount, sizeof(tBusInfo), sortBuses);
 
-			deviceInfos[devCount].busNo = busInfo.BusNo;
-			deviceInfos[devCount].id = (UWORD)devInfo.SCSIId.lo;
-			deviceInfos[devCount].maxLen = busInfo.MaxLen;
-			deviceInfos[devCount].features = features;
-			strcpy(deviceInfos[devCount].busName, busInfo.BusName);	
-			strcpy(deviceInfos[devCount].deviceBusName, deviceBusName);	
-			devCount++;
+	print("\nAvailable buses:\n");
 
-			result = scsiCall->InquireBus(cInqNext, busInfo.BusNo, &devInfo);
-		}
+	for(i = 0; i < busCount; i++) {
+		tBusInfo *info = &busInfos[i];
 
-		print("  ID: %d\n", busInfo.BusNo);
-		print("  Name: '%s'\n", busInfo.BusName);
-		print("  Maximum transfer length: %lu ($%lX)\n", busInfo.MaxLen,
-			busInfo.MaxLen);
+		print("  ID: %d\n", info->BusNo);
+		print("  Name: '%s'\n", info->BusName);
+		print("  Maximum transfer length: %lu ($%lX)\n", info->MaxLen,
+			info->MaxLen);
 
-		printFeatures(busInfo.Features, "bus");
+		printFeatures(info->Features, "bus");
 
-		if(!busInfo.BusNo && busInfo.Features & cAllCmds) {
+		if(!info->BusNo && info->Features & cAllCmds) {
 			print("    WARNING: Only ICD compatible adapters/devices are supported\n");
 		}
 
 		print("\n");
 
-		busResult = scsiCall->InquireSCSI(cInqNext, &busInfo);
+		result = scsiCall->InquireBus(cInqFirst, info->BusNo, &devInfo);
+		while(!result && devCount < MAX_DEVICES) {
+			char deviceBusName[20];
+			UWORD features;
+
+			deviceBusName[0] = 0;
+			scsiCall->CheckDev(info->BusNo, &devInfo.SCSIId,
+				deviceBusName, &features);
+
+			deviceInfos[devCount].busNo = info->BusNo;
+			deviceInfos[devCount].id = (UWORD)devInfo.SCSIId.lo;
+			deviceInfos[devCount].maxLen = info->MaxLen;
+			deviceInfos[devCount].features = features;
+			strcpy(deviceInfos[devCount].busName, info->BusName);	
+			strcpy(deviceInfos[devCount].deviceBusName, deviceBusName);	
+			devCount++;
+
+			result = scsiCall->InquireBus(cInqNext, info->BusNo, &devInfo);
+		}
 	}
 
 	return devCount;
+}
+
+
+int
+sortBuses(const void *b1, const void *b2)
+{
+	const tBusInfo *i1 = b1;
+	const tBusInfo *i2 = b2;
+
+	return i1->BusNo - i2->BusNo;
 }
 
 

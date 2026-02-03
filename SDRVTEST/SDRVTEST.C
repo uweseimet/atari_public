@@ -1086,30 +1086,12 @@ testModeSense(UWORD lun)
 
 	UBYTE buffer6[512];
 	UBYTE buffer10[4096];
-	bool hasModeSense10 = false;
+	bool requiresModeSense10 = false;
 	int size;
 	LONG status;
 
 	print("  MODE SENSE\n");
 
-	if(*cmd.Handle & cAllCmds) {
-		print("    Reading all mode pages with MODE SENSE (10)\n");
-
-		cmd.Buffer = buffer10;
-		cmd.Cmd = (void *)&ModeSense10;
-		cmd.CmdLen = (UWORD)sizeof(ModeSense10);
-		cmd.TransferLen = sizeof(buffer10);
-
-		if(!execute(lun, "      MODE SENSE (10)", true)) {
-			hasModeSense10 = true;
-
-			size = (buffer10[0] << 8) + buffer10[1];
-
-			print("      Received %d data bytes\n", size);
-
-			printPages(buffer10, size, 8);
-		}
-	}
 
 	print("    Reading all mode pages with MODE SENSE (6)\n");
 
@@ -1123,30 +1105,46 @@ testModeSense(UWORD lun)
 		if(localSenseData.senseKey != 0x05 || (
 			localSenseData.addSenseCode != 0x20 && localSenseData.addSenseCode != 0x24)) {
 			printStatus(status);
+			return;
 		}
 		else if(localSenseData.senseKey == 0x05 && localSenseData.addSenseCode == 0x24) {
+			requiresModeSense10 = true;
 			print("      MODE SENSE (10) is required (more than 255 data bytes)\n");
-		}
-
-		return;
-	}
-
-	size = buffer6[0];
-
-	print("      Received %d data bytes\n", size);
-
-	if(hasModeSense10) {
-		if(memcmp(buffer6 + 4, buffer10 + 8, size - 4)) {
-			printDeviceError(6,"MODE SENSE (6) and MODE SENSE (10) page data differ\n");
-
-			printPages(buffer6, size, 4);
-		}
-		else {
-			print("      MODE SENSE (6) and MODE SENSE (10) page data are identical\n");
 		}
 	}
 	else {
+		size = buffer6[0];
+
+		print("      Received %d data bytes\n", size);
+
 		printPages(buffer6, size, 4);
+	}
+
+	if(*cmd.Handle & cAllCmds) {
+		print("    Reading all mode pages with MODE SENSE (10)\n");
+
+		cmd.Buffer = buffer10;
+		cmd.Cmd = (void *)&ModeSense10;
+		cmd.CmdLen = (UWORD)sizeof(ModeSense10);
+		cmd.TransferLen = sizeof(buffer10);
+
+		if(!execute(lun, "      MODE SENSE (10)", true)) {
+			size = (buffer10[0] << 8) + buffer10[1];
+
+			print("      Received %d data bytes\n", size);
+
+			if(size < 8 ||
+				(!requiresModeSense10 && memcmp(buffer6 + 4, buffer10 + 8, size - 8))) {
+				printDeviceError(6,"MODE SENSE (6) and MODE SENSE (10) page data differ\n");
+				printPages(buffer10, size, 8);
+			}
+			else {
+				print("      MODE SENSE (6) and MODE SENSE (10) page data are identical\n");
+			}
+		}
+	}
+	else if(requiresModeSense10) {
+		printDriverError(6,"MODE SENSE (10) is required but not available\n");
 	}
 }
 
@@ -2057,43 +2055,43 @@ execute(UWORD lun, const char *msg, bool reportError)
 		print("      Device reported status code %ld", status);
 
 		if(status == SELECTERROR) {
-				print(" (SELECTERROR)");
+			print(" (SELECTERROR)");
 		}
 		else if(status == STATUSERROR) {
-				print(" (STATUSERROR)");
+			print(" (STATUSERROR)");
 		}
 		else if(status == PHASEERROR) {
-				print(" (PHASEERROR)");
+			print(" (PHASEERROR)");
 		}
 		else if(status == BSYERROR) {
-				print(" (BSYERROR)");
+			print(" (BSYERROR)");
 		}
 		else if(status == BUSERROR) {
-				print(" (BUSERROR)");
+			print(" (BUSERROR)");
 		}
 		else if(status == TRANSERROR) {
-				print(" (TRANSERROR)");
+			print(" (TRANSERROR)");
 		}
 		else if(status == FREEERROR) {
-				print(" (FREEERROR)");
+			print(" (FREEERROR)");
 		}
 		else if(status == TIMEOUTERROR) {
-				print(" (TIMEOUTERROR)");
+			print(" (TIMEOUTERROR)");
 		}
 		else if(status == DATATOOLONG) {
-				print(" (DATATOOLONG)");
+			print(" (DATATOOLONG)");
 		}
 		else if(status == LINKERROR) {
-				print(" (LINKERROR)");
+			print(" (LINKERROR)");
 		}
 		else if(status == TIMEOUTARBIT) {
-				print(" (TIMEOUTARBIT)");
+			print(" (TIMEOUTARBIT)");
 		}
 		else if(status == PENDINGERROR) {
-				print(" (PENDINGERROR)");
+			print(" (PENDINGERROR)");
 		}
 		else if(status == PARITYERROR) {
-				print(" (PARITYERROR)");
+			print(" (PARITYERROR)");
 		}
 
 		print("\n");
@@ -2160,7 +2158,40 @@ print(const char *msg, ...)
 void
 printStatusError(LONG status)
 {
-	print("      ERROR (Device): Request failed with status %ld\n", status);
+	print("      ERROR (Device): Request failed with status %ld", status);
+
+	if(status == 0x2L) {
+		print(" (CHECK CONDITION)");
+	}
+	else if(status == 0x04L) {
+		print(" (CONDITION MET)");
+	}
+	else if(status == 0x08L) {
+		print(" (BUSY)");
+	}
+	else if(status == 0x10L) {
+		print(" (INTERMEDIATE)");
+	}
+	else if(status == 0x14L) {
+		print(" (INTERMEDIATE CONDITION MET)");
+	}
+	else if(status == 0x18L) {
+		print(" (RESERVATION CONFLICT)");
+	}
+	else if(status == 0x22L) {
+		print(" (COMMAND TERMINATED)");
+	}
+	else if(status == 0x28L) {
+		print(" (QUEUE FULL)");
+	}
+	else if(status == 0x30L) {
+		print(" (ACA ACTIVE)");
+	}
+	else if(status == 0x40L) {
+		print(" (TASK ABORTED)");
+	}
+
+	print("\n");
 
 	deviceErrors++;
 }
