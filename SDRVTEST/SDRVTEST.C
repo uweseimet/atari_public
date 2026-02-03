@@ -411,11 +411,13 @@ testRequestSense(UWORD lun, UWORD nonExistingLun)
 	status = callInWithLun(&cmd, lun);
 
 	if(status) {
-		printStatusError(status);
 		if(!localSenseData.errorClass) {
+			printStatusError(status);
 			print("      Device uses SCSI-1 4 byte legacy sense data format\n");
 		}
-		else {
+		else if(localSenseData.senseKey || localSenseData.addSenseCode ||
+				localSenseData.addSenseCodeQualifier) {
+			printStatusError(status);
 			print("      Sense Key $%02X, ASC $%02X, ASCQ $%02X\n",
 				localSenseData.senseKey, localSenseData.addSenseCode,
 				localSenseData.addSenseCodeQualifier);
@@ -457,8 +459,13 @@ testRequestSense(UWORD lun, UWORD nonExistingLun)
 	
 		status = callInWithLun(&cmd, lun);
 		if(status) {
-			printStatusError(status);
-			if(localSenseData.errorClass) {
+			if(!localSenseData.errorClass) {
+				printStatusError(status);
+				print("      Device uses SCSI-1 4 byte legacy sense data format\n");
+			}
+			else if(localSenseData.senseKey || localSenseData.addSenseCode ||
+				localSenseData.addSenseCodeQualifier) {
+				printStatusError(status);
 				print("      Sense Key $%02X, ASC $%02X, ASCQ $%02X\n",
 					localSenseData.senseKey, localSenseData.addSenseCode,
 					localSenseData.addSenseCodeQualifier);
