@@ -54,6 +54,7 @@ void printStatus(LONG);
 LONG printSenseData(void);
 void printExpectedSenseData(SENSE_DATA *, UWORD, UWORD);
 void print(const char *, ...);
+void printStatusError(LONG status);
 void printDeviceError(UWORD, const char *, ...);
 void printDriverError(UWORD, const char *, ...);
 

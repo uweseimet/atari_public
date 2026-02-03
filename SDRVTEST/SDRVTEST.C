@@ -292,7 +292,7 @@ testInquiry(UWORD busNo, UWORD lun, UWORD nonExistingLun)
 
 	/* For ACSI and SCSI the device must support a well-defined SCSI/SPC version */
 	if(!inquiryData.ANSIVersion && busNo < 2) {
-		printDeviceError(6, "Invalid SCSI/SPC version\n");
+		printDeviceError(8, "Invalid SCSI/SPC version\n");
 	}
 
 	print("      Response data format: ");
@@ -411,7 +411,7 @@ testRequestSense(UWORD lun, UWORD nonExistingLun)
 	status = callInWithLun(&cmd, lun);
 
 	if(status) {
-		printDeviceError(6, "Request failed with status %ld\n", status);
+		printStatusError(status);
 		if(!localSenseData.errorClass) {
 			print("      Device uses SCSI-1 4 byte legacy sense data format\n");
 		}
@@ -436,7 +436,7 @@ testRequestSense(UWORD lun, UWORD nonExistingLun)
 	
 		status = callInWithLun(&cmd, nonExistingLun);
 		if(status) {
-			printDeviceError(6, "Request failed with status %ld\n", status);
+			printStatusError(status);
 			if(localSenseData.errorClass) {
 				print("      Sense Key $%02X, ASC $%02X, ASCQ $%02X\n",
 					localSenseData.senseKey, localSenseData.addSenseCode,
@@ -457,7 +457,7 @@ testRequestSense(UWORD lun, UWORD nonExistingLun)
 	
 		status = callInWithLun(&cmd, lun);
 		if(status) {
-			printDeviceError(6, "Request failed with status %ld\n", status);
+			printStatusError(status);
 			if(localSenseData.errorClass) {
 				print("      Sense Key $%02X, ASC $%02X, ASCQ $%02X\n",
 					localSenseData.senseKey, localSenseData.addSenseCode,
@@ -1113,10 +1113,11 @@ testModeSense(UWORD lun)
 
 	status = execute(lun, "      MODE SENSE (6)", false);
 	if(status) {
-		if(localSenseData.senseKey != 0x02 || localSenseData.addSenseCode != 0x24) {
+		if(localSenseData.senseKey != 0x05 || (
+			localSenseData.addSenseCode != 0x20 && localSenseData.addSenseCode != 0x24)) {
 			printStatus(status);
 		}
-		else {
+		else if(localSenseData.senseKey == 0x05 && localSenseData.addSenseCode == 0x24) {
 			print("      MODE SENSE (10) is required (more than 255 data bytes)\n");
 		}
 
@@ -1360,7 +1361,7 @@ testSenseBuffer(UWORD lun)
 
 		status = callInWithLun(&cmd, lun);
 		if(status) {
-			printDeviceError(6, "Request failed with status %ld\n", status);
+			printStatusError(status);
 			print("      Sense Key $%02X, ASC $%02X, ASCQ $%02X\n",
 				localSenseData.senseKey, localSenseData.addSenseCode,
 				localSenseData.addSenseCodeQualifier);
@@ -2065,7 +2066,7 @@ execute(UWORD lun, const char *msg, bool reportError)
 void
 printStatus(LONG status)
 {
-	printDeviceError(6, "Request failed with status %ld\n", status);
+	printStatusError(status);
 	printSenseData();
 }
 
@@ -2117,6 +2118,21 @@ print(const char *msg, ...)
 
 
 void
+printStatusError(LONG status)
+{
+	int i;
+
+	for(i = 0; i < 3; i++) {
+		print("  ");
+	}
+
+	print("ERROR (Device): Request failed with status %ld\n", status);
+
+	deviceErrors++;
+}
+
+
+void
 printDeviceError(UWORD blanks, const char *msg, ...)
 {
 	int i;
@@ -2126,7 +2142,7 @@ printDeviceError(UWORD blanks, const char *msg, ...)
 	}
 
 	print("ERROR (Device): ");
-	print(msg);
+	print(msg, ...);
 
 	deviceErrors++;
 }
