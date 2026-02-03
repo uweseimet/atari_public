@@ -113,6 +113,7 @@ runTest(UWORD busNo, UWORD lun, UWORD nonExistingLun)
 
 					testSeek(lun);
 					testModeSense(lun);
+					testModeSelect(lun);
 					testReadLong(lun);
 					testReadFormatCapacities(lun);
 				}
@@ -122,6 +123,7 @@ runTest(UWORD busNo, UWORD lun, UWORD nonExistingLun)
 
 			default:
 				testModeSense(lun);
+				testModeSelect(lun);
 				break;
 		}
 	}
@@ -292,7 +294,7 @@ testInquiry(UWORD busNo, UWORD lun, UWORD nonExistingLun)
 
 	/* For ACSI and SCSI the device must support a well-defined SCSI/SPC version */
 	if(!inquiryData.ANSIVersion && busNo < 2) {
-		printDeviceError(8, "Invalid SCSI/SPC version\n");
+		printDeviceError(8, "Invalid SCSI/SPC version for device on ACSI/SCSI bus\n");
 	}
 
 	print("      Response data format: ");
@@ -933,9 +935,7 @@ testSeek(UWORD lun)
 	cmd.Buffer = NULL;
 	cmd.TransferLen = 0;
 
-	if(execute(lun, "      SEEK (6)", true)) {
-		return;
-	}
+	execute(lun, "      SEEK (6)", true);
 
 	if(*cmd.Handle & cAllCmds) {
 		print("    Seeking block 0 with SEEK (10)\n");
@@ -1147,6 +1147,39 @@ testModeSense(UWORD lun)
 	}
 	else {
 		printPages(buffer6, size, 4);
+	}
+}
+
+
+void
+testModeSelect(UWORD lun)
+{
+	UBYTE ModeSelect6[] = {
+		0x15, 0x10, 0, 0, 0, 0
+	};
+	UBYTE ModeSelect10[] = {
+		0x55, 0x10, 0, 0, 0, 0, 0, 0, 0, 0
+	};
+
+	print("  MODE SELECT\n");
+
+	cmd.Buffer = NULL;
+	cmd.TransferLen = 0;
+
+	print("    Testing MODE SELECT (6) with empty parameter list\n");
+
+	cmd.Cmd = (void *)&ModeSelect6;
+	cmd.CmdLen = (UWORD)sizeof(ModeSelect6);
+
+	execute(lun, "      MODE SELECT (6)", true);
+
+	if(*cmd.Handle & cAllCmds) {
+		print("    Testing MODE SELECT (10) with empty parameter list\n");
+
+		cmd.Cmd = (void *)&ModeSelect10;
+		cmd.CmdLen = (UWORD)sizeof(ModeSelect10);
+
+		execute(lun, "      MODE SELECT (10)", true);
 	}
 }
 
@@ -2127,13 +2160,7 @@ print(const char *msg, ...)
 void
 printStatusError(LONG status)
 {
-	int i;
-
-	for(i = 0; i < 3; i++) {
-		print("  ");
-	}
-
-	print("ERROR (Device): Request failed with status %ld\n", status);
+	print("      ERROR (Device): Request failed with status %ld\n", status);
 
 	deviceErrors++;
 }
@@ -2165,7 +2192,7 @@ printDriverError(UWORD blanks, const char *msg, ...)
 	}
 
 	print("ERROR (SCSI Driver): ");
-	print(msg);
+	print(msg, ...);
 
 	scsiDriverErrors++;
 }

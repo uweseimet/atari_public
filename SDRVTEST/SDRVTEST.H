@@ -26,6 +26,7 @@ void testRead(UWORD, UWORD, UWORD, ULONG, UBYTE *, UBYTE *, UBYTE *);
 void testSeek(UWORD);
 void testReadLong(UWORD);
 void testModeSense(UWORD);
+void testModeSelect(UWORD);
 void testReadFormatCapacities(UWORD);
 void testGetConfiguration(UWORD);
 void printFeatures(UWORD, const char *);
