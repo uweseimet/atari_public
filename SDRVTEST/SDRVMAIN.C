@@ -176,7 +176,7 @@ testDevice(UWORD busNo, const char *busName, UWORD id, ULONG maxLen)
 	scsiDriverErrors = 0;
 	deviceErrors = 0;
 
-	print("Testing bus %d '%s', device %d, LUN %d\n", busNo, busName, id, lun);
+	print("\nTesting bus %d '%s', device %d, LUN %d\n", busNo, busName, id, lun);
 
 	runTest(busNo, lun, nonExistingLun);
 

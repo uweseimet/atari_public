@@ -620,7 +620,7 @@ testReadCapacity(UWORD lun, ULONG *blockSize)
 	capacity64.lo = maxBlock64.lo + 1;
 
 	if(!maxBlock64.lo) {
-		printDeviceError(4, "Wrong maximum block number '0'\n");
+		printDeviceError(4, "Illegal maximum block number '0'\n");
 
 		return;
 	}
@@ -634,6 +634,9 @@ testReadCapacity(UWORD lun, ULONG *blockSize)
 
 
 	print("    Reading capacity with READ CAPACITY (16)\n");
+
+	maxBlock64.hi = 0;
+	maxBlock64.lo = 0;
 
 	cmd.Cmd = (void *)&ReadCapacity16;
 	cmd.CmdLen = (UWORD)sizeof(ReadCapacity16);
@@ -1135,7 +1138,7 @@ testModeSense(UWORD lun)
 
 			if(size < 8 ||
 				(!requiresModeSense10 && memcmp(buffer6 + 4, buffer10 + 8, size - 8))) {
-				printDeviceError(6,"MODE SENSE (6) and MODE SENSE (10) page data differ\n");
+				printDeviceError(6, "MODE SENSE (6) and MODE SENSE (10) page data differ\n");
 				printPages(buffer10, size, 8);
 			}
 			else {
@@ -2200,6 +2203,8 @@ printStatusError(LONG status)
 void
 printDeviceError(UWORD blanks, const char *msg, ...)
 {
+	va_list args;
+	char s[161];
 	int i;
 
 	for(i = 0; i < blanks / 2; i++) {
@@ -2207,7 +2212,12 @@ printDeviceError(UWORD blanks, const char *msg, ...)
 	}
 
 	print("ERROR (Device): ");
-	print(msg, ...);
+
+	va_start(args, msg);
+	vsprintf(s, msg, args);
+	va_end(args);
+	logMsg(s);
+	va_start(args, fmt);
 
 	deviceErrors++;
 }
@@ -2216,6 +2226,8 @@ printDeviceError(UWORD blanks, const char *msg, ...)
 void
 printDriverError(UWORD blanks, const char *msg, ...)
 {
+	va_list args;
+	char s[161];
 	int i;
 
 	for(i = 0; i < blanks / 2; i++) {
@@ -2223,7 +2235,12 @@ printDriverError(UWORD blanks, const char *msg, ...)
 	}
 
 	print("ERROR (SCSI Driver): ");
-	print(msg, ...);
+
+	va_start(args, msg);
+	vsprintf(s, msg, args);
+	va_end(args);
+	logMsg(s);
+	va_start(args, fmt);
 
 	scsiDriverErrors++;
 }

@@ -1,8 +1,8 @@
-/***************************************/
-/* SCSI Driver Error Status Test 1.01ž */
-/*                                     */
-/* (C) 2021-2026 Uwe Seimet            */
-/***************************************/
+/**************************************/
+/* SCSI Driver Error Status Test 1.01 */
+/*                                    */
+/* (C) 2021-2026 Uwe Seimet           */
+/**************************************/
 
 
 #include <string.h>
@@ -45,7 +45,7 @@ main(WORD argc, const char *argv[])
 		goto error;
 	}
 
-	printf("SCSI Driver Error Status Test V1.01ž\n");
+	printf("SCSI Driver Error Status Test V1.01\n");
 	printf("½ 2021-2026 Uwe Seimet\n\n");
 
 	printf("Found SCSI Driver version %d.%02d\n\n", scsiCall->Version >> 8,
@@ -58,7 +58,9 @@ main(WORD argc, const char *argv[])
 	cmd1.Timeout = 2000;
 	cmd2.Timeout = 2000;
 
-	if(!Super((void *)1L)) oldstack = Super(0L);
+	if(!Super((void *)1L)) {
+		oldstack = Super(0L);
+	}
 
 	result = scsiCall->InquireSCSI(cInqFirst, &busInfo);
 	while(!result && busCount < 32) {
@@ -113,7 +115,9 @@ main(WORD argc, const char *argv[])
 	scsiCall->Close(cmd1.Handle);
 	scsiCall->Close(cmd2.Handle);
 
-	if(oldstack) Super((void *)oldstack);
+	if(oldstack) {
+		Super((void *)oldstack);
+	}
 
 	printf("\nStatus: %ld\n", result);
 
@@ -126,7 +130,9 @@ error:
 	scsiCall->Close(cmd1.Handle);
 	scsiCall->Close(cmd2.Handle);
 
-	if(oldstack) Super((void *)oldstack);
+	if(oldstack) {
+		Super((void *)oldstack);
+	}
 
 	printf("\nTest failed\n");
 

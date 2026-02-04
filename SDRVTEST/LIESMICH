@@ -14,10 +14,7 @@ Anwendungen/Treiber funktionieren mîglicherweise nicht korrekt mit GerÑten
 oder SCSI-Treibern, bei denen ein Test fehlschlÑgt.
 SDRVTEST sichert die Testergebnisse in einer Datei SDRVTEST.LOG im aktuellen
 Verzeichnis und zeigt die Ergebnisse auch auf dem Bildschirm an.
-
-Bitte melden Sie sich, falls Sie einen Test finden, bei dem das von SDRVTEST
-erwartete Ergebnis nicht der SCSI-Treiber-Spezifikation oder dem SCSI-
-Standard entspricht.
+HINWEIS: Zur Zeit wird nur LUN 0 getestet.
 
 MCHGTEST, ERRTEST and SERRTEST testen weitere SCSI-Treiber-Features, die sich
 auf Fehlerbehandlung und Medienwechsel beziehen. Bitte entnehmen Sie Details
@@ -25,5 +22,5 @@ den Quelltexten.
 Bis auf das SDRVTEST-Logfile verÑndern/schreiben die Tests keine Daten.
 
 Die C-Quelltexte sind auf GitHub verfÅgbar:
+https://github.com/uweseimet/atari_public.
 
-  https://github.com/uweseimet/atari_public

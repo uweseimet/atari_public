@@ -2,7 +2,7 @@ With SDRVTEST you can test whether a SCSI Driver implementation is compliant
 with the SCSI Driver specification 1.01, and whether a device handles certain
 SCSI commands in compliance with the SCSI standard (https://www.t10.org).
 The device does not necessarily have to be a SCSI device, but can be any
-device managed by a SCSI Driver.
+device manage by a SCSI Driver.
 Any error reported by SDRVTEST (flagged in the output with "ERROR") means
 that most likely something is either wrong with the SCSI Driver
 implementation for the respective bus, or that the device (or device
@@ -12,14 +12,11 @@ Applications/drivers may not work correctly with devices or SCSI Drivers for
 which a test fails.
 SDRVTEST saves the test results to a file SDRVTEST.LOG in the current
 directory and also displays the results on the screen.
-
-Please contact me if you find a test where the result expected by SDRVTEST
-does not comply with the SCSI Driver specification or the SCSI standard. 
+NOTE: Currently only LUN 0 is tested.
 
 MCHGTEST, ERRTEST and SERRTEST test other SCSI Driver features, related to
 error handling and media changes. Please refer to the sources for details.
 Except for the SDRVTEST logfile the tests do not change/write any data.
 
 The C sources are available on GitHub:
-
-  https://github.com/uweseimet/atari_public
+https://github.com/uweseimet/atari_public.
