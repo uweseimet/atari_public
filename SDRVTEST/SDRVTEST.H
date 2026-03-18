@@ -52,7 +52,7 @@ LONG callInWithLun(tpSCSICmd, UWORD);
 LONG execute(UWORD, const char *, bool);
 char *DULongToString(const D_ULONG *);
 void printStatus(LONG);
-LONG printSenseData(void);
+void printSenseData(void);
 void printExpectedSenseData(SENSE_DATA *, UWORD, UWORD);
 void print(const char *, ...);
 void printStatusError(LONG status);

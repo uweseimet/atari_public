@@ -64,6 +64,9 @@ typedef struct
 } CAPACITY_LIST;
 
 
+static bool reportLunsMandatory;
+static bool hasReportLuns;
+
 tSCSICmd cmd;
 
 UWORD scsiDriverErrors;
@@ -125,6 +128,10 @@ runTest(UWORD busNo, UWORD lun, UWORD nonExistingLun)
 				testModeSense(lun);
 				testModeSelect(lun);
 				break;
+		}
+
+		if(reportLunsMandatory && !hasReportLuns) {
+			printDeviceError(2, "REPORT LUNS is mandatory but not supported\n");
 		}
 	}
 
@@ -228,6 +235,9 @@ testInquiry(UWORD busNo, UWORD lun, UWORD nonExistingLun)
 
 	printRawData((UBYTE *)&inquiryData, 0, inquiryData.additionalLength + 5,
 		"      ");
+
+	/* REPORT LUNS is mandatory since SPC-3 */
+	reportLunsMandatory = inquiryData.ANSIVersion >= 6;
 
 	deviceType = inquiryData.deviceType & 0x1f;
 	if(deviceType == 0x1f) {
@@ -995,12 +1005,8 @@ testReadLong(UWORD lun)
 
 	status = callInWithLun(&cmd, lun);
 	if(status) {
-		LONG size;
 		print("      Request has been rejected\n");
-		size = printSenseData();
-		if(size) {
-			print("      Available data size is %ld bytes\n", cmd.TransferLen - size);
-		}
+		printSenseData();
 	}
 
 
@@ -1015,12 +1021,8 @@ testReadLong(UWORD lun)
 
 	status = callInWithLun(&cmd, lun);
 	if(status) {
-		LONG size;
 		print("      Request has been rejected\n");
-		size = printSenseData();
-		if(size) {
-			print("      Available data size is %ld bytes\n", cmd.TransferLen - size);
-		}
+		printSenseData();
 	}
 
 
@@ -1048,12 +1050,8 @@ testReadLong(UWORD lun)
 
 	status = callInWithLun(&cmd, lun);
 	if(status) {
-		LONG size;
 		print("      Request has been rejected\n");
-		size = printSenseData();
-		if(size) {
-			print("      Available data size is %ld bytes\n", cmd.TransferLen - size);
-		}
+		printSenseData();
 	}
 
 	print("    Reading 516 bytes of sector 0 with READ LONG (16)\n");
@@ -1067,12 +1065,8 @@ testReadLong(UWORD lun)
 
 	status = callInWithLun(&cmd, lun);
 	if(status) {
-		LONG size;
 		print("      Request has been rejected\n");
-		size = printSenseData();
-		if(size) {
-			print("      Available data size is %ld bytes\n", cmd.TransferLen - size);
-		}
+		printSenseData();
 	}
 }
 
@@ -1084,11 +1078,11 @@ testModeSense(UWORD lun)
 		0x1a, 0x08, 0x3f, 0, 0xff, 0
 	};
 	UBYTE ModeSense10[] = {
-		0x5a, 0x08, 0x3f, 0, 0, 0, 0, 0x10, 0x00, 0
+		0x5a, 0x08, 0x3f, 0, 0, 0, 0, 0x08, 0x00, 0
 	};
 
-	UBYTE buffer6[512];
-	UBYTE buffer10[4096];
+	UBYTE buffer6[256];
+	UBYTE buffer10[2048];
 	bool requiresModeSense10 = false;
 	int size;
 	LONG status;
@@ -1112,7 +1106,7 @@ testModeSense(UWORD lun)
 		}
 		else if(localSenseData.senseKey == 0x05 && localSenseData.addSenseCode == 0x24) {
 			requiresModeSense10 = true;
-			print("      MODE SENSE (10) is required (more than 255 data bytes)\n");
+			print("      Using MODE SENSE (10) is required (too many data bytes)\n");
 		}
 	}
 	else {
@@ -1210,7 +1204,8 @@ testReportLuns()
 
 	memset(&localSenseData, 0, sizeof(SENSE_DATA));
 
-	if(execute(0, "    REPORT LUNS", true)) {
+	hasReportLuns = execute(0, "    REPORT LUNS", true) == 0;
+	if(!hasReportLuns) {
 		return 0x01;
 	}
 
@@ -1582,7 +1577,7 @@ printPageHeader(UBYTE *buf, int offset, const char *name, int expected)
 	printRawData(buf, offset, size + 2, "          ");
 
 	if(size < expected) {
-		printDeviceError(10, "Page size: %d bytes, which is less than the expected %d\n",
+		printDeviceError(10, "Page size: %d bytes, less than the expected %d bytes\n",
 			size, expected);
 	}
 	else {
@@ -2112,7 +2107,7 @@ printStatus(LONG status)
 }
 
 
-LONG
+void
 printSenseData()
 {
 	if(localSenseData.errorClass) {
@@ -2124,12 +2119,8 @@ printSenseData()
 				(localSenseData.information2 << 16) | (localSenseData.information3 << 8) |
 				localSenseData.information4;
 			print("      ILI: %d, Information: %ld\n", localSenseData.ILI, information);
-
-			return information;
 		}
 	}
-
-	return 0;
 }
 
 
