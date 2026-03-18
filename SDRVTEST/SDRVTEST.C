@@ -64,7 +64,7 @@ typedef struct
 } CAPACITY_LIST;
 
 
-static bool reportLunsMandatory;
+static UWORD scsiLevel;
 static bool hasReportLuns;
 
 tSCSICmd cmd;
@@ -130,8 +130,9 @@ runTest(UWORD busNo, UWORD lun, UWORD nonExistingLun)
 				break;
 		}
 
-		if(reportLunsMandatory && !hasReportLuns) {
-			printDeviceError(2, "REPORT LUNS is mandatory but not supported\n");
+		if(scsiLevel >= 5 && !hasReportLuns) {
+			printDeviceError(2,
+				"REPORT LUNS is mandatory for SPC-%d but not supported\n", scsiLevel - 2);
 		}
 	}
 
@@ -236,8 +237,7 @@ testInquiry(UWORD busNo, UWORD lun, UWORD nonExistingLun)
 	printRawData((UBYTE *)&inquiryData, 0, inquiryData.additionalLength + 5,
 		"      ");
 
-	/* REPORT LUNS is mandatory since SPC-3 */
-	reportLunsMandatory = inquiryData.ANSIVersion >= 5;
+	scsiLevel = inquiryData.ANSIVersion;
 
 	deviceType = inquiryData.deviceType & 0x1f;
 	if(deviceType == 0x1f) {
