@@ -237,7 +237,7 @@ testInquiry(UWORD busNo, UWORD lun, UWORD nonExistingLun)
 		"      ");
 
 	/* REPORT LUNS is mandatory since SPC-3 */
-	reportLunsMandatory = inquiryData.ANSIVersion >= 6;
+	reportLunsMandatory = inquiryData.ANSIVersion >= 5;
 
 	deviceType = inquiryData.deviceType & 0x1f;
 	if(deviceType == 0x1f) {
