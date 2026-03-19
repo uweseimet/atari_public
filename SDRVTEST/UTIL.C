@@ -1,15 +1,15 @@
-/***********************************/
-/* SCSI Driver/Firmware Test 3.00ž */
-/*                                 */
-/* (C) 2014-2026 Uwe Seimet        */
-/***********************************/
+/*****************************/
+/* SCSI Driver/Firmware Test */
+/*                           */
+/* (C) 2014-2026 Uwe Seimet  */
+/*****************************/
 
 
 #include <stdlib.h>
 #include <string.h>
-#include <std.h>
 #include <tos.h>
 #include <scsidrv/scsidefs.h>
+#include "std.h"
 #include "util.h"
 
 

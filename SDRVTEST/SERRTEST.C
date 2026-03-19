@@ -26,15 +26,13 @@ main(WORD argc, const char *argv[])
 {
 	UWORD bus;
 	UWORD device;
-	tBusInfo busInfo;
 	tBusInfo busInfos[32];
 	DLONG scsiId;
 	ULONG maxLen;
 	UWORD busCount;
 	UWORD busId;
 	LONG oldstack = 0;
-	LONG result;
-	int i;
+	LONG result1, result2, result3, result4;
 
 	getCookie('SCSI', (ULONG *)&scsiCall);
 	if(!scsiCall) {
@@ -66,11 +64,6 @@ main(WORD argc, const char *argv[])
 		busInfos[busId].BusName);
 	}
 
-	for(i = 0; i < busCount; i++) {
-		printf("Bus ID: %d, Bus name: '%s'\n",
-			busInfos[i].BusNo, busInfos[i].BusName);
-	}
-
 	printf("\nEnter bus ID, device ID: ");
 	scanf("%d,%d", &bus, &device);
 	printf("\n");
@@ -95,17 +88,17 @@ main(WORD argc, const char *argv[])
 	printf("\nSetting error status for handle 1\n");
 	scsiCall->Error(cmd1.Handle, cErrWrite, cErrMediach);
 
-	result = scsiCall->Error(cmd1.Handle, cErrRead, cErrMediach);
-	printf("\nError status 1 for handle 1: %ld\n", result);
+	result1 = scsiCall->Error(cmd1.Handle, cErrRead, cErrMediach);
+	printf("\nError status 1 for handle 1: %ld\n", result1);
 
-	result = scsiCall->Error(cmd1.Handle, cErrRead, cErrMediach);
-	printf("\nError status 2 for handle 1: %ld\n", result);
+	result2 = scsiCall->Error(cmd1.Handle, cErrRead, cErrMediach);
+	printf("\nError status 2 for handle 1: %ld\n", result2);
 
-	result = scsiCall->Error(cmd2.Handle, cErrRead, cErrMediach);
-	printf("\nError status 1 for handle 2: %ld\n", result);
+	result3 = scsiCall->Error(cmd2.Handle, cErrRead, cErrMediach);
+	printf("\nError status 1 for handle 2: %ld\n", result3);
 
-	result = scsiCall->Error(cmd2.Handle, cErrRead, cErrMediach);
-	printf("\nError status 2 for handle 2: %ld\n", result);
+	result4 = scsiCall->Error(cmd2.Handle, cErrRead, cErrMediach);
+	printf("\nError status 2 for handle 2: %ld\n", result4);
 
 	scsiCall->Close(cmd1.Handle);
 	scsiCall->Close(cmd2.Handle);
@@ -114,7 +107,12 @@ main(WORD argc, const char *argv[])
 		Super((void *)oldstack);
 	}
 
-	printf("\nStatus: %ld\n", result);
+	if(result1 || result2 || !result3 || result4) {
+		printf("\nTest failed\n");
+	}
+	else {
+		printf("\nTest succceded\n");
+	}
 
 	Cconin();
 
