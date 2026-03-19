@@ -679,6 +679,7 @@ testReadCapacity(UWORD lun, ULONG *blockSize)
 
 		print("      Maximum block number hi: %lu, maximum block number lo: %lu\n",
 			maxBlock64.hi, maxBlock64.lo);
+		print("      Maximum block number: %s\n", maxBlockString);
 		print("      Block size: %lu\n", capacity16[2]);
 		if(!ratio) {
 			print("      Logical sectors per physical sector: Unknown (1 or more)\n");
@@ -2125,13 +2126,16 @@ printSenseData()
 
 
 void
-printExpectedSenseData(SENSE_DATA *localSenseData, UWORD senseKey, UWORD addSenseCode)
+printExpectedSenseData(SENSE_DATA *senseData, UWORD senseKey, UWORD addSenseCode)
 {
 	printDeviceError(6, "Request was not correctly rejected\n");
-	if(localSenseData->errorClass) {
+	if(senseData->errorClass) {
 		print("        Expected: Sense Key $%02X (got $%02X),"
 			" ASC $%02X (got $%02X)\n",
-			senseKey, localSenseData->senseKey, addSenseCode, localSenseData->addSenseCode);
+			senseKey, senseData->senseKey, addSenseCode, senseData->addSenseCode);
+	}
+	else {
+		print("        Device uses SCSI-1 4 byte legacy sense data format\n");
 	}
 }
 
