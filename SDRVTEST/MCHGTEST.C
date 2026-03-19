@@ -240,7 +240,7 @@ TestUnitReady(UWORD lun, bool expectChange)
 		}
 
 		if(senseData.senseKey != 0x06 || senseData.addSenseCode != 0x28) {
-			printf("Media change was not reported\n");
+			printf("Media change was not reported, Sense Key != $06, ASC != $28\n");
 			
 			return false;
 		}
