@@ -1,7 +1,7 @@
 /**************************************/
-/* SCSI Driver Media Change Test 1.00 */
+/* SCSI Driver Media Change Test 1.01 */
 /*                                    */
-/* (C) 2021 Uwe Seimet                */
+/* (C) 2021-2026 Uwe Seimet           */
 /**************************************/
 
 
@@ -18,6 +18,8 @@ bool Inquiry(UWORD);
 ULONG ReadCapacity(UWORD);
 bool TestUnitReady(UWORD, bool);
 bool Read(UWORD, ULONG);
+UWORD ScanBuses(tBusInfo *);
+WORD SortBuses(const void *, const void *);
 bool getCookie(LONG, ULONG *);
 
 
@@ -31,12 +33,13 @@ void
 main(WORD argc, const char *argv[])
 {
 	UWORD bus, device, lun;
-	tBusInfo busInfo;
+	tBusInfo busInfos[32];
 	DLONG scsiId;
 	ULONG maxLen;
 	ULONG blockSize;
+	UWORD busCount;
+	UWORD busId;
 	LONG oldstack = 0;
-	LONG result;
 
 	getCookie('SCSI', (ULONG *)&scsiCall);
 	if(!scsiCall) {
@@ -46,8 +49,8 @@ main(WORD argc, const char *argv[])
 	}
 
 
-	printf("SCSI Driver Media Change Test V1.00\n");
-	printf("½ 2021 Uwe Seimet\n\n");
+	printf("SCSI Driver Media Change Test V1.01\n");
+	printf("½ 2021-2026 Uwe Seimet\n\n");
 
 	printf("Found SCSI Driver version %d.%02d\n\n", scsiCall->Version >> 8,
 		scsiCall->Version & 0xff);
@@ -58,11 +61,10 @@ main(WORD argc, const char *argv[])
 
 	if(!Super((void *)1L)) oldstack = Super(0L);
 
-	result = scsiCall->InquireSCSI(cInqFirst, &busInfo);
-	while(!result) {
-		printf("Bus ID: %d, Bus name: '%s'\n", busInfo.BusNo, busInfo.BusName);
-
-		result = scsiCall->InquireSCSI(cInqNext, &busInfo);
+	busCount = ScanBuses(busInfos);
+	for(busId = 0; busId < busCount; busId++) {
+		printf("Bus ID: %d, Bus name: '%s'\n", busInfos[busId].BusNo,
+		busInfos[busId].BusName);
 	}
 
 	printf("\nEnter bus ID, device ID, LUN ID: ");
@@ -257,6 +259,37 @@ TestUnitReady(UWORD lun, bool expectChange)
 	printf("TEST UNIT READY succeeded\n\n");
 
 	return true;
+}
+
+
+UWORD
+ScanBuses(tBusInfo *busInfos)
+{
+	tBusInfo busInfo;
+	UWORD busCount = 0;
+
+	LONG result = scsiCall->InquireSCSI(cInqFirst, &busInfo);
+	while(!result && busCount < 32) {
+		memcpy(&busInfos[busCount], &busInfo, sizeof(tBusInfo));
+
+		busCount++;
+
+		result = scsiCall->InquireSCSI(cInqNext, &busInfo);
+	}
+
+	qsort(busInfos, busCount, sizeof(tBusInfo), SortBuses);
+
+	return busCount;
+}
+
+
+WORD
+SortBuses(const void *b1, const void *b2)
+{
+	const tBusInfo *i1 = b1;
+	const tBusInfo *i2 = b2;
+
+	return i1->BusNo - i2->BusNo;
 }
 
 
