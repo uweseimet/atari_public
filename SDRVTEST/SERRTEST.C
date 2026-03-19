@@ -8,14 +8,11 @@
 #include <string.h>
 #include <stdio.h>
 #include <assert.h>
-#include <std.h>
 #include <tos.h>
 #include <scsi3.h>
 #include <scsidrv/scsidefs.h>
-
-
-int sortBuses(const void *, const void *);
-bool getCookie(LONG, ULONG *);
+#include "std.h"
+#include "util.h"
 
 
 tpScsiCall scsiCall;
@@ -33,7 +30,8 @@ main(WORD argc, const char *argv[])
 	tBusInfo busInfos[32];
 	DLONG scsiId;
 	ULONG maxLen;
-	UWORD busCount = 0;
+	UWORD busCount;
+	UWORD busId;
 	LONG oldstack = 0;
 	LONG result;
 	int i;
@@ -62,14 +60,11 @@ main(WORD argc, const char *argv[])
 		oldstack = Super(0L);
 	}
 
-	result = scsiCall->InquireSCSI(cInqFirst, &busInfo);
-	while(!result && busCount < 32) {
-		memcpy(&busInfos[busCount++], &busInfo, sizeof(tBusInfo));
-
-		result = scsiCall->InquireSCSI(cInqNext, &busInfo);
+	busCount = ScanBuses(busInfos, scsiCall);
+	for(busId = 0; busId < busCount; busId++) {
+		printf("Bus ID: %d, Bus name: '%s'\n", busInfos[busId].BusNo,
+		busInfos[busId].BusName);
 	}
-
-	qsort(busInfos, busCount, sizeof(tBusInfo), sortBuses);
 
 	for(i = 0; i < busCount; i++) {
 		printf("Bus ID: %d, Bus name: '%s'\n",
@@ -139,40 +134,3 @@ error:
 	Cconin();
 }
 #pragma warn .par
-
-
-int
-sortBuses(const void *b1, const void *b2)
-{
-	const tBusInfo *i1 = b1;
-	const tBusInfo *i2 = b2;
-
-	return i1->BusNo - i2->BusNo;
-}
-
-
-LONG
-cookieptr()
-{
-	return *((LONG *)0x5a0);
-}
-
-
-bool
-getCookie(LONG cookie, ULONG *p_value)
-{
-	LONG *cookiejar = (LONG *)Supexec(cookieptr);
-
-	if(!cookiejar) return false;
-
-	do {
-		if(cookiejar[0] == cookie) {
-			if (p_value) *p_value = (ULONG)cookiejar[1];
-			return true;
-		}
-		else
-			cookiejar = &(cookiejar[2]);
-	} while(cookiejar[-2]);
-
-	return false;
-}

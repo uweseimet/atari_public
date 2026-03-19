@@ -1,21 +1,21 @@
 /****************************************/
-/* SCSI Driver Error Handling Test 1.00 */
+/* SCSI Driver Error Handling Test 1.01 */
 /*                                      */
-/* (C) 2021 Uwe Seimet                  */
+/* (C) 2021-2026 Uwe Seimet             */
 /****************************************/
 
 
 #include <string.h>
 #include <stdio.h>
 #include <assert.h>
-#include <std.h>
 #include <tos.h>
 #include <scsi3.h>
 #include <scsidrv/scsidefs.h>
+#include "std.h"
+#include "util.h"
 
 
 bool Inquiry(UWORD);
-bool getCookie(LONG, ULONG *);
 
 
 tpScsiCall scsiCall;
@@ -28,9 +28,11 @@ void
 main(WORD argc, const char *argv[])
 {
 	UWORD bus, device, lun;
-	tBusInfo busInfo;
+	tBusInfo busInfos[32];
 	DLONG scsiId;
 	ULONG maxLen;
+	UWORD busCount;
+	UWORD busId;
 	LONG oldstack = 0;
 	LONG result;
 
@@ -41,8 +43,8 @@ main(WORD argc, const char *argv[])
 		goto error;
 	}
 
-	printf("SCSI Driver Error Handling Test V1.00\n");
-	printf("½ 2021 Uwe Seimet\n\n");
+	printf("SCSI Driver Error Handling Test V1.01\n");
+	printf("½ 2021-2026 Uwe Seimet\n\n");
 
 	printf("Found SCSI Driver version %d.%02d\n\n", scsiCall->Version >> 8,
 		scsiCall->Version & 0xff);
@@ -51,13 +53,14 @@ main(WORD argc, const char *argv[])
 	cmd.SenseBuffer = (BYTE *)&senseData;
 	cmd.Timeout = 2000;
 
-	if(!Super((void *)1L)) oldstack = Super(0L);
+	if(!Super((void *)1L)) {
+		oldstack = Super(0L);
+	}
 
-	result = scsiCall->InquireSCSI(cInqFirst, &busInfo);
-	while(!result) {
-		printf("Bus ID: %d, Bus name: '%s'\n", busInfo.BusNo, busInfo.BusName);
-
-		result = scsiCall->InquireSCSI(cInqNext, &busInfo);
+	busCount = ScanBuses(busInfos, scsiCall);
+	for(busId = 0; busId < busCount; busId++) {
+		printf("Bus ID: %d, Bus name: '%s'\n", busInfos[busId].BusNo,
+		busInfos[busId].BusName);
 	}
 
 	printf("\nEnter bus ID, device ID, LUN ID: ");
@@ -87,7 +90,9 @@ main(WORD argc, const char *argv[])
 
 	scsiCall->Close(cmd.Handle);
 
-	if(oldstack) Super((void *)oldstack);
+	if(oldstack) {
+		Super((void *)oldstack);
+	}
 
 	printf("\nStatus: %ld\n", result);
 
@@ -144,31 +149,4 @@ Inquiry(UWORD lun)
 	};
 
 	return inquiryData.RMB;
-}
-
-
-LONG
-cookieptr()
-{
-	return *((LONG *)0x5a0);
-}
-
-
-bool
-getCookie(LONG cookie, ULONG *p_value)
-{
-	LONG *cookiejar = (LONG *)Supexec(cookieptr);
-
-	if(!cookiejar) return false;
-
-	do {
-		if(cookiejar[0] == cookie) {
-			if (p_value) *p_value = (ULONG)cookiejar[1];
-			return true;
-		}
-		else
-			cookiejar = &(cookiejar[2]);
-	} while(cookiejar[-2]);
-
-	return false;
 }

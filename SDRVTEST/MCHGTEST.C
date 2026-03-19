@@ -8,19 +8,17 @@
 #include <string.h>
 #include <stdio.h>
 #include <assert.h>
-#include <std.h>
 #include <tos.h>
 #include <scsi3.h>
 #include <scsidrv/scsidefs.h>
+#include "std.h"
+#include "util.h"
 
 
 bool Inquiry(UWORD);
 ULONG ReadCapacity(UWORD);
 bool TestUnitReady(UWORD, bool);
 bool Read(UWORD, ULONG);
-UWORD ScanBuses(tBusInfo *);
-WORD SortBuses(const void *, const void *);
-bool getCookie(LONG, ULONG *);
 
 
 tpScsiCall scsiCall;
@@ -59,9 +57,11 @@ main(WORD argc, const char *argv[])
 	cmd.SenseBuffer = (BYTE *)&senseData;
 	cmd.Timeout = 2000;
 
-	if(!Super((void *)1L)) oldstack = Super(0L);
+	if(!Super((void *)1L)) {
+		oldstack = Super(0L);
+	}
 
-	busCount = ScanBuses(busInfos);
+	busCount = ScanBuses(busInfos, scsiCall);
 	for(busId = 0; busId < busCount; busId++) {
 		printf("Bus ID: %d, Bus name: '%s'\n", busInfos[busId].BusNo,
 		busInfos[busId].BusName);
@@ -114,7 +114,9 @@ error:
 
 	scsiCall->Close(cmd.Handle);
 
-	if(oldstack) Super((void *)oldstack);
+	if(oldstack) {
+		Super((void *)oldstack);
+	}
 
 	printf("\nTest failed\n");
 
@@ -262,37 +264,6 @@ TestUnitReady(UWORD lun, bool expectChange)
 }
 
 
-UWORD
-ScanBuses(tBusInfo *busInfos)
-{
-	tBusInfo busInfo;
-	UWORD busCount = 0;
-
-	LONG result = scsiCall->InquireSCSI(cInqFirst, &busInfo);
-	while(!result && busCount < 32) {
-		memcpy(&busInfos[busCount], &busInfo, sizeof(tBusInfo));
-
-		busCount++;
-
-		result = scsiCall->InquireSCSI(cInqNext, &busInfo);
-	}
-
-	qsort(busInfos, busCount, sizeof(tBusInfo), SortBuses);
-
-	return busCount;
-}
-
-
-WORD
-SortBuses(const void *b1, const void *b2)
-{
-	const tBusInfo *i1 = b1;
-	const tBusInfo *i2 = b2;
-
-	return i1->BusNo - i2->BusNo;
-}
-
-
 bool
 Read(UWORD lun, ULONG blockSize)
 {
@@ -336,31 +307,4 @@ Read(UWORD lun, ULONG blockSize)
 	printf("Reading root sector succeeded\n\n");
 
 	return true;
-}
-
-
-LONG
-cookieptr()
-{
-	return *((LONG *)0x5a0);
-}
-
-
-bool
-getCookie(LONG cookie, ULONG *p_value)
-{
-	LONG *cookiejar = (LONG *)Supexec(cookieptr);
-
-	if(!cookiejar) return false;
-
-	do {
-		if(cookiejar[0] == cookie) {
-			if (p_value) *p_value = (ULONG)cookiejar[1];
-			return true;
-		}
-		else
-			cookiejar = &(cookiejar[2]);
-	} while(cookiejar[-2]);
-
-	return false;
 }

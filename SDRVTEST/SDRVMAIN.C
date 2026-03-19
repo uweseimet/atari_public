@@ -12,6 +12,7 @@
 #include <scsidrv/scsidefs.h>
 #include "scsi3.h"
 #include "std.h"
+#include "util.h"
 #include "sdrvtest.h"
 #include "sdrvio.h"
 
@@ -54,7 +55,6 @@ tpScsiCall scsiCall;
 bool testDevice(UWORD, const char *, UWORD, ULONG);
 UWORD findDevices(void);
 int sortBuses(const void *, const void *);
-bool getCookie(LONG, ULONG *);
 bool getNvm(NVM *nvm);
 
 
@@ -322,35 +322,6 @@ sortBuses(const void *b1, const void *b2)
 	const tBusInfo *i2 = b2;
 
 	return i1->BusNo - i2->BusNo;
-}
-
-
-LONG
-cookieptr()
-{
-	return *((LONG *)0x5a0);
-}
-
-
-bool
-getCookie(LONG cookie, ULONG *p_value)
-{
-	LONG *cookiejar = (LONG *)Supexec(cookieptr);
-
-	if(!cookiejar) {
-		return false;
-	}
-
-	do {
-		if(cookiejar[0] == cookie) {
-			if (p_value) *p_value = (ULONG)cookiejar[1];
-			return true;
-		}
-		else
-			cookiejar = &(cookiejar[2]);
-	} while(cookiejar[-2]);
-
-	return false;
 }
 
 
