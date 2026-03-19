@@ -1,6 +1,6 @@
 # Notes on the projects for Atari 16/32 bit computers in this repository
 
-Each folder contains a separate project. There are no dependencies between these projects. They share a single repository in order to reduce the maintenance overhead. There is a tag for each individual project release. For historical reasons the comments in some sources are in German.
+Each folder contains a separate project. There are no dependencies between these projects. They share a single repository in order to reduce the maintenance overhead. There is a tag for each individual project release. The C sources compile with Pure C. For historical reasons the comments in some sources are in German.
 
 - FIX24 - Uses the 68030 PMMU to limit the TT address space to 24 bit. Work-arounds like this were required in the distant past to run some pieces of software for the ST also on the TT. Also see https://www.stcarchiv.de/stc1991/04/tt-manipulation-auf-24-bit (German only).
 
