@@ -38,7 +38,9 @@ main(WORD argc, const char *argv[])
 	if(!scsiCall) {
 		printf("SCSI Driver not found\n");
 
-		goto error;
+		Cconin();
+
+		return;
 	}
 
 	printf("SCSI Driver Error Status Test V1.01\n");
@@ -89,16 +91,16 @@ main(WORD argc, const char *argv[])
 	scsiCall->Error(cmd1.Handle, cErrWrite, cErrMediach);
 
 	result1 = scsiCall->Error(cmd1.Handle, cErrRead, cErrMediach);
-	printf("\nError status 1 for handle 1: %ld\n", result1);
+	printf("\nError status 1 for handle 1 must be 0: %ld\n", result1);
 
 	result2 = scsiCall->Error(cmd1.Handle, cErrRead, cErrMediach);
-	printf("\nError status 2 for handle 1: %ld\n", result2);
+	printf("\nError status 2 for handle 1 must be 0: %ld\n", result2);
 
 	result3 = scsiCall->Error(cmd2.Handle, cErrRead, cErrMediach);
-	printf("\nError status 1 for handle 2: %ld\n", result3);
+	printf("\nError status 1 for handle 2 must be 1: %ld\n", result3);
 
 	result4 = scsiCall->Error(cmd2.Handle, cErrRead, cErrMediach);
-	printf("\nError status 2 for handle 2: %ld\n", result4);
+	printf("\nError status 2 for handle 2 must be 0: %ld\n", result4);
 
 	scsiCall->Close(cmd1.Handle);
 	scsiCall->Close(cmd2.Handle);
@@ -107,6 +109,9 @@ main(WORD argc, const char *argv[])
 		Super((void *)oldstack);
 	}
 
+	/* The errpr status must be reflected by all handles except the
+	   handle Error() was called for. After getting the status for
+	   a handle, the status must be cleard. */
 	if(result1 || result2 || !result3 || result4) {
 		printf("\nTest failed\n");
 	}
