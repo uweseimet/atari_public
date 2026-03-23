@@ -1,21 +1,18 @@
 /**************************************/
-/* SCSI Driver Error Status Test 1.00 */
+/* SCSI Driver Error Status Test 1.01 */
 /*                                    */
-/* (C) 2021 Uwe Seimet                */
+/* (C) 2021-2026 Uwe Seimet           */
 /**************************************/
 
 
 #include <string.h>
 #include <stdio.h>
 #include <assert.h>
-#include <std.h>
 #include <tos.h>
 #include <scsi3.h>
 #include <scsidrv/scsidefs.h>
-
-
-void ReadCapacity(tSCSICmd *, UWORD);
-bool getCookie(LONG, ULONG *);
+#include "std.h"
+#include "util.h"
 
 
 tpScsiCall scsiCall;
@@ -27,22 +24,27 @@ SENSE_DATA senseData;
 void
 main(WORD argc, const char *argv[])
 {
-	UWORD bus, device;
-	tBusInfo busInfo;
+	UWORD bus;
+	UWORD device;
+	tBusInfo busInfos[32];
 	DLONG scsiId;
 	ULONG maxLen;
+	UWORD busCount;
+	UWORD busId;
 	LONG oldstack = 0;
-	LONG result;
+	LONG result1, result2, result3, result4;
 
 	getCookie('SCSI', (ULONG *)&scsiCall);
 	if(!scsiCall) {
 		printf("SCSI Driver not found\n");
 
-		goto error;
+		Cconin();
+
+		return;
 	}
 
-	printf("SCSI Driver Error Status Test V1.00\n");
-	printf("½ 2021 Uwe Seimet\n\n");
+	printf("SCSI Driver Error Status Test V1.01\n");
+	printf("½ 2021-2026 Uwe Seimet\n\n");
 
 	printf("Found SCSI Driver version %d.%02d\n\n", scsiCall->Version >> 8,
 		scsiCall->Version & 0xff);
@@ -54,13 +56,14 @@ main(WORD argc, const char *argv[])
 	cmd1.Timeout = 2000;
 	cmd2.Timeout = 2000;
 
-	if(!Super((void *)1L)) oldstack = Super(0L);
+	if(!Super((void *)1L)) {
+		oldstack = Super(0L);
+	}
 
-	result = scsiCall->InquireSCSI(cInqFirst, &busInfo);
-	while(!result) {
-		printf("Bus ID: %d, Bus name: '%s'\n", busInfo.BusNo, busInfo.BusName);
-
-		result = scsiCall->InquireSCSI(cInqNext, &busInfo);
+	busCount = ScanBuses(busInfos, scsiCall);
+	for(busId = 0; busId < busCount; busId++) {
+		printf("Bus ID: %d, Bus name: '%s'\n", busInfos[busId].BusNo,
+		busInfos[busId].BusName);
 	}
 
 	printf("\nEnter bus ID, device ID: ");
@@ -84,30 +87,37 @@ main(WORD argc, const char *argv[])
 		goto error;
 	}
 
-/*	ReadCapacity(&cmd1, 3);*/
-	ReadCapacity(&cmd2, 3);
-
 	printf("\nSetting error status for handle 1\n");
 	scsiCall->Error(cmd1.Handle, cErrWrite, cErrMediach);
 
-	result = scsiCall->Error(cmd1.Handle, cErrRead, cErrMediach);
-	printf("\nError status 1 for handle 1: %ld\n", result);
+	result1 = scsiCall->Error(cmd1.Handle, cErrRead, cErrMediach);
+	printf("\nError status 1 for handle 1 (expected: 0): %ld\n", result1);
 
-	result = scsiCall->Error(cmd1.Handle, cErrRead, cErrMediach);
-	printf("\nError status 2 for handle 1: %ld\n", result);
+	result2 = scsiCall->Error(cmd1.Handle, cErrRead, cErrMediach);
+	printf("\nError status 2 for handle 1 (expected: 0): %ld\n", result2);
 
-	result = scsiCall->Error(cmd2.Handle, cErrRead, cErrMediach);
-	printf("\nError status 1 for handle 2: %ld\n", result);
+	result3 = scsiCall->Error(cmd2.Handle, cErrRead, cErrMediach);
+	printf("\nError status 1 for handle 2 (expected: 1): %ld\n", result3);
 
-	result = scsiCall->Error(cmd2.Handle, cErrRead, cErrMediach);
-	printf("\nError status 2 for handle 2: %ld\n", result);
+	result4 = scsiCall->Error(cmd2.Handle, cErrRead, cErrMediach);
+	printf("\nError status 2 for handle 2 (expected: 0): %ld\n", result4);
 
 	scsiCall->Close(cmd1.Handle);
 	scsiCall->Close(cmd2.Handle);
 
-	if(oldstack) Super((void *)oldstack);
+	if(oldstack) {
+		Super((void *)oldstack);
+	}
 
-	printf("\nStatus: %ld\n", result);
+	/* The errpr status must be reflected by all handles except the
+	   handle Error() was called for. After getting the status for
+	   a handle, the status must be cleard. */
+	if(result1 || result2 || !result3 || result4) {
+		printf("\nTest failed\n");
+	}
+	else {
+		printf("\nTest succceded\n");
+	}
 
 	Cconin();
 
@@ -118,74 +128,12 @@ error:
 	scsiCall->Close(cmd1.Handle);
 	scsiCall->Close(cmd2.Handle);
 
-	if(oldstack) Super((void *)oldstack);
+	if(oldstack) {
+		Super((void *)oldstack);
+	}
 
 	printf("\nTest failed\n");
 
 	Cconin();
 }
 #pragma warn .par
-
-
-void
-ReadCapacity(tSCSICmd *cmd, UWORD lun)
-{
-	BYTE ReadCapacityCmd[10] = {
-		0x25, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0, 0x00
-	};
-
-	LONG status;
-	ULONG capacity[] = { 0L, 0L };
-
-	ReadCapacityCmd[1] = lun << 5;
-	cmd->Cmd = (void *)&ReadCapacityCmd;
-	cmd->CmdLen = (UWORD)sizeof(ReadCapacityCmd);
-	cmd->Buffer = capacity;
-	cmd->TransferLen = sizeof(capacity);
-
-	status = scsiCall->In(cmd);
-	if(status) {
-		printf("READ CAPACITY failed: %ld\n", status);
-
-		return;
-	}
-
-	if(!capacity[0]) {
-		printf("Wrong capacity '0'\n");
-
-		return;
-	}
-
-	if(!capacity[1]) {
-		printf("Wrong block size '0'\n");
-
-		return;
-	}
-}
-
-
-LONG
-cookieptr()
-{
-	return *((LONG *)0x5a0);
-}
-
-
-bool
-getCookie(LONG cookie, ULONG *p_value)
-{
-	LONG *cookiejar = (LONG *)Supexec(cookieptr);
-
-	if(!cookiejar) return false;
-
-	do {
-		if(cookiejar[0] == cookie) {
-			if (p_value) *p_value = (ULONG)cookiejar[1];
-			return true;
-		}
-		else
-			cookiejar = &(cookiejar[2]);
-	} while(cookiejar[-2]);
-
-	return false;
-}
