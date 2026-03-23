@@ -19,4 +19,8 @@ error handling and media changes. Please refer to the sources for details.
 Except for the SDRVTEST logfile the tests do not change/write any data.
 
 The C sources are available on GitHub:
-https://github.com/uweseimet/atari_public.
+
+  https://github.com/uweseimet/atari_public.
+
+
+Uwe.Seimet@seimet.de

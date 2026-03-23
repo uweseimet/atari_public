@@ -1,8 +1,8 @@
-/***********************************/
-/* SCSI Driver/Firmware Test 3.00ž */
-/*                                 */
-/* (C) 2014-2026 Uwe Seimet        */
-/***********************************/
+/**********************************/
+/* SCSI Driver/Firmware Test 3.00 */
+/*                                */
+/* (C) 2014-2026 Uwe Seimet       */
+/**********************************/
 
 
 #include <string.h>
@@ -84,7 +84,7 @@ main()
 		return -1;
 	}
 
-	print("SCSI Driver and firmware test V3.00ž\n");
+	print("SCSI Driver and firmware test V3.00\n");
 	print("½ 2014-2026 Uwe Seimet\n\n");
 
 	if(getNvm(&nvm)) {
