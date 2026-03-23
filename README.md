@@ -22,6 +22,6 @@ Each folder contains a separate project. There are no dependencies between these
 
 - SCTARGET - Sample code for the SCSI Driver target interface. This code shows how Atari TT or Falcon can act as a SCSI target device.
 
-- SDRVTEST - The SCSI Driver/Firmware testsuite. The binaries are available on https://www.hddriver.net/en/scsidriver.html. To compile the sources, add the SCSI Driver standard header files (included in the CBHD 5.02 distribution) to your include path.
+- SDRVTEST - The SCSI Driver/Firmware testsuite. The binaries are available on https://www.hddriver.net/en/scsidriver.html. To compile the sources, add the SCSI Driver standard header files (included in the SCSI Driver specification archive) to your include path.
 
 - XHDI_MON - The XHDI monitor. The binary is available on https://www.hddriver.net/en/downloads.html.
