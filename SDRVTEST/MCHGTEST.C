@@ -118,7 +118,7 @@ error:
 		Super((void *)oldstack);
 	}
 
-	printf("\nTest failed\n");
+	printf("\nTest failed, there is no hot-swap support\n");
 
 	Cconin();
 }
