@@ -1,5 +1,5 @@
 /**********************************/
-/* SCSI Driver/Firmware Test 3.00 */
+/* SCSI Driver/Firmware Test 3.01 */
 /*                                */
 /* (C) 2014-2026 Uwe Seimet       */
 /**********************************/
@@ -2053,45 +2053,7 @@ execute(UWORD lun, const char *msg, bool reportError)
 	else if(status) {
 		print("      Device reported status code %ld", status);
 
-		if(status == SELECTERROR) {
-			print(" (SELECTERROR)");
-		}
-		else if(status == STATUSERROR) {
-			print(" (STATUSERROR)");
-		}
-		else if(status == PHASEERROR) {
-			print(" (PHASEERROR)");
-		}
-		else if(status == BSYERROR) {
-			print(" (BSYERROR)");
-		}
-		else if(status == BUSERROR) {
-			print(" (BUSERROR)");
-		}
-		else if(status == TRANSERROR) {
-			print(" (TRANSERROR)");
-		}
-		else if(status == FREEERROR) {
-			print(" (FREEERROR)");
-		}
-		else if(status == TIMEOUTERROR) {
-			print(" (TIMEOUTERROR)");
-		}
-		else if(status == DATATOOLONG) {
-			print(" (DATATOOLONG)");
-		}
-		else if(status == LINKERROR) {
-			print(" (LINKERROR)");
-		}
-		else if(status == TIMEOUTARBIT) {
-			print(" (TIMEOUTARBIT)");
-		}
-		else if(status == PENDINGERROR) {
-			print(" (PENDINGERROR)");
-		}
-		else if(status == PARITYERROR) {
-			print(" (PARITYERROR)");
-		}
+		printApiError(status);
 
 		print("\n");
 	}
@@ -2154,6 +2116,51 @@ print(const char *msg, ...)
 
 
 void
+printApiError(LONG status)
+{
+	if(status == SELECTERROR) {
+		print(" (SELECTERROR)");
+	}
+	else if(status == STATUSERROR) {
+		print(" (STATUSERROR)");
+	}
+	else if(status == PHASEERROR) {
+		print(" (PHASEERROR)");
+	}
+	else if(status == BSYERROR) {
+		print(" (BSYERROR)");
+	}
+	else if(status == BUSERROR) {
+		print(" (BUSERROR)");
+	}
+	else if(status == TRANSERROR) {
+		print(" (TRANSERROR)");
+	}
+	else if(status == FREEERROR) {
+		print(" (FREEERROR)");
+	}
+	else if(status == TIMEOUTERROR) {
+		print(" (TIMEOUTERROR)");
+	}
+	else if(status == DATATOOLONG) {
+		print(" (DATATOOLONG)");
+	}
+	else if(status == LINKERROR) {
+		print(" (LINKERROR)");
+	}
+	else if(status == TIMEOUTARBIT) {
+		print(" (TIMEOUTARBIT)");
+	}
+	else if(status == PENDINGERROR) {
+		print(" (PENDINGERROR)");
+	}
+	else if(status == PARITYERROR) {
+		print(" (PARITYERROR)");
+	}
+}
+
+
+void
 printStatusError(LONG status)
 {
 	print("      ERROR (Device): Request failed with status %ld", status);
@@ -2187,6 +2194,9 @@ printStatusError(LONG status)
 	}
 	else if(status == 0x40L) {
 		print(" (TASK ABORTED)");
+	}
+	else {
+		printApiError(status); 
 	}
 
 	print("\n");

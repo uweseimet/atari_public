@@ -1,5 +1,5 @@
 /**********************************/
-/* SCSI Driver/Firmware Test 3.00 */
+/* SCSI Driver/Firmware Test 3.01 */
 /*                                */
 /* (C) 2014-2026 Uwe Seimet       */
 /**********************************/
@@ -55,7 +55,8 @@ void printStatus(LONG);
 void printSenseData(void);
 void printExpectedSenseData(SENSE_DATA *, UWORD, UWORD);
 void print(const char *, ...);
-void printStatusError(LONG status);
+void printApiError(LONG);
+void printStatusError(LONG);
 void printDeviceError(UWORD, const char *, ...);
 void printDriverError(UWORD, const char *, ...);
 
