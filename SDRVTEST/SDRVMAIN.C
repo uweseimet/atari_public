@@ -112,7 +112,7 @@ main()
 	for(i = 0; i < devCount && i < MAX_DEVICES; i++) {
 		DEVICEINFO *deviceInfo = &deviceInfos[i];
 
-		print("\nTesting bus %d %s', device %d\n", deviceInfo->busNo,
+		print("\nTesting bus %d '%s', device %d\n", deviceInfo->busNo,
 			deviceInfo->busName, deviceInfo->id);
 		printFeatures(deviceInfo->features, "device");
 
@@ -183,8 +183,8 @@ testDevice(UWORD busNo, const char *busName, UWORD id, ULONG maxLen)
 	scsiCall->Close(handle);
 
 	print("\nTest result summary:\n"
-		"SCSI Driver specification violations: %d, "
-		"SCSI standard violations: %d\n",
+		"SCSI Driver bugs: %d, "
+		"SCSI compatibility bugs: %d\n",
 		scsiDriverErrors, deviceErrors);
 
 	if(scsiDriverErrors || deviceErrors) {
