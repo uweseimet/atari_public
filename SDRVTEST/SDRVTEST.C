@@ -407,6 +407,7 @@ testInquiry(UWORD busNo, UWORD lun, UWORD nonExistingLun)
 	}
 
 
+/* This test may cause a crash with IDE drives and HDDRIVER < 12.78 */
 	print("    Testing with requested byte count of 0\n");
 
 	Inquiry.length = 0;
