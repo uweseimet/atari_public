@@ -6,6 +6,8 @@ Each folder contains a separate project. There are no dependencies between these
 
 - MAGTOROM - Protects the MagiC multitasking operating system code against write access, as if it were in ROM. The binary is available on https://www.seimet.de/atari/en. Also see https://www.stcarchiv.de/stc1994/10/magtorom (German only).
 
+- MEMWATCH - Memory protection for the TEXT segment. Also see https://www.stcarchiv.de/st-computer/1991/12/memwatch (German only).
+
 - MODULES - Modules for the hard disk driver HDDRIVER, see https://www.hddriver.net/en/modules.html for details and binaries.
 
 - NF_SCSI - SCSI Driver for Hatari and ARAnyM. See https://www.hddriver.net/en/scsidriver.html for details.
