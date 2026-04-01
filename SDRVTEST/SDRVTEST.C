@@ -1,5 +1,5 @@
 /**********************************/
-/* SCSI Driver/Firmware Test 3.00 */
+/* SCSI Driver/Firmware Test 3.01 */
 /*                                */
 /* (C) 2014-2026 Uwe Seimet       */
 /**********************************/
@@ -62,6 +62,35 @@ typedef struct
 	ULONG formattableBlocks;
 	ULONG formattableBlockSize;
 } CAPACITY_LIST;
+
+
+static void initBuffer(UBYTE *, ULONG);
+static void checkRoot(UBYTE *, UBYTE *, ULONG);
+static LONG execute(UWORD, const char *, bool);
+static LONG callInWithLun(tpSCSICmd, UWORD);
+static void printPageHeader(UBYTE *, int, const char *, int);
+static void printPages(UBYTE *, int, int);
+static void printPage1(UBYTE *, int);
+static void printPage2(UBYTE *, int);
+static void printPage3(UBYTE *, int);
+static void printPage4(UBYTE *, int);
+static void printPage5(UBYTE *, int);
+static void printPage7(UBYTE *, int);
+static void printPage8(UBYTE *, int);
+static void printPage10(UBYTE *, int);
+static void printPage12(UBYTE *, int);
+static void printPage15(UBYTE *, int);
+static void printPage16(UBYTE *, int);
+static void printPages17_20(UBYTE *, int, int);
+static void printPage0(UBYTE *, int, int);
+static void printStatus(LONG);
+static void printSenseData(void);
+static void printExpectedSenseData(SENSE_DATA *, UWORD, UWORD);
+static void printStatusError(LONG);
+static void printApiError(LONG);
+static void printRawData(UBYTE *, int, int, const char *);
+static void printDeviceError(UWORD, const char *, ...);
+static char *DULongToString(const D_ULONG *);
 
 
 static UWORD scsiLevel;
@@ -378,6 +407,7 @@ testInquiry(UWORD busNo, UWORD lun, UWORD nonExistingLun)
 	}
 
 
+/* This test may cause a crash with IDE drives and HDDRIVER < 12.78 */
 	print("    Testing with requested byte count of 0\n");
 
 	Inquiry.length = 0;
@@ -1084,6 +1114,7 @@ testModeSense(UWORD lun)
 
 	UBYTE buffer6[256];
 	UBYTE buffer10[2048];
+	bool hasModeSense6 = true;
 	bool requiresModeSense10 = false;
 	int size;
 	LONG status;
@@ -1103,7 +1134,7 @@ testModeSense(UWORD lun)
 		if(localSenseData.senseKey != 0x05 || (
 			localSenseData.addSenseCode != 0x20 && localSenseData.addSenseCode != 0x24)) {
 			printStatus(status);
-			return;
+			hasModeSense6 = false;
 		}
 		else if(localSenseData.senseKey == 0x05 && localSenseData.addSenseCode == 0x24) {
 			requiresModeSense10 = true;
@@ -1132,7 +1163,8 @@ testModeSense(UWORD lun)
 			print("      Received %d data bytes\n", size);
 
 			if(size < 8 ||
-				(!requiresModeSense10 && memcmp(buffer6 + 4, buffer10 + 8, size - 8))) {
+				(hasModeSense6 && !requiresModeSense10 &&
+					memcmp(buffer6 + 4, buffer10 + 8, size - 8))) {
 				printDeviceError(6, "MODE SENSE (6) and MODE SENSE (10) page data differ\n");
 				printPages(buffer10, size, 8);
 			}
@@ -2053,45 +2085,7 @@ execute(UWORD lun, const char *msg, bool reportError)
 	else if(status) {
 		print("      Device reported status code %ld", status);
 
-		if(status == SELECTERROR) {
-			print(" (SELECTERROR)");
-		}
-		else if(status == STATUSERROR) {
-			print(" (STATUSERROR)");
-		}
-		else if(status == PHASEERROR) {
-			print(" (PHASEERROR)");
-		}
-		else if(status == BSYERROR) {
-			print(" (BSYERROR)");
-		}
-		else if(status == BUSERROR) {
-			print(" (BUSERROR)");
-		}
-		else if(status == TRANSERROR) {
-			print(" (TRANSERROR)");
-		}
-		else if(status == FREEERROR) {
-			print(" (FREEERROR)");
-		}
-		else if(status == TIMEOUTERROR) {
-			print(" (TIMEOUTERROR)");
-		}
-		else if(status == DATATOOLONG) {
-			print(" (DATATOOLONG)");
-		}
-		else if(status == LINKERROR) {
-			print(" (LINKERROR)");
-		}
-		else if(status == TIMEOUTARBIT) {
-			print(" (TIMEOUTARBIT)");
-		}
-		else if(status == PENDINGERROR) {
-			print(" (PENDINGERROR)");
-		}
-		else if(status == PARITYERROR) {
-			print(" (PARITYERROR)");
-		}
+		printApiError(status);
 
 		print("\n");
 	}
@@ -2154,6 +2148,51 @@ print(const char *msg, ...)
 
 
 void
+printApiError(LONG status)
+{
+	if(status == SELECTERROR) {
+		print(" (SELECTERROR)");
+	}
+	else if(status == STATUSERROR) {
+		print(" (STATUSERROR)");
+	}
+	else if(status == PHASEERROR) {
+		print(" (PHASEERROR)");
+	}
+	else if(status == BSYERROR) {
+		print(" (BSYERROR)");
+	}
+	else if(status == BUSERROR) {
+		print(" (BUSERROR)");
+	}
+	else if(status == TRANSERROR) {
+		print(" (TRANSERROR)");
+	}
+	else if(status == FREEERROR) {
+		print(" (FREEERROR)");
+	}
+	else if(status == TIMEOUTERROR) {
+		print(" (TIMEOUTERROR)");
+	}
+	else if(status == DATATOOLONG) {
+		print(" (DATATOOLONG)");
+	}
+	else if(status == LINKERROR) {
+		print(" (LINKERROR)");
+	}
+	else if(status == TIMEOUTARBIT) {
+		print(" (TIMEOUTARBIT)");
+	}
+	else if(status == PENDINGERROR) {
+		print(" (PENDINGERROR)");
+	}
+	else if(status == PARITYERROR) {
+		print(" (PARITYERROR)");
+	}
+}
+
+
+void
 printStatusError(LONG status)
 {
 	print("      ERROR (Device): Request failed with status %ld", status);
@@ -2187,6 +2226,9 @@ printStatusError(LONG status)
 	}
 	else if(status == 0x40L) {
 		print(" (TASK ABORTED)");
+	}
+	else {
+		printApiError(status); 
 	}
 
 	print("\n");

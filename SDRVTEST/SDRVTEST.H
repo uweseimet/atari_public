@@ -1,5 +1,5 @@
 /**********************************/
-/* SCSI Driver/Firmware Test 3.00 */
+/* SCSI Driver/Firmware Test 3.01 */
 /*                                */
 /* (C) 2014-2026 Uwe Seimet       */
 /**********************************/
@@ -29,34 +29,8 @@ void testModeSense(UWORD);
 void testModeSelect(UWORD);
 void testReadFormatCapacities(UWORD);
 void testGetConfiguration(UWORD);
-void printFeatures(UWORD, const char *);
-void printPageHeader(UBYTE *, int, const char *, int);
-void printPages(UBYTE *, int, int);
-void printPage1(UBYTE *, int);
-void printPage2(UBYTE *, int);
-void printPage3(UBYTE *, int);
-void printPage4(UBYTE *, int);
-void printPage5(UBYTE *, int);
-void printPage7(UBYTE *, int);
-void printPage8(UBYTE *, int);
-void printPage10(UBYTE *, int);
-void printPage12(UBYTE *, int);
-void printPage15(UBYTE *, int);
-void printPage16(UBYTE *, int);
-void printPages17_20(UBYTE *, int, int);
-void printPage0(UBYTE *, int, int);
-void printRawData(UBYTE *, int, int, const char *);
-void checkRoot(UBYTE *, UBYTE *, ULONG);
-void initBuffer(UBYTE *, ULONG);
-LONG callInWithLun(tpSCSICmd, UWORD);
-LONG execute(UWORD, const char *, bool);
-char *DULongToString(const D_ULONG *);
-void printStatus(LONG);
-void printSenseData(void);
-void printExpectedSenseData(SENSE_DATA *, UWORD, UWORD);
 void print(const char *, ...);
-void printStatusError(LONG status);
-void printDeviceError(UWORD, const char *, ...);
+void printFeatures(UWORD, const char *);
 void printDriverError(UWORD, const char *, ...);
 
 extern tSCSICmd cmd;
