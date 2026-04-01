@@ -1,8 +1,8 @@
-/**************************************/
-/* SCSI Driver Media Change Test 1.01 */
-/*                                    */
-/* (C) 2021-2026 Uwe Seimet           */
-/**************************************/
+/***************************************/
+/* SCSI Driver Media Change Test 1.02ž */
+/*                                     */
+/* (C) 2021-2026 Uwe Seimet            */
+/***************************************/
 
 
 #include <string.h>
@@ -27,7 +27,7 @@ SENSE_DATA senseData;
 
 
 #pragma warn -par
-void
+int
 main(WORD argc, const char *argv[])
 {
 	UWORD bus, device, lun;
@@ -47,7 +47,7 @@ main(WORD argc, const char *argv[])
 	}
 
 
-	printf("SCSI Driver Media Change Test V1.01\n");
+	printf("SCSI Driver Media Change Test V1.02ž\n");
 	printf("½ 2021-2026 Uwe Seimet\n\n");
 
 	printf("Found SCSI Driver version %d.%02d\n\n", scsiCall->Version >> 8,
@@ -104,7 +104,7 @@ main(WORD argc, const char *argv[])
 
 					Cconin();
 
-					return;
+					return 0;
 				}
 			}
 		}
@@ -121,6 +121,8 @@ error:
 	printf("\nTest failed, there is no hot-swap support\n");
 
 	Cconin();
+
+	return 0;
 }
 #pragma warn .par
 

@@ -1,8 +1,8 @@
-/**************************************/
-/* SCSI Driver Error Status Test 1.01 */
-/*                                    */
-/* (C) 2021-2026 Uwe Seimet           */
-/**************************************/
+/***************************************/
+/* SCSI Driver Error Status Test 1.02ž */
+/*                                     */
+/* (C) 2021-2026 Uwe Seimet            */
+/***************************************/
 
 
 #include <string.h>
@@ -21,7 +21,7 @@ SENSE_DATA senseData;
 
 
 #pragma warn -par
-void
+int
 main(WORD argc, const char *argv[])
 {
 	UWORD bus;
@@ -32,7 +32,7 @@ main(WORD argc, const char *argv[])
 	UWORD busCount;
 	UWORD busId;
 	LONG oldstack = 0;
-	LONG result1, result2, result3, result4;
+	LONG result1, result2, result3;
 
 	getCookie('SCSI', (ULONG *)&scsiCall);
 	if(!scsiCall) {
@@ -40,10 +40,10 @@ main(WORD argc, const char *argv[])
 
 		Cconin();
 
-		return;
+		return 0;
 	}
 
-	printf("SCSI Driver Error Status Test V1.01\n");
+	printf("SCSI Driver Error Status Test V1.02ž\n");
 	printf("½ 2021-2026 Uwe Seimet\n\n");
 
 	printf("Found SCSI Driver version %d.%02d\n\n", scsiCall->Version >> 8,
@@ -91,16 +91,13 @@ main(WORD argc, const char *argv[])
 	scsiCall->Error(cmd1.Handle, cErrWrite, cErrMediach);
 
 	result1 = scsiCall->Error(cmd1.Handle, cErrRead, cErrMediach);
-	printf("\nError status 1 for handle 1 (expected: 0): %ld\n", result1);
+	printf("\nError status for handle 1 (expected: 0): %ld\n", result1);
 
-	result2 = scsiCall->Error(cmd1.Handle, cErrRead, cErrMediach);
-	printf("\nError status 2 for handle 1 (expected: 0): %ld\n", result2);
+	result2 = scsiCall->Error(cmd2.Handle, cErrRead, cErrMediach);
+	printf("\nError status 1 for handle 2 (expected: 1): %ld\n", result2);
 
 	result3 = scsiCall->Error(cmd2.Handle, cErrRead, cErrMediach);
-	printf("\nError status 1 for handle 2 (expected: 1): %ld\n", result3);
-
-	result4 = scsiCall->Error(cmd2.Handle, cErrRead, cErrMediach);
-	printf("\nError status 2 for handle 2 (expected: 0): %ld\n", result4);
+	printf("\nError status 2 for handle 2 (expected: 0): %ld\n", result3);
 
 	scsiCall->Close(cmd1.Handle);
 	scsiCall->Close(cmd2.Handle);
@@ -112,7 +109,7 @@ main(WORD argc, const char *argv[])
 	/* The errpr status must be reflected by all handles except the
 	   handle Error() was called for. After getting the status for
 	   a handle, the status must be cleard. */
-	if(result1 || result2 || !result3 || result4) {
+	if(result1 || !result2 || result3) {
 		printf("\nTest failed\n");
 	}
 	else {
@@ -121,7 +118,7 @@ main(WORD argc, const char *argv[])
 
 	Cconin();
 
-	return;
+	return 0;
 
 error:
 
@@ -135,5 +132,7 @@ error:
 	printf("\nTest failed\n");
 
 	Cconin();
+
+	return 0;
 }
 #pragma warn .par
