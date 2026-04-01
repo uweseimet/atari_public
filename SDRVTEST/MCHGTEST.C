@@ -88,6 +88,8 @@ main(WORD argc, const char *argv[])
 	blockSize = ReadCapacity(lun);
 	if(blockSize) {
 		if(TestUnitReady(lun, false) && Read(lun, blockSize)) {
+			ULONG drvbits = *((ULONG *)0x4c2);
+
 			printf("Now change the medium and then press a key\n");
 
 			Cconin();
@@ -96,11 +98,21 @@ main(WORD argc, const char *argv[])
 
 			if(TestUnitReady(lun, true)) {
 				if(Read(lun, blockSize)) {
-					scsiCall->Close(cmd.Handle);
+					ULONG newdrvbits = *((ULONG *)0x4c2);
 
-					if(oldstack) Super((void *)oldstack);
+ 					scsiCall->Close(cmd.Handle);
 
-					printf("Test was successful\n");
+					if(oldstack) {
+						Super((void *)oldstack);
+					}
+
+					/* AHD compatible drivers do not change _drvbits */
+					if(drvbits == newdrvbits) {
+						printf("Test was successful\n");
+					}
+					else {
+						printf("Test failed, _drvbits has changed\n");
+					}
 
 					Cconin();
 
@@ -227,8 +239,8 @@ TestUnitReady(UWORD lun, bool expectChange)
 
 		sprintf(s, "%ld", status);
 
-		printf("TEST UNIT READY failed (%s): %s",
-			expectChange ? "expected" : "unexpected",
+		printf("TEST UNIT READY result is (%s): %s",
+			expectChange ? "expected and correct" : "unexpected and wrong",
 			status == 2 ? "CHECK CONDITION" : s);
 
 		if(status == 2) {

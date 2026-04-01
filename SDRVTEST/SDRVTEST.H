@@ -1,5 +1,5 @@
 /**********************************/
-/* SCSI Driver/Firmware Test 3.01 */
+/* SCSI Driver/Firmware Test 3.02 */
 /*                                */
 /* (C) 2014-2026 Uwe Seimet       */
 /**********************************/

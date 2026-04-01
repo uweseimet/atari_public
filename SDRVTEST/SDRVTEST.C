@@ -1,5 +1,5 @@
 /**********************************/
-/* SCSI Driver/Firmware Test 3.01 */
+/* SCSI Driver/Firmware Test 3.02 */
 /*                                */
 /* (C) 2014-2026 Uwe Seimet       */
 /**********************************/
@@ -2248,7 +2248,11 @@ printDeviceError(UWORD blanks, const char *msg, ...)
 		print("  ");
 	}
 
-	print("ERROR (Device): ");
+	print("ERROR (most likely in device firmware):\n");
+
+	for(i = 0; i < blanks / 2 + 1; i++) {
+		print("  ");
+	}
 
 	va_start(args, msg);
 	vsprintf(s, msg, args);
@@ -2271,7 +2275,11 @@ printDriverError(UWORD blanks, const char *msg, ...)
 		print("  ");
 	}
 
-	print("ERROR (SCSI Driver): ");
+	print("ERROR (most likely in SCSI Driver):\n");
+
+	for(i = 0; i < blanks / 2 + 1; i++) {
+		print("  ");
+	}
 
 	va_start(args, msg);
 	vsprintf(s, msg, args);
