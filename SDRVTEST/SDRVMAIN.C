@@ -84,7 +84,7 @@ main()
 		return -1;
 	}
 
-	print("SCSI Driver and firmware test V3.01ž\n");
+	print("SCSI Driver and firmware test V3.01\n");
 	print("½ 2014-2026 Uwe Seimet\n\n");
 
 	if(getNvm(&nvm)) {

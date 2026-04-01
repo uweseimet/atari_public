@@ -1,5 +1,5 @@
 /****************************************/
-/* SCSI Driver Error Handling Test 1.01 */
+/* SCSI Driver Error Handling Test 1.02 */
 /*                                      */
 /* (C) 2021-2026 Uwe Seimet             */
 /****************************************/
@@ -24,7 +24,7 @@ SENSE_DATA senseData;
 
 
 #pragma warn -par
-void
+int
 main(WORD argc, const char *argv[])
 {
 	UWORD bus, device, lun;
@@ -43,7 +43,7 @@ main(WORD argc, const char *argv[])
 		goto error;
 	}
 
-	printf("SCSI Driver Error Handling Test V1.01\n");
+	printf("SCSI Driver Error Handling Test V1.02\n");
 	printf("½ 2021-2026 Uwe Seimet\n\n");
 
 	printf("Found SCSI Driver version %d.%02d\n\n", scsiCall->Version >> 8,
@@ -98,7 +98,7 @@ main(WORD argc, const char *argv[])
 
 	Cconin();
 
-	return;
+	return 0;
 
 error:
 
@@ -109,6 +109,8 @@ error:
 	printf("\nTest failed\n");
 
 	Cconin();
+
+	return 0;
 }
 #pragma warn .par
 
