@@ -106,7 +106,7 @@ main(WORD argc, const char *argv[])
 		Super((void *)oldstack);
 	}
 
-	/* The errpr status must be reflected by all handles except the
+	/* The error status must be reflected by all handles except the
 	   handle Error() was called for. After getting the status for
 	   a handle, the status must be cleard. */
 	if(result1 || !result2 || result3) {
