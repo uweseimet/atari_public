@@ -7,7 +7,7 @@
 #ifndef __util_h
 #define __util_h
 
-UWORD ScanBuses(tBusInfo *, tpScsiCall);
+void ScanBuses(tpScsiCall, UWORD *, UWORD *, UWORD *);
 WORD SortBuses(const void *, const void *);
 bool getCookie(LONG, ULONG *);
 

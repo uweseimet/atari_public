@@ -7,16 +7,19 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 #include <tos.h>
 #include <scsidrv/scsidefs.h>
 #include "std.h"
 #include "util.h"
 
 
-UWORD
-ScanBuses(tBusInfo *busInfos, tpScsiCall scsiCall)
+void
+ScanBuses(tpScsiCall scsiCall, UWORD *bus, UWORD *device, UWORD *lun)
 {
+	tBusInfo busInfos[32];
 	tBusInfo busInfo;
+	UWORD busId;
 	UWORD busCount = 0;
 
 	LONG result = scsiCall->InquireSCSI(cInqFirst, &busInfo);
@@ -30,7 +33,20 @@ ScanBuses(tBusInfo *busInfos, tpScsiCall scsiCall)
 
 	qsort(busInfos, busCount, sizeof(tBusInfo), SortBuses);
 
-	return busCount;
+	for(busId = 0; busId < busCount; busId++) {
+		printf("Bus ID: %d, Bus name: '%s'\n", busInfos[busId].BusNo,
+		busInfos[busId].BusName);
+	}
+
+	if(lun) {
+		printf("\nEnter bus ID, device ID, LUN ID: ");
+		scanf("%d,%d,%d", bus, device, lun);
+	}
+	else {
+		printf("\nEnter bus ID, device ID: ");
+		scanf("%d,%d", bus, device);
+	}
+	printf("\n");
 }
 
 

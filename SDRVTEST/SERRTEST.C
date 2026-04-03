@@ -24,13 +24,9 @@ SENSE_DATA senseData;
 int
 main(WORD argc, const char *argv[])
 {
-	UWORD bus;
-	UWORD device;
-	tBusInfo busInfos[32];
-	DLONG scsiId;
+	UWORD bus, device;
+	DLONG scsiId = { 0, 0 };
 	ULONG maxLen;
-	UWORD busCount;
-	UWORD busId;
 	LONG oldstack = 0;
 	LONG result1, result2, result3;
 
@@ -60,17 +56,8 @@ main(WORD argc, const char *argv[])
 		oldstack = Super(0L);
 	}
 
-	busCount = ScanBuses(busInfos, scsiCall);
-	for(busId = 0; busId < busCount; busId++) {
-		printf("Bus ID: %d, Bus name: '%s'\n", busInfos[busId].BusNo,
-		busInfos[busId].BusName);
-	}
+	ScanBuses(scsiCall, &bus, &device, NULL);
 
-	printf("\nEnter bus ID, device ID: ");
-	scanf("%d,%d", &bus, &device);
-	printf("\n");
-
-	scsiId.hi = 0;
 	scsiId.lo = device;
 
 	cmd1.Handle = (tHandle)scsiCall->Open(bus, &scsiId, &maxLen);

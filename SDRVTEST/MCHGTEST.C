@@ -31,12 +31,9 @@ int
 main(WORD argc, const char *argv[])
 {
 	UWORD bus, device, lun;
-	tBusInfo busInfos[32];
-	DLONG scsiId;
+	DLONG scsiId = { 0, 0 };
 	ULONG maxLen;
 	ULONG blockSize;
-	UWORD busCount;
-	UWORD busId;
 	LONG oldstack = 0;
 
 	getCookie('SCSI', (ULONG *)&scsiCall);
@@ -61,17 +58,8 @@ main(WORD argc, const char *argv[])
 		oldstack = Super(0L);
 	}
 
-	busCount = ScanBuses(busInfos, scsiCall);
-	for(busId = 0; busId < busCount; busId++) {
-		printf("Bus ID: %d, Bus name: '%s'\n", busInfos[busId].BusNo,
-		busInfos[busId].BusName);
-	}
+	ScanBuses(scsiCall, &bus, &device, &lun);
 
-	printf("\nEnter bus ID, device ID, LUN ID: ");
-	scanf("%d,%d,%d", &bus, &device, &lun);
-	printf("\n");
-
-	scsiId.hi = 0;
 	scsiId.lo = device;
 	cmd.Handle = (tHandle)scsiCall->Open(bus, &scsiId, &maxLen);
 	if(((LONG)cmd.Handle >> 24) < 0) {
