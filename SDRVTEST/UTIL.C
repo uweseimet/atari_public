@@ -11,9 +11,32 @@
 #include <tos.h>
 #include <scsidrv/scsidefs.h>
 #include "std.h"
+#include "util.h"
 
 
 WORD SortBuses(const void *, const void *);
+
+
+tpScsiCall
+GetScsiDriver(const char *msg)
+{
+	tpScsiCall scsiCall;
+
+	getCookie('SCSI', (ULONG *)&scsiCall);
+	if(!scsiCall) {
+		printf("SCSI Driver not found\n");
+
+		return NULL;
+	}
+
+	printf("%s\n", msg);
+	printf("½ 2021-2026 Uwe Seimet\n\n");
+
+	printf("Found SCSI Driver version %d.%02d\n\n", scsiCall->Version >> 8,
+		scsiCall->Version & 0xff);
+
+	return scsiCall;
+}
 
 
 tHandle

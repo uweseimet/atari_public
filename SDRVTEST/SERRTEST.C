@@ -1,5 +1,5 @@
 /**************************************/
-/* SCSI Driver Error Status Test 1.03 */
+/* SCSI Driver Error Status Test 1.04 */
 /*                                    */
 /* (C) 2021-2026 Uwe Seimet           */
 /**************************************/
@@ -30,20 +30,10 @@ main(WORD argc, const char *argv[])
 	LONG oldstack = 0;
 	LONG result1, result2, result3;
 
-	getCookie('SCSI', (ULONG *)&scsiCall);
+	scsiCall = GetScsiDriver("SCSI Driver Error Status Test V1.04");
 	if(!scsiCall) {
-		printf("SCSI Driver not found\n");
-
-		Cconin();
-
-		return 0;
+		goto error;
 	}
-
-	printf("SCSI Driver Error Status Test V1.03\n");
-	printf("½ 2021-2026 Uwe Seimet\n\n");
-
-	printf("Found SCSI Driver version %d.%02d\n\n", scsiCall->Version >> 8,
-		scsiCall->Version & 0xff);
 
 	cmd1.Flags = 0;
 	cmd2.Flags = 0;
@@ -60,7 +50,9 @@ main(WORD argc, const char *argv[])
 
 	cmd1.Handle = GetHandle(scsiCall, &bus, &scsiId.lo, NULL);
 	if(!cmd1.Handle) {
-		goto error;
+		Cconin();
+
+		return 0;
 	}
 
 	cmd2.Handle = (tHandle)scsiCall->Open(bus, &scsiId, &maxLen);
