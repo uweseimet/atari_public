@@ -18,6 +18,10 @@ MCHGTEST, ERRTEST and SERRTEST test other SCSI Driver features, related to
 error handling and media changes. Please refer to the sources for details.
 Except for the SDRVTEST logfile the tests do not change/write any data.
 
+More information is available here:
+
+  https://www.hddriver.net/en/testsuite.html
+
 The C sources are available on GitHub:
 
   https://github.com/uweseimet/atari_public
