@@ -11,7 +11,6 @@
 #include <tos.h>
 #include <scsidrv/scsidefs.h>
 #include "std.h"
-#include "util.h"
 
 
 WORD SortBuses(const void *, const void *);
@@ -46,11 +45,11 @@ GetHandle(tpScsiCall scsiCall, UWORD *bus, ULONG *device, UWORD *lun)
 	}
 
 	if(lun) {
-		printf("\nEnter bus ID, device ID, LUN ID: ");
+		printf("\nEnter bus ID, device ID and LUN of the device to test (x,y,z): ");
 		s = scanf("%d,%ld,%d", bus, &scsiId.lo, lun);
 	}
 	else {
-		printf("\nEnter bus ID, device ID: ");
+		printf("\nEnter bus ID and device ID of the device to test (x,y): ");
 		s = scanf("%d,%ld", bus, &scsiId.lo);
 	}
 	printf("\n");

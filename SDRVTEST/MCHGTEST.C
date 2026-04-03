@@ -1,5 +1,5 @@
 /**************************************/
-/* SCSI Driver Media Change Test 1.02 */
+/* SCSI Driver Media Change Test 1.03 */
 /*                                    */
 /* (C) 2021-2026 Uwe Seimet           */
 /**************************************/
@@ -42,7 +42,7 @@ main(WORD argc, const char *argv[])
 	}
 
 
-	printf("SCSI Driver Media Change Test V1.02\n");
+	printf("SCSI Driver Media Change Test V1.03\n");
 	printf("½ 2021-2026 Uwe Seimet\n\n");
 
 	printf("Found SCSI Driver version %d.%02d\n\n", scsiCall->Version >> 8,
@@ -86,7 +86,8 @@ main(WORD argc, const char *argv[])
 						Super((void *)oldstack);
 					}
 
-					/* AHD compatible drivers do not change _drvbits */
+					/* AHDI/XHDI compatible drivers do not modify _drvbits
+						 after a media change, see AHDI/XHDI specifications */
 					if(drvbits == newdrvbits) {
 						printf("Test was successful\n");
 					}
@@ -195,7 +196,7 @@ ReadCapacity(UWORD lun)
 		return 0;
 	}
 
-	printf("\nNumber of blocks: %ld, Block size: %ld\n\n",
+	printf("\nNumber of blocks: %ld, block size: %ld\n\n",
 		capacity[0] + 1, capacity[1]);
 
 	return capacity[1];

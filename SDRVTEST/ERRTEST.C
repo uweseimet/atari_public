@@ -1,5 +1,5 @@
 /****************************************/
-/* SCSI Driver Error Handling Test 1.02 */
+/* SCSI Driver Error Handling Test 1.03 */
 /*                                      */
 /* (C) 2021-2026 Uwe Seimet             */
 /****************************************/
@@ -38,7 +38,7 @@ main(WORD argc, const char *argv[])
 		goto error;
 	}
 
-	printf("SCSI Driver Error Handling Test V1.02\n");
+	printf("SCSI Driver Error Handling Test V1.03\n");
 	printf("½ 2021-2026 Uwe Seimet\n\n");
 
 	printf("Found SCSI Driver version %d.%02d\n\n", scsiCall->Version >> 8,
