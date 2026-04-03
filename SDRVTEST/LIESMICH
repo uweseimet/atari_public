@@ -21,6 +21,10 @@ auf Fehlerbehandlung und Medienwechsel beziehen. Bitte entnehmen Sie Details
 den Quelltexten.
 Bis auf das SDRVTEST-Logfile ver„ndern/schreiben die Tests keine Daten.
 
+Weitere Informationen gibt es hier:
+
+  https://www.hddriver.net/de/testsuite.html
+
 Die C-Quelltexte sind auf GitHub verfgbar:
 
   https://github.com/uweseimet/atari_public
