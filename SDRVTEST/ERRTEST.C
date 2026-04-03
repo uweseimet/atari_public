@@ -1,5 +1,5 @@
 /****************************************/
-/* SCSI Driver Error Handling Test 1.02 */
+/* SCSI Driver Error Handling Test 1.03 */
 /*                                      */
 /* (C) 2021-2026 Uwe Seimet             */
 /****************************************/
@@ -27,12 +27,7 @@ SENSE_DATA senseData;
 int
 main(WORD argc, const char *argv[])
 {
-	UWORD bus, device, lun;
-	tBusInfo busInfos[32];
-	DLONG scsiId;
-	ULONG maxLen;
-	UWORD busCount;
-	UWORD busId;
+	UWORD bus, lun;
 	LONG oldstack = 0;
 	LONG result;
 
@@ -43,7 +38,7 @@ main(WORD argc, const char *argv[])
 		goto error;
 	}
 
-	printf("SCSI Driver Error Handling Test V1.02\n");
+	printf("SCSI Driver Error Handling Test V1.03\n");
 	printf("½ 2021-2026 Uwe Seimet\n\n");
 
 	printf("Found SCSI Driver version %d.%02d\n\n", scsiCall->Version >> 8,
@@ -57,22 +52,8 @@ main(WORD argc, const char *argv[])
 		oldstack = Super(0L);
 	}
 
-	busCount = ScanBuses(busInfos, scsiCall);
-	for(busId = 0; busId < busCount; busId++) {
-		printf("Bus ID: %d, Bus name: '%s'\n", busInfos[busId].BusNo,
-		busInfos[busId].BusName);
-	}
-
-	printf("\nEnter bus ID, device ID, LUN ID: ");
-	scanf("%d,%d,%d", &bus, &device, &lun);
-	printf("\n");
-
-	scsiId.hi = 0;
-	scsiId.lo = device;
-	cmd.Handle = (tHandle)scsiCall->Open(bus, &scsiId, &maxLen);
-	if(((LONG)cmd.Handle >> 24) < 0) {
-		printf("Unknown IDs or device not found\n");
-
+	cmd.Handle = GetHandle(scsiCall, &bus, NULL, &lun);
+	if(!cmd.Handle) {
 		goto error;
 	}
 
@@ -102,9 +83,13 @@ main(WORD argc, const char *argv[])
 
 error:
 
-	scsiCall->Close(cmd.Handle);
+	if(cmd.Handle) {
+		scsiCall->Close(cmd.Handle);
+	}
 
-	if(oldstack) Super((void *)oldstack);
+	if(oldstack) {
+		Super((void *)oldstack);
+	}
 
 	printf("\nTest failed\n");
 

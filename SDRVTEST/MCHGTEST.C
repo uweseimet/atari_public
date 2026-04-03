@@ -1,5 +1,5 @@
 /**************************************/
-/* SCSI Driver Media Change Test 1.02 */
+/* SCSI Driver Media Change Test 1.03 */
 /*                                    */
 /* (C) 2021-2026 Uwe Seimet           */
 /**************************************/
@@ -30,13 +30,8 @@ SENSE_DATA senseData;
 int
 main(WORD argc, const char *argv[])
 {
-	UWORD bus, device, lun;
-	tBusInfo busInfos[32];
-	DLONG scsiId;
-	ULONG maxLen;
+	UWORD bus, lun;
 	ULONG blockSize;
-	UWORD busCount;
-	UWORD busId;
 	LONG oldstack = 0;
 
 	getCookie('SCSI', (ULONG *)&scsiCall);
@@ -47,7 +42,7 @@ main(WORD argc, const char *argv[])
 	}
 
 
-	printf("SCSI Driver Media Change Test V1.02\n");
+	printf("SCSI Driver Media Change Test V1.03\n");
 	printf("½ 2021-2026 Uwe Seimet\n\n");
 
 	printf("Found SCSI Driver version %d.%02d\n\n", scsiCall->Version >> 8,
@@ -61,33 +56,20 @@ main(WORD argc, const char *argv[])
 		oldstack = Super(0L);
 	}
 
-	busCount = ScanBuses(busInfos, scsiCall);
-	for(busId = 0; busId < busCount; busId++) {
-		printf("Bus ID: %d, Bus name: '%s'\n", busInfos[busId].BusNo,
-		busInfos[busId].BusName);
-	}
-
-	printf("\nEnter bus ID, device ID, LUN ID: ");
-	scanf("%d,%d,%d", &bus, &device, &lun);
-	printf("\n");
-
-	scsiId.hi = 0;
-	scsiId.lo = device;
-	cmd.Handle = (tHandle)scsiCall->Open(bus, &scsiId, &maxLen);
-	if(((LONG)cmd.Handle >> 24) < 0) {
-		printf("Unknown IDs or device not found\n");
-
+	cmd.Handle = GetHandle(scsiCall, &bus, NULL, &lun);
+	if(!cmd.Handle) {
 		goto error;
 	}
 
 	if(!Inquiry(lun)) {
 		goto error;
 	}
-	
 
 	blockSize = ReadCapacity(lun);
 	if(blockSize) {
 		if(TestUnitReady(lun, false) && Read(lun, blockSize)) {
+			ULONG drvbits = *((ULONG *)0x4c2);
+
 			printf("Now change the medium and then press a key\n");
 
 			Cconin();
@@ -96,11 +78,22 @@ main(WORD argc, const char *argv[])
 
 			if(TestUnitReady(lun, true)) {
 				if(Read(lun, blockSize)) {
-					scsiCall->Close(cmd.Handle);
+					ULONG newdrvbits = *((ULONG *)0x4c2);
 
-					if(oldstack) Super((void *)oldstack);
+ 					scsiCall->Close(cmd.Handle);
 
-					printf("Test was successful\n");
+					if(oldstack) {
+						Super((void *)oldstack);
+					}
+
+					/* AHDI/XHDI compatible drivers do not modify _drvbits
+						 after a media change, see AHDI/XHDI specifications */
+					if(drvbits == newdrvbits) {
+						printf("Test was successful\n");
+					}
+					else {
+						printf("Test failed, _drvbits has changed\n");
+					}
 
 					Cconin();
 
@@ -112,7 +105,9 @@ main(WORD argc, const char *argv[])
 
 error:
 
-	scsiCall->Close(cmd.Handle);
+	if(cmd.Handle) {
+		scsiCall->Close(cmd.Handle);
+	}
 
 	if(oldstack) {
 		Super((void *)oldstack);
@@ -201,7 +196,7 @@ ReadCapacity(UWORD lun)
 		return 0;
 	}
 
-	printf("\nNumber of blocks: %ld, Block size: %ld\n\n",
+	printf("\nNumber of blocks: %ld, block size: %ld\n\n",
 		capacity[0] + 1, capacity[1]);
 
 	return capacity[1];
@@ -227,8 +222,8 @@ TestUnitReady(UWORD lun, bool expectChange)
 
 		sprintf(s, "%ld", status);
 
-		printf("TEST UNIT READY failed (%s): %s",
-			expectChange ? "expected" : "unexpected",
+		printf("TEST UNIT READY result is (%s): %s",
+			expectChange ? "expected and correct" : "unexpected and wrong",
 			status == 2 ? "CHECK CONDITION" : s);
 
 		if(status == 2) {

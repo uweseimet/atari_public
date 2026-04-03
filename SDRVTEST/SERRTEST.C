@@ -1,5 +1,5 @@
 /**************************************/
-/* SCSI Driver Error Status Test 1.02 */
+/* SCSI Driver Error Status Test 1.03 */
 /*                                    */
 /* (C) 2021-2026 Uwe Seimet           */
 /**************************************/
@@ -25,12 +25,8 @@ int
 main(WORD argc, const char *argv[])
 {
 	UWORD bus;
-	UWORD device;
-	tBusInfo busInfos[32];
-	DLONG scsiId;
+	DLONG scsiId = { 0, 0 };
 	ULONG maxLen;
-	UWORD busCount;
-	UWORD busId;
 	LONG oldstack = 0;
 	LONG result1, result2, result3;
 
@@ -43,7 +39,7 @@ main(WORD argc, const char *argv[])
 		return 0;
 	}
 
-	printf("SCSI Driver Error Status Test V1.02\n");
+	printf("SCSI Driver Error Status Test V1.03\n");
 	printf("½ 2021-2026 Uwe Seimet\n\n");
 
 	printf("Found SCSI Driver version %d.%02d\n\n", scsiCall->Version >> 8,
@@ -55,28 +51,15 @@ main(WORD argc, const char *argv[])
 	cmd2.SenseBuffer = (BYTE *)&senseData;
 	cmd1.Timeout = 2000;
 	cmd2.Timeout = 2000;
+	cmd1.Handle = NULL;
+	cmd2.Handle = NULL;
 
 	if(!Super((void *)1L)) {
 		oldstack = Super(0L);
 	}
 
-	busCount = ScanBuses(busInfos, scsiCall);
-	for(busId = 0; busId < busCount; busId++) {
-		printf("Bus ID: %d, Bus name: '%s'\n", busInfos[busId].BusNo,
-		busInfos[busId].BusName);
-	}
-
-	printf("\nEnter bus ID, device ID: ");
-	scanf("%d,%d", &bus, &device);
-	printf("\n");
-
-	scsiId.hi = 0;
-	scsiId.lo = device;
-
-	cmd1.Handle = (tHandle)scsiCall->Open(bus, &scsiId, &maxLen);
-	if(((LONG)cmd1.Handle >> 24) < 0) {
-		printf("Unknown IDs or device not found\n");
-
+	cmd1.Handle = GetHandle(scsiCall, &bus, &scsiId.lo, NULL);
+	if(!cmd1.Handle) {
 		goto error;
 	}
 
@@ -106,7 +89,7 @@ main(WORD argc, const char *argv[])
 		Super((void *)oldstack);
 	}
 
-	/* The errpr status must be reflected by all handles except the
+	/* The error status must be reflected by all handles except the
 	   handle Error() was called for. After getting the status for
 	   a handle, the status must be cleard. */
 	if(result1 || !result2 || result3) {
@@ -122,8 +105,13 @@ main(WORD argc, const char *argv[])
 
 error:
 
-	scsiCall->Close(cmd1.Handle);
-	scsiCall->Close(cmd2.Handle);
+	if(cmd1.Handle) {
+		scsiCall->Close(cmd1.Handle);
+	}
+
+	if(cmd2.Handle) {
+		scsiCall->Close(cmd2.Handle);
+	}
 
 	if(oldstack) {
 		Super((void *)oldstack);
