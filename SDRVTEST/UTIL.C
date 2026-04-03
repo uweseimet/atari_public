@@ -14,13 +14,20 @@
 #include "util.h"
 
 
-void
-ScanBuses(tpScsiCall scsiCall, UWORD *bus, UWORD *device, UWORD *lun)
+WORD SortBuses(const void *, const void *);
+
+
+tHandle
+GetHandle(tpScsiCall scsiCall, UWORD *bus, ULONG *device, UWORD *lun)
 {
 	tBusInfo busInfos[32];
 	tBusInfo busInfo;
+	DLONG scsiId = { 0, 0 };
+	ULONG maxLen;
 	UWORD busId;
 	UWORD busCount = 0;
+	tHandle handle;
+	int s;
 
 	LONG result = scsiCall->InquireSCSI(cInqFirst, &busInfo);
 	while(!result && busCount < 32) {
@@ -40,13 +47,34 @@ ScanBuses(tpScsiCall scsiCall, UWORD *bus, UWORD *device, UWORD *lun)
 
 	if(lun) {
 		printf("\nEnter bus ID, device ID, LUN ID: ");
-		scanf("%d,%d,%d", bus, device, lun);
+		s = scanf("%d,%ld,%d", bus, &scsiId.lo, lun);
 	}
 	else {
 		printf("\nEnter bus ID, device ID: ");
-		scanf("%d,%d", bus, device);
+		s = scanf("%d,%ld", bus, &scsiId.lo);
 	}
 	printf("\n");
+
+	if(!s) {
+		printf("Input error\n");
+		
+		Cconin();
+
+		return NULL;
+	}
+
+	handle = (tHandle)scsiCall->Open(*bus, &scsiId, &maxLen);
+	if(((LONG)handle >> 24) < 0) {
+		printf("Unknown IDs or device not found\n");
+
+		return NULL;
+	}
+
+	if(device) {
+		*device = scsiId.lo;
+	}
+
+	return handle;
 }
 
 

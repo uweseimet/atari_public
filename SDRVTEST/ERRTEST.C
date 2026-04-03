@@ -27,9 +27,7 @@ SENSE_DATA senseData;
 int
 main(WORD argc, const char *argv[])
 {
-	UWORD bus, device, lun;
-	DLONG scsiId = { 0, 0 };
-	ULONG maxLen;
+	UWORD bus, lun;
 	LONG oldstack = 0;
 	LONG result;
 
@@ -54,13 +52,8 @@ main(WORD argc, const char *argv[])
 		oldstack = Super(0L);
 	}
 
-	ScanBuses(scsiCall, &bus, &device, &lun);
-
-	scsiId.lo = device;
-	cmd.Handle = (tHandle)scsiCall->Open(bus, &scsiId, &maxLen);
-	if(((LONG)cmd.Handle >> 24) < 0) {
-		printf("Unknown IDs or device not found\n");
-
+	cmd.Handle = GetHandle(scsiCall, &bus, NULL, &lun);
+	if(!cmd.Handle) {
 		goto error;
 	}
 
@@ -90,9 +83,13 @@ main(WORD argc, const char *argv[])
 
 error:
 
-	scsiCall->Close(cmd.Handle);
+	if(cmd.Handle) {
+		scsiCall->Close(cmd.Handle);
+	}
 
-	if(oldstack) Super((void *)oldstack);
+	if(oldstack) {
+		Super((void *)oldstack);
+	}
 
 	printf("\nTest failed\n");
 
