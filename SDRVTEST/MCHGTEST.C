@@ -1,5 +1,5 @@
 /**************************************/
-/* SCSI Driver Media Change Test 1.03 */
+/* SCSI Driver Media Change Test 1.04 */
 /*                                    */
 /* (C) 2021-2026 Uwe Seimet           */
 /**************************************/
@@ -34,19 +34,12 @@ main(WORD argc, const char *argv[])
 	ULONG blockSize;
 	LONG oldstack = 0;
 
-	getCookie('SCSI', (ULONG *)&scsiCall);
+	scsiCall = GetScsiDriver("SCSI Driver Media Change Test V1.04");
 	if(!scsiCall) {
-		printf("SCSI Driver not found\n");
+		Cconin();
 
-		goto error;
+		return 0;
 	}
-
-
-	printf("SCSI Driver Media Change Test V1.03\n");
-	printf("½ 2021-2026 Uwe Seimet\n\n");
-
-	printf("Found SCSI Driver version %d.%02d\n\n", scsiCall->Version >> 8,
-		scsiCall->Version & 0xff);
 
 	cmd.Flags = 0;
 	cmd.SenseBuffer = (BYTE *)&senseData;
