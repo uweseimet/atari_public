@@ -1,5 +1,5 @@
 /****************************************/
-/* SCSI Driver Error Handling Test 1.04 */
+/* SCSI Driver Error Handling Test 1.05 */
 /*                                      */
 /* (C) 2021-2026 Uwe Seimet             */
 /****************************************/
@@ -15,9 +15,10 @@
 #include "util.h"
 
 
-bool Inquiry(UWORD);
+int HandleError(void);
 
 
+LONG oldstack = 0;
 tpScsiCall scsiCall;
 tSCSICmd cmd;
 SENSE_DATA senseData;
@@ -28,10 +29,9 @@ int
 main(WORD argc, const char *argv[])
 {
 	UWORD bus, lun;
-	LONG oldstack = 0;
 	LONG result;
 
-	scsiCall = GetScsiDriver("SCSI Driver Error Handling Test V1.04");
+	scsiCall = GetScsiDriver("SCSI Driver Error Handling Test V1.05");
 	if(!scsiCall) {
 		Cconin();
 
@@ -48,11 +48,11 @@ main(WORD argc, const char *argv[])
 
 	cmd.Handle = GetHandle(scsiCall, &bus, NULL, &lun);
 	if(!cmd.Handle) {
-		goto error;
+		return HandleError();
 	}
 
-	if(!Inquiry(lun)) {
-		goto error;
+	if(!Inquiry(scsiCall, &cmd, lun)) {
+		return HandleError();
 	}
 
 	printf("\nChange medium and press a key\n");
@@ -74,9 +74,13 @@ main(WORD argc, const char *argv[])
 	Cconin();
 
 	return 0;
+}
+#pragma warn .par
 
-error:
 
+int
+HandleError()
+{
 	if(cmd.Handle) {
 		scsiCall->Close(cmd.Handle);
 	}
@@ -90,44 +94,4 @@ error:
 	Cconin();
 
 	return 0;
-}
-#pragma warn .par
-
-
-bool
-Inquiry(UWORD lun)
-{
-	SENSE_BLK Inquiry = {
-		0x12, 0x00, 0x00, 0x00, 0x00, (UBYTE)sizeof(INQUIRY_DATA), 0x00, 0x00, 0x00
-	};
-
-	LONG status;
-	INQUIRY_DATA inquiryData;
-
-	Inquiry.lun = lun;
-	cmd.Cmd = (void *)&Inquiry;
-	cmd.CmdLen = 6;
-	cmd.Buffer = &inquiryData;
-	cmd.TransferLen = Inquiry.length;
-
-	memset(&inquiryData, 0, sizeof(INQUIRY_DATA));
-
-	status = scsiCall->In(&cmd);
-	if(status) {
-		printf("INQUIRY failed: %ld\n", status);
-
-		return false;
-	}
-
-	inquiryData.revision[0] = 0;
-	printf("Device name: '%s'\n\n", inquiryData.vendor);
-
-	printf("Removable media support: %s\n",
-		inquiryData.RMB ? "Yes" : "No");
-
-	if(!inquiryData.RMB) 	{
-		printf("\nRemovable media support is required\n");
-	};
-
-	return inquiryData.RMB;
 }

@@ -9,6 +9,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <tos.h>
+#include <scsi3.h>
 #include <scsidrv/scsidefs.h>
 #include "std.h"
 #include "util.h"
@@ -22,18 +23,17 @@ GetScsiDriver(const char *msg)
 {
 	tpScsiCall scsiCall;
 
-	getCookie('SCSI', (ULONG *)&scsiCall);
-	if(!scsiCall) {
-		printf("SCSI Driver not found\n");
-
-		return NULL;
-	}
-
 	printf("%s\n", msg);
 	printf("½ 2021-2026 Uwe Seimet\n\n");
 
-	printf("Found SCSI Driver version %d.%02d\n\n", scsiCall->Version >> 8,
-		scsiCall->Version & 0xff);
+	getCookie('SCSI', (ULONG *)&scsiCall);
+	if(scsiCall) {
+		printf("Found SCSI Driver version %d.%02d\n\n", scsiCall->Version >> 8,
+			scsiCall->Version & 0xff);
+	}
+	else {
+		printf("No SCSI Driver found\n");
+	}
 
 	return scsiCall;
 }
@@ -44,16 +44,22 @@ GetHandle(tpScsiCall scsiCall, UWORD *bus, ULONG *device, UWORD *lun)
 {
 	tBusInfo busInfos[32];
 	tBusInfo busInfo;
+	bool buses[32];
 	DLONG scsiId = { 0, 0 };
 	ULONG maxLen;
 	UWORD busId;
 	UWORD busCount = 0;
 	tHandle handle;
+	LONG result;
 	int s;
 
-	LONG result = scsiCall->InquireSCSI(cInqFirst, &busInfo);
+	memset(buses, false, sizeof(buses));
+
+	result = scsiCall->InquireSCSI(cInqFirst, &busInfo);
 	while(!result && busCount < 32) {
 		memcpy(&busInfos[busCount], &busInfo, sizeof(tBusInfo));
+
+		buses[busInfo.BusNo] = true;
 
 		busCount++;
 
@@ -78,7 +84,23 @@ GetHandle(tpScsiCall scsiCall, UWORD *bus, ULONG *device, UWORD *lun)
 	printf("\n");
 
 	if(!s) {
-		printf("Input error\n");
+		printf("Input format error\n");
+		
+		Cconin();
+
+		return NULL;
+	}
+
+	if(*bus > 31 || !buses[*bus]) {
+		printf("Invalid bus ID: %d\n", *bus);
+		
+		Cconin();
+
+		return NULL;
+	}
+
+	if(*lun > 7) {
+		printf("Invalid LUN: %d\n", *lun);
 		
 		Cconin();
 
@@ -87,7 +109,9 @@ GetHandle(tpScsiCall scsiCall, UWORD *bus, ULONG *device, UWORD *lun)
 
 	handle = (tHandle)scsiCall->Open(*bus, &scsiId, &maxLen);
 	if(((LONG)handle >> 24) < 0) {
-		printf("Unknown IDs or device not found\n");
+		printf("Device with ID %d.%Ld not found\n", *bus, scsiId.lo);
+
+		Cconin();
 
 		return NULL;
 	}
@@ -107,6 +131,45 @@ SortBuses(const void *b1, const void *b2)
 	const tBusInfo *i2 = b2;
 
 	return i1->BusNo - i2->BusNo;
+}
+
+
+bool
+Inquiry(tpScsiCall scsiCall, tpSCSICmd cmd, UWORD lun)
+{
+	SENSE_BLK Inquiry = {
+		0x12, 0x00, 0x00, 0x00, 0x00, (UBYTE)sizeof(INQUIRY_DATA), 0x00, 0x00, 0x00
+	};
+
+	LONG status;
+	INQUIRY_DATA inquiryData;
+
+	Inquiry.lun = lun;
+	cmd->Cmd = (void *)&Inquiry;
+	cmd->CmdLen = 6;
+	cmd->Buffer = &inquiryData;
+	cmd->TransferLen = Inquiry.length;
+
+	memset(&inquiryData, 0, sizeof(INQUIRY_DATA));
+
+	status = scsiCall->In(cmd);
+	if(status) {
+		printf("INQUIRY failed: %ld\n", status);
+
+		return false;
+	}
+
+	inquiryData.revision[0] = 0;
+	printf("Device name: '%s'\n\n", inquiryData.vendor);
+
+	printf("Removable media support: %s\n",
+		inquiryData.RMB ? "Yes" : "No");
+
+	if(!inquiryData.RMB) 	{
+		printf("\nRemovable media support is required\n");
+	};
+
+	return inquiryData.RMB;
 }
 
 

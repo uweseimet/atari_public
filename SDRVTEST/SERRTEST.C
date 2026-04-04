@@ -1,5 +1,5 @@
 /**************************************/
-/* SCSI Driver Error Status Test 1.04 */
+/* SCSI Driver Error Status Test 1.05 */
 /*                                    */
 /* (C) 2021-2026 Uwe Seimet           */
 /**************************************/
@@ -15,6 +15,10 @@
 #include "util.h"
 
 
+int HandleError(void);
+
+
+LONG oldstack = 0;
 tpScsiCall scsiCall;
 tSCSICmd cmd1, cmd2;
 SENSE_DATA senseData;
@@ -27,12 +31,11 @@ main(WORD argc, const char *argv[])
 	UWORD bus;
 	DLONG scsiId = { 0, 0 };
 	ULONG maxLen;
-	LONG oldstack = 0;
 	LONG result1, result2, result3;
 
-	scsiCall = GetScsiDriver("SCSI Driver Error Status Test V1.04");
+	scsiCall = GetScsiDriver("SCSI Driver Error Status Test V1.05");
 	if(!scsiCall) {
-		goto error;
+		return HandleError();
 	}
 
 	cmd1.Flags = 0;
@@ -59,7 +62,7 @@ main(WORD argc, const char *argv[])
 	if(((LONG)cmd2.Handle >> 24) < 0) {
 		printf("Unknown IDs or device not found\n");
 
-		goto error;
+		return HandleError();
 	}
 
 	printf("\nSetting error status for handle 1\n");
@@ -94,9 +97,13 @@ main(WORD argc, const char *argv[])
 	Cconin();
 
 	return 0;
+}
+#pragma warn .par
 
-error:
 
+int
+HandleError()
+{
 	if(cmd1.Handle) {
 		scsiCall->Close(cmd1.Handle);
 	}
@@ -115,4 +122,3 @@ error:
 
 	return 0;
 }
-#pragma warn .par

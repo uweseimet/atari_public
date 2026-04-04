@@ -9,6 +9,7 @@
 
 tpScsiCall GetScsiDriver(const char *);
 tHandle GetHandle(tpScsiCall, UWORD *, ULONG *, UWORD *);
+bool Inquiry(tpScsiCall, tpSCSICmd, UWORD);
 bool getCookie(LONG, ULONG *);
 
 #endif
