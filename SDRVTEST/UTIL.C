@@ -45,16 +45,22 @@ GetHandle(tpScsiCall scsiCall, UWORD *bus, ULONG *device, UWORD *lun)
 {
 	tBusInfo busInfos[32];
 	tBusInfo busInfo;
+	BYTE buses[32];
 	DLONG scsiId = { 0, 0 };
 	ULONG maxLen;
 	UWORD busId;
 	UWORD busCount = 0;
 	tHandle handle;
+	LONG result;
 	int s;
 
-	LONG result = scsiCall->InquireSCSI(cInqFirst, &busInfo);
+	memset(buses, -1, sizeof(buses));
+
+	result = scsiCall->InquireSCSI(cInqFirst, &busInfo);
 	while(!result && busCount < 32) {
 		memcpy(&busInfos[busCount], &busInfo, sizeof(tBusInfo));
+
+		buses[busInfo.BusNo] = 0;
 
 		busCount++;
 
@@ -79,7 +85,23 @@ GetHandle(tpScsiCall scsiCall, UWORD *bus, ULONG *device, UWORD *lun)
 	printf("\n");
 
 	if(!s) {
-		printf("Input error\n");
+		printf("Input format error\n");
+		
+		Cconin();
+
+		return NULL;
+	}
+
+	if(*bus > 31 || buses[*bus] < 0) {
+		printf("Invalid bus: %d\n", *bus);
+		
+		Cconin();
+
+		return NULL;
+	}
+
+	if(*lun > 7) {
+		printf("Invalid LUN: %d\n", *lun);
 		
 		Cconin();
 
