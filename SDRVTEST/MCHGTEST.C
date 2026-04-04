@@ -16,7 +16,6 @@
 
 
 int HandleError(void);
-bool Inquiry(UWORD);
 ULONG ReadCapacity(UWORD);
 bool TestUnitReady(UWORD, bool);
 bool Read(UWORD, ULONG);
@@ -55,7 +54,7 @@ main(WORD argc, const char *argv[])
 		return HandleError();
 	}
 
-	if(!Inquiry(lun)) {
+	if(!Inquiry(scsiCall, &cmd, lun)) {
 		return HandleError();
 	}
 
@@ -116,45 +115,6 @@ HandleError()
 	Cconin();
 
 	return 0;
-}
-
-
-bool
-Inquiry(UWORD lun)
-{
-	SENSE_BLK Inquiry = {
-		0x12, 0x00, 0x00, 0x00, 0x00, (UBYTE)sizeof(INQUIRY_DATA), 0x00, 0x00, 0x00
-	};
-
-	LONG status;
-	INQUIRY_DATA inquiryData;
-
-	Inquiry.lun = lun;
-	cmd.Cmd = (void *)&Inquiry;
-	cmd.CmdLen = 6;
-	cmd.Buffer = &inquiryData;
-	cmd.TransferLen = Inquiry.length;
-
-	memset(&inquiryData, 0, sizeof(INQUIRY_DATA));
-
-	status = scsiCall->In(&cmd);
-	if(status) {
-		printf("INQUIRY failed: %ld\n", status);
-
-		return false;
-	}
-
-	inquiryData.revision[0] = 0;
-	printf("Device name: '%s'\n\n", inquiryData.vendor);
-
-	printf("Removable media support: %s\n",
-		inquiryData.RMB ? "Yes" : "No");
-
-	if(!inquiryData.RMB) 	{
-		printf("\nRemovable media support is required\n");
-	};
-
-	return inquiryData.RMB;
 }
 
 

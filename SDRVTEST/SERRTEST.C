@@ -1,5 +1,5 @@
 /**************************************/
-/* SCSI Driver Error Status Test 1.04 */
+/* SCSI Driver Error Status Test 1.05 */
 /*                                    */
 /* (C) 2021-2026 Uwe Seimet           */
 /**************************************/
@@ -33,7 +33,7 @@ main(WORD argc, const char *argv[])
 	ULONG maxLen;
 	LONG result1, result2, result3;
 
-	scsiCall = GetScsiDriver("SCSI Driver Error Status Test V1.04");
+	scsiCall = GetScsiDriver("SCSI Driver Error Status Test V1.05");
 	if(!scsiCall) {
 		return HandleError();
 	}
