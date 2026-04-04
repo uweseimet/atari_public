@@ -23,18 +23,17 @@ GetScsiDriver(const char *msg)
 {
 	tpScsiCall scsiCall;
 
-	getCookie('SCSI', (ULONG *)&scsiCall);
-	if(!scsiCall) {
-		printf("SCSI Driver not found\n");
-
-		return NULL;
-	}
-
 	printf("%s\n", msg);
 	printf("½ 2021-2026 Uwe Seimet\n\n");
 
-	printf("Found SCSI Driver version %d.%02d\n\n", scsiCall->Version >> 8,
-		scsiCall->Version & 0xff);
+	getCookie('SCSI', (ULONG *)&scsiCall);
+	if(scsiCall) {
+		printf("Found SCSI Driver version %d.%02d\n\n", scsiCall->Version >> 8,
+			scsiCall->Version & 0xff);
+	}
+	else {
+		printf("No SCSI Driver found\n");
+	}
 
 	return scsiCall;
 }
@@ -45,7 +44,7 @@ GetHandle(tpScsiCall scsiCall, UWORD *bus, ULONG *device, UWORD *lun)
 {
 	tBusInfo busInfos[32];
 	tBusInfo busInfo;
-	BYTE buses[32];
+	bool buses[32];
 	DLONG scsiId = { 0, 0 };
 	ULONG maxLen;
 	UWORD busId;
@@ -54,13 +53,13 @@ GetHandle(tpScsiCall scsiCall, UWORD *bus, ULONG *device, UWORD *lun)
 	LONG result;
 	int s;
 
-	memset(buses, -1, sizeof(buses));
+	memset(buses, false, sizeof(buses));
 
 	result = scsiCall->InquireSCSI(cInqFirst, &busInfo);
 	while(!result && busCount < 32) {
 		memcpy(&busInfos[busCount], &busInfo, sizeof(tBusInfo));
 
-		buses[busInfo.BusNo] = 0;
+		buses[busInfo.BusNo] = true;
 
 		busCount++;
 
@@ -92,8 +91,8 @@ GetHandle(tpScsiCall scsiCall, UWORD *bus, ULONG *device, UWORD *lun)
 		return NULL;
 	}
 
-	if(*bus > 31 || buses[*bus] < 0) {
-		printf("Invalid bus: %d\n", *bus);
+	if(*bus > 31 || !buses[*bus]) {
+		printf("Invalid bus ID: %d\n", *bus);
 		
 		Cconin();
 
@@ -110,7 +109,9 @@ GetHandle(tpScsiCall scsiCall, UWORD *bus, ULONG *device, UWORD *lun)
 
 	handle = (tHandle)scsiCall->Open(*bus, &scsiId, &maxLen);
 	if(((LONG)handle >> 24) < 0) {
-		printf("Unknown IDs or device not found\n");
+		printf("Device with ID %d.%Ld not found\n", *bus, scsiId.lo);
+
+		Cconin();
 
 		return NULL;
 	}
