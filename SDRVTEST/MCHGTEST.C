@@ -1,5 +1,5 @@
 /**************************************/
-/* SCSI Driver Media Change Test 1.04 */
+/* SCSI Driver Media Change Test 1.05 */
 /*                                    */
 /* (C) 2021-2026 Uwe Seimet           */
 /**************************************/
@@ -15,12 +15,14 @@
 #include "util.h"
 
 
+int HandleError(void);
 bool Inquiry(UWORD);
 ULONG ReadCapacity(UWORD);
 bool TestUnitReady(UWORD, bool);
 bool Read(UWORD, ULONG);
 
 
+LONG oldstack = 0;
 tpScsiCall scsiCall;
 tSCSICmd cmd;
 SENSE_DATA senseData;
@@ -32,9 +34,8 @@ main(WORD argc, const char *argv[])
 {
 	UWORD bus, lun;
 	ULONG blockSize;
-	LONG oldstack = 0;
 
-	scsiCall = GetScsiDriver("SCSI Driver Media Change Test V1.04");
+	scsiCall = GetScsiDriver("SCSI Driver Media Change Test V1.05");
 	if(!scsiCall) {
 		Cconin();
 
@@ -51,11 +52,11 @@ main(WORD argc, const char *argv[])
 
 	cmd.Handle = GetHandle(scsiCall, &bus, NULL, &lun);
 	if(!cmd.Handle) {
-		goto error;
+		return HandleError();
 	}
 
 	if(!Inquiry(lun)) {
-		goto error;
+		return HandleError();
 	}
 
 	blockSize = ReadCapacity(lun);
@@ -89,15 +90,19 @@ main(WORD argc, const char *argv[])
 					}
 
 					Cconin();
-
-					return 0;
 				}
 			}
 		}
 	}
 
-error:
+	return 0;
+}
+#pragma warn .par
 
+
+int
+HandleError()
+{
 	if(cmd.Handle) {
 		scsiCall->Close(cmd.Handle);
 	}
@@ -112,7 +117,6 @@ error:
 
 	return 0;
 }
-#pragma warn .par
 
 
 bool

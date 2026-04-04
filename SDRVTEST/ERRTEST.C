@@ -15,9 +15,11 @@
 #include "util.h"
 
 
+int HandleError(void);
 bool Inquiry(UWORD);
 
 
+LONG oldstack = 0;
 tpScsiCall scsiCall;
 tSCSICmd cmd;
 SENSE_DATA senseData;
@@ -28,7 +30,6 @@ int
 main(WORD argc, const char *argv[])
 {
 	UWORD bus, lun;
-	LONG oldstack = 0;
 	LONG result;
 
 	scsiCall = GetScsiDriver("SCSI Driver Error Handling Test V1.04");
@@ -48,11 +49,11 @@ main(WORD argc, const char *argv[])
 
 	cmd.Handle = GetHandle(scsiCall, &bus, NULL, &lun);
 	if(!cmd.Handle) {
-		goto error;
+		return HandleError();
 	}
 
 	if(!Inquiry(lun)) {
-		goto error;
+		return HandleError();
 	}
 
 	printf("\nChange medium and press a key\n");
@@ -74,9 +75,13 @@ main(WORD argc, const char *argv[])
 	Cconin();
 
 	return 0;
+}
+#pragma warn .par
 
-error:
 
+int
+HandleError()
+{
 	if(cmd.Handle) {
 		scsiCall->Close(cmd.Handle);
 	}
@@ -91,7 +96,6 @@ error:
 
 	return 0;
 }
-#pragma warn .par
 
 
 bool
