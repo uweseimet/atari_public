@@ -407,7 +407,9 @@ testInquiry(UWORD busNo, UWORD lun, UWORD nonExistingLun)
 	}
 
 
-/* This test may cause a crash with IDE drives and HDDRIVER < 12.78 */
+/* This test is disabled because it can result in a buffer overflow
+	 (e.g. with HDDRIVER < 12.78), which will crash the test suite. */
+/*
 	print("    Testing with requested byte count of 0\n");
 
 	Inquiry.length = 0;
@@ -425,6 +427,7 @@ testInquiry(UWORD busNo, UWORD lun, UWORD nonExistingLun)
 			printDeviceError(4, "More than 0 requested bytes were returned\n");
 		}
 	}
+*/
 
 	return deviceType;
 }
