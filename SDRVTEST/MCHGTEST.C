@@ -1,5 +1,5 @@
 /**************************************/
-/* SCSI Driver Media Change Test 1.05 */
+/* SCSI Driver Media Change Test 1.06 */
 /*                                    */
 /* (C) 2021-2026 Uwe Seimet           */
 /**************************************/
@@ -34,7 +34,7 @@ main(WORD argc, const char *argv[])
 	UWORD bus, lun;
 	ULONG blockSize;
 
-	scsiCall = GetScsiDriver("SCSI Driver Media Change Test V1.05");
+	scsiCall = GetScsiDriver("SCSI Driver Media Change Test V1.06");
 	if(!scsiCall) {
 		Cconin();
 
@@ -87,12 +87,12 @@ main(WORD argc, const char *argv[])
 					else {
 						printf("Test failed, _drvbits has changed\n");
 					}
-
-					Cconin();
 				}
 			}
 		}
 	}
+
+	Cconin();
 
 	return 0;
 }
