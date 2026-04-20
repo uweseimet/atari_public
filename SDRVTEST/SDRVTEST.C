@@ -651,6 +651,12 @@ testReadCapacity(UWORD lun, ULONG *blockSize)
 
 		return;
 	}
+	else if(status == 2 && localSenseData.senseKey == 0x02 &&
+		localSenseData.addSenseCode == 0x04) {
+		print("    Drive is not ready\n");
+
+		return;
+	}
 	else if(status) {
 		printStatus(status);
 
@@ -2080,6 +2086,10 @@ execute(UWORD lun, const char *msg, bool reportError)
 		else if(localSenseData.errorClass && localSenseData.senseKey == 0x02 &&
 			localSenseData.addSenseCode == 0x3a) {
 			print("      Medium not present, test skipped\n");
+		}			
+		else if(localSenseData.errorClass && localSenseData.senseKey == 0x02 &&
+			localSenseData.addSenseCode == 0x04) {
+			print("      Drive not ready, test skipped\n");
 		}			
 		else if(reportError) {
 			printStatus(status);
