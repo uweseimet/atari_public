@@ -94,7 +94,7 @@ static char *DULongToString(const D_ULONG *);
 
 
 static UWORD scsiLevel;
-static bool hasReportLuns;
+bool hasReportLuns;
 
 tSCSICmd cmd;
 
