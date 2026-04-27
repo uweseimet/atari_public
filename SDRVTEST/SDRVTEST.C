@@ -94,7 +94,7 @@ static char *DULongToString(const D_ULONG *);
 
 
 static UWORD scsiLevel;
-bool hasReportLuns;
+static bool hasReportLuns;
 
 tSCSICmd cmd;
 
@@ -159,7 +159,7 @@ runTest(UWORD busNo, UWORD lun, UWORD nonExistingLun)
 				break;
 		}
 
-		if(scsiLevel >= 5 && !hasReportLuns) {
+		if(scsiLevel >= 5 && !hasReportLuns && !lun) {
 			printDeviceError(2,
 				"REPORT LUNS is mandatory for SPC-%d but not supported\n", scsiLevel - 2);
 		}
