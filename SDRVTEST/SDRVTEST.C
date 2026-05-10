@@ -7,6 +7,7 @@
 
 #include <assert.h>
 #include <atarierr.h>
+#include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
 #include <scsidrv/scsidefs.h>
