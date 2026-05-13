@@ -2209,7 +2209,8 @@ printApiError(LONG status)
 void
 printStatusError(LONG status)
 {
-	print("      ERROR (Device): Request failed with status %ld", status);
+	print("      ERROR (most likely in device firmware)::\n"
+		"        Request failed with status %ld", status);
 
 	if(status == 0x2L) {
 		print(" (CHECK CONDITION)");
@@ -2271,8 +2272,8 @@ printDeviceError(UWORD blanks, const char *msg, ...)
 	va_start(args, msg);
 	vsprintf(s, msg, args);
 	va_end(args);
+
 	logMsg(s);
-	va_start(args, fmt);
 
 	deviceErrors++;
 }
@@ -2298,8 +2299,8 @@ printDriverError(UWORD blanks, const char *msg, ...)
 	va_start(args, msg);
 	vsprintf(s, msg, args);
 	va_end(args);
+
 	logMsg(s);
-	va_start(args, fmt);
 
 	scsiDriverErrors++;
 }
