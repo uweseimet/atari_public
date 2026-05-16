@@ -2209,7 +2209,7 @@ printApiError(LONG status)
 void
 printStatusError(LONG status)
 {
-	print("      ERROR (most likely in device firmware)::\n"
+	print("      ERROR (presumably in device firmware)::\n"
 		"        Request failed with status %ld", status);
 
 	if(status == 0x2L) {
@@ -2263,7 +2263,7 @@ printDeviceError(UWORD blanks, const char *msg, ...)
 		print("  ");
 	}
 
-	print("ERROR (most likely in device firmware):\n");
+	print("ERROR (presumably in device firmware):\n");
 
 	for(i = 0; i < blanks / 2 + 1; i++) {
 		print("  ");
@@ -2290,7 +2290,7 @@ printDriverError(UWORD blanks, const char *msg, ...)
 		print("  ");
 	}
 
-	print("ERROR (most likely in SCSI Driver):\n");
+	print("ERROR (presumably in SCSI Driver):\n");
 
 	for(i = 0; i < blanks / 2 + 1; i++) {
 		print("  ");
