@@ -1,5 +1,5 @@
 /**********************************/
-/* SCSI Driver/Firmware Test 3.03 */
+/* SCSI Driver/Firmware Test 3.04 */
 /*                                */
 /* (C) 2014-2026 Uwe Seimet       */
 /**********************************/
@@ -7,6 +7,7 @@
 
 #include <assert.h>
 #include <atarierr.h>
+#include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
 #include <scsidrv/scsidefs.h>
@@ -159,7 +160,7 @@ runTest(UWORD busNo, UWORD lun, UWORD nonExistingLun)
 				break;
 		}
 
-		if(scsiLevel >= 5 && !hasReportLuns) {
+		if(scsiLevel >= 5 && !hasReportLuns && !lun) {
 			printDeviceError(2,
 				"REPORT LUNS is mandatory for SPC-%d but not supported\n", scsiLevel - 2);
 		}
@@ -648,6 +649,12 @@ testReadCapacity(UWORD lun, ULONG *blockSize)
 	if(status == 2 && localSenseData.senseKey == 0x02 &&
 		localSenseData.addSenseCode == 0x3a) {
 		print("    Medium not present\n");
+
+		return;
+	}
+	else if(status == 2 && localSenseData.senseKey == 0x02 &&
+		localSenseData.addSenseCode == 0x04) {
+		print("    Drive is not ready\n");
 
 		return;
 	}
@@ -2081,6 +2088,10 @@ execute(UWORD lun, const char *msg, bool reportError)
 			localSenseData.addSenseCode == 0x3a) {
 			print("      Medium not present, test skipped\n");
 		}			
+		else if(localSenseData.errorClass && localSenseData.senseKey == 0x02 &&
+			localSenseData.addSenseCode == 0x04) {
+			print("      Drive not ready, test skipped\n");
+		}			
 		else if(reportError) {
 			printStatus(status);
 		}
@@ -2198,7 +2209,8 @@ printApiError(LONG status)
 void
 printStatusError(LONG status)
 {
-	print("      ERROR (Device): Request failed with status %ld", status);
+	print("      ERROR (presumably in device firmware)::\n"
+		"        Request failed with status %ld", status);
 
 	if(status == 0x2L) {
 		print(" (CHECK CONDITION)");
@@ -2251,7 +2263,7 @@ printDeviceError(UWORD blanks, const char *msg, ...)
 		print("  ");
 	}
 
-	print("ERROR (most likely in device firmware):\n");
+	print("ERROR (presumably in device firmware):\n");
 
 	for(i = 0; i < blanks / 2 + 1; i++) {
 		print("  ");
@@ -2260,8 +2272,8 @@ printDeviceError(UWORD blanks, const char *msg, ...)
 	va_start(args, msg);
 	vsprintf(s, msg, args);
 	va_end(args);
+
 	logMsg(s);
-	va_start(args, fmt);
 
 	deviceErrors++;
 }
@@ -2278,7 +2290,7 @@ printDriverError(UWORD blanks, const char *msg, ...)
 		print("  ");
 	}
 
-	print("ERROR (most likely in SCSI Driver):\n");
+	print("ERROR (presumably in SCSI Driver):\n");
 
 	for(i = 0; i < blanks / 2 + 1; i++) {
 		print("  ");
@@ -2287,8 +2299,8 @@ printDriverError(UWORD blanks, const char *msg, ...)
 	va_start(args, msg);
 	vsprintf(s, msg, args);
 	va_end(args);
+
 	logMsg(s);
-	va_start(args, fmt);
 
 	scsiDriverErrors++;
 }
