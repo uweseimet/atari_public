@@ -842,7 +842,7 @@ testRead(UWORD lun, UWORD nonExistingLun, UWORD busNo, ULONG blockSize,
 		cmd.Buffer = NULL;
 		cmd.TransferLen = 0xffffffffL;
 		if(execute(lun, "      READ (6)", false) != DATATOOLONG) {
-			printDriverError(6, "Transfer length of $FFFFFFFF bytes was not rejected\n");
+			printDriverError(6, "Transfer length of $FFFFFFFF bytes was not correctly rejected\n");
 		}
 	}
 
