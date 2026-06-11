@@ -1,5 +1,5 @@
 /**********************************/
-/* SCSI Driver/Firmware Test 3.04 */
+/* SCSI Driver/Firmware Test 3.05 */
 /*                                */
 /* (C) 2014-2026 Uwe Seimet       */
 /**********************************/
@@ -213,7 +213,7 @@ testUnitReady(UWORD lun)
 
 	cmd.Cmd = (void *)&TestUnitReady;
 	cmd.CmdLen = 6;
-/* There is no data transfer, i.e. an invalid address must not matter */
+/* There is no data transfer, i.e. an invalid buffer address must not matter */
 	cmd.Buffer = (void *)0xffffffffL;
 	cmd.TransferLen = 0;
 
@@ -834,6 +834,16 @@ testRead(UWORD lun, UWORD nonExistingLun, UWORD busNo, ULONG blockSize,
 	}
 	else {
 		ptrRoot = ptr1;
+	}
+
+	if(!status) {
+		print("    Reading block 0 with READ (6), using invalid transfer length\n");
+
+		cmd.Buffer = NULL;
+		cmd.TransferLen = 0xffffffffL;
+		if(execute(lun, "      READ (6)", false) != DATATOOLONG) {
+			printDriverError(6, "Transfer length of $FFFFFFFF bytes was not rejected\n");
+		}
 	}
 
 	if(*cmd.Handle & cAllCmds) {
@@ -2096,8 +2106,8 @@ execute(UWORD lun, const char *msg, bool reportError)
 			printStatus(status);
 		}
 	}
-	else if(status) {
-		print("      Device reported status code %ld", status);
+	else if(status && reportError) {
+		print("      Device/driver reported status code %ld", status);
 
 		printApiError(status);
 
