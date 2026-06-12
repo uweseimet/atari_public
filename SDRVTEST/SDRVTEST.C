@@ -276,7 +276,7 @@ testInquiry(UWORD busNo, UWORD lun, UWORD nonExistingLun)
 		return 0;
 	}
 
-	memcpy(&fullInquiryData, &inquiryData, sizeof(INQUIRY_DATA));
+	fullInquiryData = inquiryData;
 
 	strncpy(name, inquiryData.vendor, 24);
 	strncpy(revision, inquiryData.revision, 4);
