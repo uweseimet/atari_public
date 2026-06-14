@@ -8,6 +8,8 @@ that most likely something is either wrong with the SCSI Driver
 implementation for the respective bus, or that the device (or device
 emulation like SCSI2Pi or BlueSCSI) handles SCSI commands incorrectly. If an
 optional SCSI command is not supported this is not considered an error.
+If SDRVTEST crashes during testing, this indicates a particularly serious
+error in a SCSI Driver.
 Applications/drivers may not work correctly with devices or SCSI Drivers for
 which a test fails.
 SDRVTEST saves the test results to a file SDRVTEST.LOG in the current
