@@ -15,6 +15,6 @@ FILE *out;
 void
 logMsg(const char *msg)
 {
-	printf(msg);
-	fprintf(out, msg);
+	printf("%s", msg);
+	fprintf(out, "%s", msg);
 }

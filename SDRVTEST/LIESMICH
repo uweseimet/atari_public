@@ -1,3 +1,8 @@
+Diese Testsuite enth„lt mehrere Programme zum Testen von SCSI-Treiber-
+Implentierungen und Ger„te-Firmwares. Jedes Program hat seine eigene
+Versionsnummer, die nicht identisch ist mit der Versionsnummer der
+Testsuite.
+
 Mit SDRVTEST l„sst sich testen, ob eine SCSI-Treiber-Implementierung die
 SCSI-Treiber-Spezifikation 1.01 korrekt implementiert, und ob ein Ger„t
 gewisse SCSI-Kommandos in šbereinstimmung mit dem SCSI-Standard
@@ -10,6 +15,8 @@ SCSI-Treiber-Implementierung fr den jeweiligen Bus nicht stimmt, oder dass
 das Ger„t (oder Ger„teemulation wie SCSI2Pi oder BlueSCSI) SCSI-Kommandos
 nicht korrekt bearbeitet. Falls ein optionales SCSI-Kommando nicht
 untersttzt wird, wird dies nicht als Fehler angesehen.
+Falls SDRVTEST beim Testen abstrzt deutet dies auf einen besonders
+gravierenden Fehler in einem SCSI-Treiber hin.
 Anwendungen/Treiber funktionieren m”glicherweise nicht korrekt mit Ger„ten
 oder SCSI-Treibern, bei denen ein Test fehlschl„gt.
 SDRVTEST sichert die Testergebnisse in einer Datei SDRVTEST.LOG im aktuellen

@@ -1,3 +1,7 @@
+This test suite contains several programs for testing SCSI DRIVER
+implementations and device firmwares. Each program has its own version
+number, which is not identical with the test suite version number.
+
 With SDRVTEST you can test whether a SCSI Driver implementation is compliant
 with the SCSI Driver specification 1.01, and whether a device handles certain
 SCSI commands in compliance with the SCSI standard (https://www.t10.org).
@@ -8,6 +12,8 @@ that most likely something is either wrong with the SCSI Driver
 implementation for the respective bus, or that the device (or device
 emulation like SCSI2Pi or BlueSCSI) handles SCSI commands incorrectly. If an
 optional SCSI command is not supported this is not considered an error.
+If SDRVTEST crashes during testing, this indicates a particularly serious
+error in a SCSI Driver.
 Applications/drivers may not work correctly with devices or SCSI Drivers for
 which a test fails.
 SDRVTEST saves the test results to a file SDRVTEST.LOG in the current
