@@ -22,6 +22,9 @@
 
 #define MAX_DEVICES 64
 
+/* 4Kn SATA drives have a physical block size of 4096 bytes */
+#define MAX_BLOCK_SIZE 4096
+
 
 typedef struct {
   unsigned int bootpref;
@@ -47,6 +50,9 @@ typedef struct {
 } DEVICEINFO;
 
 
+/* 6 * maximum sector size + 1 */
+static UBYTE buffers[6 * MAX_BLOCK_SIZE + 1];
+
 static DEVICEINFO deviceInfos[MAX_DEVICES];
 SENSE_DATA localSenseData;
 tpScsiCall scsiCall;
@@ -68,7 +74,7 @@ main()
 
 	getCookie('SCSI', (ULONG *)&scsiCall);
 	if(!scsiCall) {
-		printf("SCSI Driver not found\n");
+		printf("No SCSI Driver is installed\n");
 
 		Cconin();
 
@@ -84,7 +90,7 @@ main()
 		return -1;
 	}
 
-	print("SCSI Driver and device firmware test V3.05\n");
+	print("SCSI Driver and device firmware test V3.10\n");
 	print("½ 2014-2026 Uwe Seimet\n\n");
 
 	if(getNvm(&nvm)) {
@@ -178,7 +184,7 @@ testDevice(UWORD busNo, const char *busName, UWORD id, ULONG maxLen)
 
 	print("\nTesting bus %d '%s', device %d, LUN %d\n", busNo, busName, id, lun);
 
-	runTest(busNo, lun, nonExistingLun);
+	runTest(busNo, lun, nonExistingLun, buffers);
 
 	scsiCall->Close(handle);
 
@@ -238,6 +244,18 @@ findDevices()
 	while(!result && busCount < 32) {
 		int bitCount = 0;
 		int i;
+
+		if(busInfo.BusNo > 31) {
+			printDriverError(2, "Invalid bus number: %d\n\n", busInfo.BusNo);
+			result = scsiCall->InquireSCSI(cInqNext, &busInfo);
+			continue;
+		}
+
+		if(strlen(busInfo.BusName) >= 20) {
+			printDriverError(2, "Invalid bus name: %s\n\n", busInfo.BusName);
+			result = scsiCall->InquireSCSI(cInqNext, &busInfo);
+			continue;
+		}
 
 		memcpy(&busInfos[busCount++], &busInfo, sizeof(tBusInfo));
 
