@@ -254,7 +254,7 @@ LONG cdecl
 InquireSCSI(WORD what, tBusInfo *info)
 {
 	if(!what) {
-		info->Private.BusIds = 0L;
+		memset(&info->Private, 0, (UWORD)sizeof(info->Private));
 	}
 
 	info->BusNo = info->Private.BusIds & (1L << busA) ? busB : busA;
