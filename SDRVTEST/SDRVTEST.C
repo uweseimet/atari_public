@@ -440,7 +440,7 @@ testRequestSense(UWORD lun, UWORD nonExistingLun)
 
 	cmd.Cmd = (void *)RequestSense;
 	cmd.CmdLen = (UWORD)sizeof(RequestSense);
-	cmd.Buffer = &buffer;
+	cmd.Buffer = buffer;
 	cmd.TransferLen = sizeof(SENSE_DATA);
 
 	memset(&localSenseData, 0, sizeof(SENSE_DATA));
@@ -661,7 +661,8 @@ testReadCapacity(UWORD lun, ULONG *blockSize)
 	maxBlock64.hi = 0;
 	maxBlock64.lo = capacity10[0];
 	capacity64.hi = 0;
-	capacity64.lo = maxBlock64.lo + 1;
+	capacity64.lo = maxBlock64.lo != 0xffffffffL ?
+		maxBlock64.lo + 1 : 0xffffffffL;
 
 	if(!maxBlock64.lo) {
 		printDeviceError(4, "Suspicious maximum block number '0'\n");
@@ -724,7 +725,7 @@ testReadCapacity(UWORD lun, ULONG *blockSize)
 		}
 	}
 
-	cmd.Buffer = &buffer;
+	cmd.Buffer = buffer;
 	cmd.TransferLen = *blockSize;
 
 	print("    Reading last block (%s)\n", maxBlockString);
@@ -1080,7 +1081,7 @@ testReadLong(UWORD lun)
 
 	print("    Reading 512 bytes of sector 0 with READ LONG (10)\n");
 
-	cmd.Buffer = &buffer;
+	cmd.Buffer = buffer;
 	cmd.TransferLen = 512;
 	ReadLong10[7] = 2;
 	ReadLong10[8] = 0;
@@ -1096,7 +1097,7 @@ testReadLong(UWORD lun)
 
 	print("    Reading 516 bytes of sector 0 with READ LONG (10)\n");
 
-	cmd.Buffer = &buffer;
+	cmd.Buffer = buffer;
 	cmd.TransferLen = 516;
 	ReadLong10[7] = 2;
 	ReadLong10[8] = 4;
@@ -1125,7 +1126,7 @@ testReadLong(UWORD lun)
 
 	print("    Reading 512 bytes of sector 0 with READ LONG (16)\n");
 
-	cmd.Buffer = &buffer;
+	cmd.Buffer = buffer;
 	cmd.TransferLen = 512;
 	ReadLong16[12] = 2;
 	ReadLong16[13] = 0;
@@ -1140,7 +1141,7 @@ testReadLong(UWORD lun)
 
 	print("    Reading 516 bytes of sector 0 with READ LONG (16)\n");
 
-	cmd.Buffer = &buffer;
+	cmd.Buffer = buffer;
 	cmd.TransferLen = 516;
 	ReadLong16[12] = 2;
 	ReadLong16[13] = 4;
@@ -1285,7 +1286,7 @@ testReportLuns()
 
 	cmd.Cmd = (void *)ReportLuns;
 	cmd.CmdLen = (UWORD)sizeof(ReportLuns);
-	cmd.Buffer = &buffer;
+	cmd.Buffer = buffer;
 	cmd.TransferLen = sizeof(buffer);
 
 	memset(&localSenseData, 0, sizeof(SENSE_DATA));
@@ -1345,7 +1346,7 @@ testReadFormatCapacities(UWORD lun)
 
 	cmd.Cmd = (void *)ReadFormatCapacities;
 	cmd.CmdLen = (UWORD)sizeof(ReadFormatCapacities);
-	cmd.Buffer = &capacityData;
+	cmd.Buffer = capacityData;
 	cmd.TransferLen = sizeof(capacityData);
 
 	memset(&localSenseData, 0, sizeof(SENSE_DATA));
@@ -1398,7 +1399,7 @@ testGetConfiguration(UWORD lun)
 
 	cmd.Cmd = (void *)GetConfiguration;
 	cmd.CmdLen = (UWORD)sizeof(GetConfiguration);
-	cmd.Buffer = &profileData;
+	cmd.Buffer = profileData;
 	cmd.TransferLen = sizeof(profileData);
 
 	memset(&localSenseData, 0, sizeof(SENSE_DATA));
