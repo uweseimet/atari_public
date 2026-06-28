@@ -315,7 +315,7 @@ testInquiry(UWORD busNo, UWORD lun, UWORD nonExistingLun)
 
 		default:
 			{
-				char version[6];
+				char version[10];
 				sprintf(version, "SPC-%d", inquiryData.ANSIVersion - 2);
 				print("%s", version);
 				break;
@@ -344,7 +344,7 @@ testInquiry(UWORD busNo, UWORD lun, UWORD nonExistingLun)
 
 		default:
 			{
-				char format[3];
+				char format[4];
 				sprintf(format, "$%2X", inquiryData.responseDataFormat);
 				print("%s", format);
 				break;
@@ -1569,7 +1569,7 @@ printPages(UBYTE *buf, int size, int minSize)
 	}
 
 	i = minSize;
-	while(i +1 < size) {
+	while(i + 1 < size) {
 		int page = buf[i] & 0x3f;
 
 		if(i > minSize) {
