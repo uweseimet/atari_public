@@ -83,7 +83,7 @@ GetHandle(tpScsiCall scsiCall, UWORD *bus, ULONG *device, UWORD *lun)
 	}
 	printf("\n");
 
-	if(!s) {
+	if(s != (lun ? 3 : 2)) {
 		printf("Input format error\n");
 		
 		Cconin();
@@ -99,7 +99,7 @@ GetHandle(tpScsiCall scsiCall, UWORD *bus, ULONG *device, UWORD *lun)
 		return NULL;
 	}
 
-	if(*lun > 7) {
+	if(lun && *lun > 7) {
 		printf("Invalid LUN: %d\n", *lun);
 		
 		Cconin();
@@ -109,7 +109,7 @@ GetHandle(tpScsiCall scsiCall, UWORD *bus, ULONG *device, UWORD *lun)
 
 	handle = (tHandle)scsiCall->Open(*bus, &scsiId, &maxLen);
 	if(((LONG)handle >> 24) < 0) {
-		printf("Device with ID %d.%Ld not found\n", *bus, scsiId.lo);
+		printf("Device with ID %d.%lu not found\n", *bus, scsiId.lo);
 
 		Cconin();
 

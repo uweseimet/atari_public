@@ -1,5 +1,5 @@
 /****************************************/
-/* SCSI Driver Error Handling Test 1.05 */
+/* SCSI Driver Error Handling Test 1.06 */
 /*                                      */
 /* (C) 2021-2026 Uwe Seimet             */
 /****************************************/
@@ -31,7 +31,7 @@ main(WORD argc, const char *argv[])
 	UWORD bus, lun;
 	LONG result;
 
-	scsiCall = GetScsiDriver("SCSI Driver Error Handling Test V1.05");
+	scsiCall = GetScsiDriver("SCSI Driver Error Handling Test V1.06");
 	if(!scsiCall) {
 		Cconin();
 
