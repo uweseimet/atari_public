@@ -253,7 +253,9 @@ testInquiry(UWORD busNo, UWORD lun, UWORD nonExistingLun)
 		return 0;
 	}
 
-	printRawData((UBYTE *)&inquiryData, 0, inquiryData.additionalLength + 5,
+	printRawData((UBYTE *)&inquiryData, 0,
+		inquiryData.additionalLength + 5 < sizeof(INQUIRY_DATA) ?
+		inquiryData.additionalLength + 5 : (int)sizeof(INQUIRY_DATA),
 		"      ");
 
 	scsiLevel = inquiryData.ANSIVersion;
