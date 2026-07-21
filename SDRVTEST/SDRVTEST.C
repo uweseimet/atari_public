@@ -401,6 +401,8 @@ testInquiry(UWORD busNo, UWORD lun, UWORD nonExistingLun)
 	}
 
 
+/* This test can result in a buffer overflow, e.g. with HDDRIVER < 12.78,
+	 which will crash the test suite. */
 	print("    Testing with requested byte count of 0\n");
 
 	Inquiry.length = 0;
