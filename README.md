@@ -16,7 +16,7 @@ Each folder contains a separate project. There are no dependencies between these
 
 - ROMSPEED - Copies the TOS ROM to the Fast-RAM and accelerates the system. The binary is available on https://www.seimet.de/atari/en. Also see https://www.stcarchiv.de/stc1991/09/romspeed-und-virtuelle-speicherverwaltung (German only).
 
-- RSSCONV - Converts .RSC and .H files created by a resource construction set like INTERFACE into a format suitable for assemblers like the EASYRIDER assembler.
+- RSCCONV - Converts .RSC and .H files created by a resource construction set like INTERFACE into a format suitable for assemblers like the EASYRIDER assembler.
 
 - SCSI2PI - Atari client tools for the <a href="https://github.com/uweseimet/scsi2pi">SCSI2Pi</a>/<a href="https://github.com/PISCSI/piscsi">PiSCSI</a> projects. The binaries are available on https://www.hddriver.net/en/scsi2pi_tools.html.
 
