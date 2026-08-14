@@ -90,13 +90,13 @@ main()
 		return -1;
 	}
 
-	print("SCSI Driver and device firmware test V3.10\n");
+	print("SCSI Driver and device firmware test V3.11 beta\n");
 	print("½ 2014-2026 Uwe Seimet\n\n");
 
 	if(getNvm(&nvm)) {
 		print("SCSI initiator ID in NVRAM is %d\n", nvm.scsiid & 0x07);
 		print("SCSI initiator identification is %s ", nvm.scsiid & 0x80 ?
-			"enabled" : "disabled");		
+			"enabled" : "disabled");
 	}
 	else {
 		print("SCSI initiator ID is not available");
@@ -228,7 +228,7 @@ findDevices()
 	result = scsiCall->InquireSCSI(cInqNext, &busInfo);
 	if(!result) {
 		UWORD busNo = busInfo.BusNo;
-		
+
 		result = scsiCall->InquireSCSI(cInqFirst, &busInfo);
 		if(result || busNo != busInfo.BusNo) {
 			printDriverError(2, "Inconsistent handling of cInqFirst/cInqNext\n\n");
@@ -321,8 +321,8 @@ findDevices()
 			deviceInfos[devCount].id = (UWORD)devInfo.SCSIId.lo;
 			deviceInfos[devCount].maxLen = info->MaxLen;
 			deviceInfos[devCount].features = features;
-			strcpy(deviceInfos[devCount].busName, info->BusName);	
-			strcpy(deviceInfos[devCount].deviceBusName, deviceBusName);	
+			strcpy(deviceInfos[devCount].busName, info->BusName);
+			strcpy(deviceInfos[devCount].deviceBusName, deviceBusName);
 			devCount++;
 
 			result = scsiCall->InquireBus(cInqNext, info->BusNo, &devInfo);
@@ -353,6 +353,6 @@ getNvm(NVM *nvm)
 
 		return !NVMaccess(0, 0, nvmSize, nvm);
 	}
-	
+
 	return false;
 }
