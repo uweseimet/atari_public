@@ -2187,6 +2187,12 @@ execute(UWORD lun, const char *msg, bool reportError)
 			print(msg);
 			print(" is not supported by device\n");
 		}
+		/* Special case: Command $9E with service action */
+		else if(localSenseData.errorClass && localSenseData.senseKey == 0x05 &&
+			localSenseData.addSenseCode == 0x24 && ((UBYTE *)(cmd.Cmd))[0] == 0x9e) {
+			print(msg);
+			print(" is not supported by device\n");
+		}
 		else if(localSenseData.errorClass && localSenseData.senseKey == 0x02 &&
 			localSenseData.addSenseCode == 0x3a) {
 			print("      Medium not present, test skipped\n");
