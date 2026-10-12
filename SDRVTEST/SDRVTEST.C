@@ -607,6 +607,7 @@ testReadCapacity(UWORD lun, ULONG *blockSize)
 	ULONG capacity16[] = { 0, 0, 0, 0 };
 	D_ULONG maxBlock64;
 	D_ULONG capacity64;
+	bool capacityKnown;
 	ULONG maxBlock32 = 0;
 	ULONG capacity32 = 0;
 	WORD buffer[2048];
@@ -653,10 +654,12 @@ testReadCapacity(UWORD lun, ULONG *blockSize)
 	}
 
 	maxBlock32 = capacity10[0];
-	capacity32 = maxBlock32 != 0xffffffffL ? maxBlock32 + 1 : 0xffffffffL;
+	capacityKnown = maxBlock32 != 0xffffffffL;
+	capacity32 = capacityKnown ? maxBlock32 + 1 : 0xffffffffL;
 
 	if(!maxBlock32) {
-		printDeviceError(4, "Suspicious maximum block number 0\n");
+		printDeviceError(4, "Illegal maximum block number 0\n");
+		return;
 	}
 
 	*blockSize = capacity10[1];
@@ -691,6 +694,7 @@ testReadCapacity(UWORD lun, ULONG *blockSize)
 		if(!capacity64.lo) {
 			capacity64.hi++;
 		}
+		capacityKnown = true;
 
 		if((maxBlock64.hi ? 0xffffffffL : maxBlock64.lo) != maxBlock32) {
 			printDeviceError(6, "Maximum block number mismatch between READ CAPACITY (10) and (16)\n");
@@ -702,8 +706,7 @@ testReadCapacity(UWORD lun, ULONG *blockSize)
 	  ratio = (UWORD)(capacity16[3] >> 16) & 0x0f;
 
 		if(!maxBlock64.hi && !maxBlock64.lo) {
-			printDeviceError(6, "Illegal maximum block number '0'\n");
-
+			printDeviceError(6, "Illegal maximum block number 0\n");
 			return;
 		}
 
@@ -718,12 +721,17 @@ testReadCapacity(UWORD lun, ULONG *blockSize)
 			print("      Logical sectors per physical sector: Unknown (1 or more)\n");
 		}
 		else {
-			print("      Logical sectors per physical sector: %d\n",
-				1 << ratio);
+			print("      Logical sectors per physical sector: %lu\n", 1UL << ratio);
 		}
 	}
 
 	if(!*blockSize || *blockSize > 4096) {
+		return;
+	}
+
+	if(!capacityKnown) {
+		printDeviceError(6, "READ CAPACITY (10) reports $FFFFFFFF but "
+			"READ CAPACITY (16) failed\n");
 		return;
 	}
 
@@ -856,8 +864,7 @@ testRead(UWORD lun, UWORD nonExistingLun, UWORD busNo, ULONG blockSize,
 		if(status) {
 			printStatus(status);
 		}
-
-		if(ptrRoot) {
+		else if(ptrRoot) {
 			checkRoot(ptrRoot, ptr2, blockSize);
 		}
 		else {
@@ -874,7 +881,7 @@ testRead(UWORD lun, UWORD nonExistingLun, UWORD busNo, ULONG blockSize,
 		initBuffer(ptr3);
 
 		status = execute(lun, "      READ (12)", true);
-		if(!status) {
+		if(!status && ptrRoot) {
 			checkRoot(ptrRoot, ptr3, blockSize);
 		}
 
@@ -888,7 +895,7 @@ testRead(UWORD lun, UWORD nonExistingLun, UWORD busNo, ULONG blockSize,
 		initBuffer(ptr3);
 
 		status = execute(lun, "      READ (16)", true);
-		if(!status) {
+		if(!status && ptrRoot) {
 			checkRoot(ptrRoot, ptr3, blockSize);
 
 			if(busNo == 2) {
@@ -926,6 +933,10 @@ testRead(UWORD lun, UWORD nonExistingLun, UWORD busNo, ULONG blockSize,
 		cmd.CmdLen = (UWORD)sizeof(Read10);
 
 		print("    Trying to read block 0 to odd address with READ (10)\n");
+	}
+	else {
+		printDeviceError(4, "Neither READ (6) nor READ (10) are supported\n");
+		return;
 	}
 
 	cmd.Buffer = ptrOdd;
@@ -1148,7 +1159,6 @@ testModeSense(UWORD lun)
 
 	UBYTE buffer6[256];
 	UBYTE buffer10[2048];
-	bool hasModeSense6 = true;
 	bool requiresModeSense10 = false;
 	LONG first6 = 4;
 	LONG first10 = 8;
@@ -1174,7 +1184,6 @@ testModeSense(UWORD lun)
 		if(localSenseData.senseKey != 0x05 || (
 			localSenseData.addSenseCode != 0x20 && localSenseData.addSenseCode != 0x24)) {
 			printStatus(status);
-			hasModeSense6 = false;
 		}
 		else if(localSenseData.addSenseCode == 0x24) {
 			requiresModeSense10 = true;
@@ -1250,11 +1259,17 @@ testModeSense(UWORD lun)
 
 			print("      Received %d data bytes\n", size);
 
-			if(total10 < 8 || (hasModeSense6 && !requiresModeSense10 &&
-				(pageLen6 != pageLen10 ||
-				memcmp(buffer6 + first6, buffer10 + first10, pageLen10)))) {
-				printDeviceError(6, "MODE SENSE (6) and MODE SENSE (10) page data differ\n");
-				printPages(buffer10, (int)total10 - 1, (int)first10);
+			if(total10 < 8) {
+				printDeviceError(6, "MODE SENSE (10) response with %ld byte(s) is too short\n",
+					total10);
+				}
+				else if(pageLen6 < 0) {
+					printPages(buffer10, (int)total10 - 1, (int)first10);
+				}
+				else if(pageLen6 != pageLen10 ||
+					memcmp(buffer6 + first6, buffer10 + first10, pageLen10)) {
+					printDeviceError(6, "MODE SENSE (6) and MODE SENSE (10) page data differ\n");
+					printPages(buffer10, (int)total10 - 1, (int)first10);
 			}
 			else {
 				print("      MODE SENSE (6) and MODE SENSE (10) page data are identical\n");
@@ -1396,7 +1411,7 @@ testReadFormatCapacities(UWORD lun)
 		}
 		length -= 8;
 
-		print("    Current blocks: %ld\n", capacityList->currentBlocks);
+		print("    Current blocks: %lu\n", capacityList->currentBlocks);
 		print("    Current block size: %d\n", capacityList->currentBlockSize);
 		print("    Descriptor type: $%02X\n", capacityList->descriptorType & 0x03);
 
@@ -1673,7 +1688,7 @@ printPages(UBYTE *buf, int size, int minSize)
 	}
 
 	if(pageOffsets[0] != -1) {
-		printPage0(buf, pageOffsets[0], size - pageOffsets[0] - 1);
+		printPage0(buf, pageOffsets[0], size - pageOffsets[0]);
 	}
 }
 
