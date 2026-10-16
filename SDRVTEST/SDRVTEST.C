@@ -54,14 +54,11 @@ const char *DEVICE_TYPES[] = {
 
 typedef struct
 {
-	UBYTE reserved1[3];
+	UBYTE reserved[3];
 	UBYTE length;
 	ULONG currentBlocks;
 	UBYTE descriptorType;
-	BYTE reserved2[1];
-	UWORD currentBlockSize;
-	ULONG formattableBlocks;
-	ULONG formattableBlockSize;
+	UBYTE currentBlockSize[3];
 } CAPACITY_LIST;
 
 
@@ -1382,7 +1379,6 @@ testReadFormatCapacities(UWORD lun)
 	LONG status;
 	UBYTE capacityData[254];
 	CAPACITY_LIST *capacityList = (CAPACITY_LIST *)capacityData;
-	ULONG *formattableData = (ULONG *)&capacityData[12];
 
 	if(!(*cmd.Handle & cAllCmds)) {
 		return;
@@ -1396,32 +1392,42 @@ testReadFormatCapacities(UWORD lun)
 	cmd.Buffer = capacityData;
 	cmd.TransferLen = sizeof(capacityData);
 
+	memset(capacityData, 0, sizeof(capacityData));
+
 	status = execute(lun, "    READ FORMAT CAPACITIES", true);
 	if(!status) {
 		int i;
 
 		int length = capacityList->length;
-		if(length < 8) {
+		if(length < 8 || length % 8) {
 			printDeviceError(4, "Invalid format capacities list length: %d\n", length);
 			return;
 		}
 
-		if(length > 254) {
-			length = 254;
+		if(length > 250) {
+			length = 250;
 		}
 		length -= 8;
 
 		print("    Current blocks: %lu\n", capacityList->currentBlocks);
-		print("    Current block size: %d\n", capacityList->currentBlockSize);
+		print("    Current block size: %lu\n",
+			((ULONG)capacityList->currentBlockSize[0] << 16) |
+			((ULONG)capacityList->currentBlockSize[1] << 8) |
+			(ULONG)capacityList->currentBlockSize[2]);
 		print("    Descriptor type: $%02X\n", capacityList->descriptorType & 0x03);
 
 		for(i = 0; i < length / 8; i++) {
+			const UBYTE *d = &capacityData[12 + 8 * i];
+			const UBYTE formatType = d[4] >> 2;
+			const ULONG blocks = ((ULONG)d[0] << 24) | ((ULONG)d[1] << 16) |
+				((ULONG)d[2] << 8) | d[3];
+			const ULONG parameter = ((ULONG)d[5] << 16) | ((ULONG)d[6] << 8) | d[7];
+
 			print("    Formattable capacity descriptor %d:\n", i + 1);
-			print("      Formattable blocks: %ld\n", formattableData[2 * i] &
-				0x03ffffffL);
-			print("      Formattable block size: %ld\n",
-				formattableData[2 * i + 1]);
-			print("      Format type: $%02X\n", formattableData[2 * i] >> 30);
+			print("      Formattable blocks: %lu\n", blocks);
+			print(formatType ? "      Type dependent parameter: %lu\n" :
+				"      Formattable block size: %lu\n", parameter);
+			print("      Format type: $%02X\n", formatType);
 		}
 	}
 }
