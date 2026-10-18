@@ -17,7 +17,7 @@ bool runTest(UWORD, UWORD, UWORD, UBYTE *);
 void testCheckDev(UWORD, UWORD);
 ULONG testReportLuns(void);
 void testUnitReady(UWORD);
-UWORD testInquiry(UWORD, UWORD, UWORD);
+UWORD testInquiry(UWORD, UWORD);
 void testOpenClose(UWORD, UWORD, ULONG);
 void testSenseBuffer(UWORD);
 void testRequestSense(UWORD, UWORD);

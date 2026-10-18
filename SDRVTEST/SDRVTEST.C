@@ -54,14 +54,11 @@ const char *DEVICE_TYPES[] = {
 
 typedef struct
 {
-	UBYTE reserved1[3];
+	UBYTE reserved[3];
 	UBYTE length;
 	ULONG currentBlocks;
 	UBYTE descriptorType;
-	BYTE reserved2[1];
-	UWORD currentBlockSize;
-	ULONG formattableBlocks;
-	ULONG formattableBlockSize;
+	UBYTE currentBlockSize[3];
 } CAPACITY_LIST;
 
 
@@ -91,11 +88,12 @@ static void printStatusError(LONG);
 static void printApiError(LONG);
 static void printRawData(UBYTE *, int, int, const char *);
 static void printDeviceError(UWORD, const char *, ...);
+void checkBlockDescriptorLength(UWORD);
 static char *DULongToString(const D_ULONG *);
 static ULONG DivMod10(D_ULONG *);
 
 
-static UWORD scsiLevel;
+static int scsiLevel = -1;
 static bool hasReportLuns;
 
 tSCSICmd cmd;
@@ -109,9 +107,11 @@ runTest(UWORD busNo, UWORD lun, UWORD nonExistingLun, UBYTE *buffers)
 {
 	UWORD deviceType;
 
+	cmd.SenseBuffer = (BYTE *)&localSenseData;
+
 	testUnitReady(lun);
 
-	deviceType = testInquiry(busNo, lun, nonExistingLun);
+	deviceType = testInquiry(lun, nonExistingLun);
 
 	testRequestSense(lun, nonExistingLun);
 
@@ -206,8 +206,6 @@ testUnitReady(UWORD lun)
 	cmd.Buffer = (void *)0xffffffffL;
 	cmd.TransferLen = 0;
 
-	memset(&localSenseData, 0, sizeof(SENSE_DATA));
-
 	status = callInWithLun(&cmd, lun);
 	if(status) {
 		if(status == 2 && localSenseData.senseKey == 0x02 &&
@@ -221,7 +219,7 @@ testUnitReady(UWORD lun)
 
 
 UWORD
-testInquiry(UWORD busNo, UWORD lun, UWORD nonExistingLun)
+testInquiry(UWORD lun, UWORD nonExistingLun)
 {
 	SENSE_BLK Inquiry = {
 		0x12, 0x00, 0x00, 0x00, 0x00, (UBYTE)sizeof(INQUIRY_DATA), 0x00, 0x00, 0x00
@@ -250,6 +248,7 @@ testInquiry(UWORD busNo, UWORD lun, UWORD nonExistingLun)
 	if(status) {
 		printStatus(status);
 
+		/* Assume a hard drive */
 		return 0;
 	}
 
@@ -264,7 +263,7 @@ testInquiry(UWORD busNo, UWORD lun, UWORD nonExistingLun)
 	if(deviceType == 0x1f) {
 		printDeviceError(4, "Unknown or no device type\n");
 
-		return 0;
+		return deviceType;
 	}
 
 	fullInquiryData = inquiryData;
@@ -325,11 +324,6 @@ testInquiry(UWORD busNo, UWORD lun, UWORD nonExistingLun)
 	}
 	print("\n");
 
-	/* For ACSI and SCSI the device must support a well-defined SCSI/SPC version */
-	if(!inquiryData.ANSIVersion && busNo < 2) {
-		printDeviceError(8, "Invalid SCSI/SPC version for device on ACSI/SCSI bus\n");
-	}
-
 	print("      Response data format: ");
 	switch(inquiryData.responseDataFormat) {
 		case 0:
@@ -347,12 +341,16 @@ testInquiry(UWORD busNo, UWORD lun, UWORD nonExistingLun)
 		default:
 			{
 				char format[4];
-				sprintf(format, "$%2X", inquiryData.responseDataFormat);
+				sprintf(format, "$%02X", inquiryData.responseDataFormat);
 				print("%s", format);
 				break;
 			}
 	}
 	print("\n");
+
+	if(inquiryData.ANSIVersion >= 2 && inquiryData.responseDataFormat < 2) {
+		printDeviceError(6, "Response data format is incompatible with SCSI version\n");
+	}
 
 	print("      Additional length: $%02X\n", inquiryData.additionalLength);
 	if(inquiryData.additionalLength < 0x1f) {
@@ -394,10 +392,10 @@ testInquiry(UWORD busNo, UWORD lun, UWORD nonExistingLun)
 		if(data[10] != 0x44 || data[11] != 0x44) {
 			printDriverError(4, "More than 10 requested bytes were returned\n");
 		}
-	}
 
-	if(memcmp(&fullInquiryData, &inquiryData, 10)) {
-		printDriverError(4, "INQUIRY data mismatch\n");
+		if(memcmp(&fullInquiryData, &inquiryData, 10)) {
+			printDriverError(4, "INQUIRY data mismatch\n");
+		}
 	}
 
 
@@ -443,10 +441,7 @@ testRequestSense(UWORD lun, UWORD nonExistingLun)
 	cmd.Buffer = buffer;
 	cmd.TransferLen = sizeof(SENSE_DATA);
 
-	memset(&localSenseData, 0, sizeof(SENSE_DATA));
-
 	status = callInWithLun(&cmd, lun);
-
 	if(status) {
 		if(!localSenseData.errorClass) {
 			printStatusError(status);
@@ -471,8 +466,6 @@ testRequestSense(UWORD lun, UWORD nonExistingLun)
 	if(nonExistingLun) {
 		print("    Calling REQUEST SENSE for non-existing LUN %d\n", nonExistingLun);
 
-		memset(&localSenseData, 0, sizeof(SENSE_DATA));
-
 		status = callInWithLun(&cmd, nonExistingLun);
 		if(status) {
 			printStatusError(status);
@@ -491,8 +484,6 @@ testRequestSense(UWORD lun, UWORD nonExistingLun)
 
 
 		print("    Calling REQUEST SENSE again for existing LUN %d\n", lun);
-
-		memset(&localSenseData, 0, sizeof(SENSE_DATA));
 
 		status = callInWithLun(&cmd, lun);
 		if(status) {
@@ -530,45 +521,38 @@ testOpenClose(UWORD busNo, UWORD id, ULONG maxLen)
 
 /* Determine the available handle count */
 	for(i = 0; i < 256; i++) {
+		len = 0;
+
 		handle = (tHandle)scsiCall->Open(busNo, &scsiId, &len);
-
-		if(len != maxLen) {
-			printDeviceError(4, "Transfer length mismatch: $%lX\n", len);
-
-			break;
-		}
 
 		result = (LONG)handle;
 
-		handles[i] = (tHandle)-1;
-		switch((WORD)result) {
-			case ENHNDL:
-				break;
-
-			case EUNDEV:
-				print("    Handle $%08lX: EUNDEV\n", handle);
-				break;
-
-			case EACCDN:
-				print("    Handle $%08lX: EACCDN\n", handle);
-				break;
-
-			default:
-				handles[i] = handle;
-				break;
-		}
-
 		if(result < 0) {
-			if(i != 255) {
-				print("    Available handles for bus %d: %d\n", busNo, i);
+			if(result == EUNDEV) {
+				print("    Handle $%08lX: EUNDEV\n", handle);
+			}
+			else if(result == EACCDN) {
+				print("    Handle $%08lX: EACCDN\n", handle);
 			}
 			else {
-				print("    At least 256 handles are supported for bus %d\n", busNo);
-				i++;
+				print("    Available handles for bus %d: %d\n", busNo, i);
 			}
 
 			break;
 		}
+
+		handles[i] = handle;
+
+		if(len != maxLen) {
+			printDriverError(4, "Transfer length mismatch: $%lX\n", len);
+			i++;
+
+			break;
+		}
+	}
+
+	if(i == 256) {
+		print("    At least 256 handles are supported for bus %d\n", busNo);
 	}
 
 	while(--i >= 0) {
@@ -615,9 +599,12 @@ testReadCapacity(UWORD lun, ULONG *blockSize)
 	ULONG capacity16[] = { 0, 0, 0, 0 };
 	D_ULONG maxBlock64;
 	D_ULONG capacity64;
+	bool capacityKnown;
+	ULONG maxBlock32 = 0;
+	ULONG capacity32 = 0;
 	WORD buffer[2048];
-	char maxBlockString[20];
-	char capacityString[20];
+	char maxBlockString[21];
+	char capacityString[21];
 
 	*blockSize = 512;
 
@@ -658,21 +645,18 @@ testReadCapacity(UWORD lun, ULONG *blockSize)
 		return;
 	}
 
-	maxBlock64.hi = 0;
-	maxBlock64.lo = capacity10[0];
-	capacity64.hi = 0;
-	capacity64.lo = maxBlock64.lo != 0xffffffffL ?
-		maxBlock64.lo + 1 : 0xffffffffL;
+	maxBlock32 = capacity10[0];
+	capacityKnown = maxBlock32 != 0xffffffffL;
+	capacity32 = capacityKnown ? maxBlock32 + 1 : 0xffffffffL;
 
-	if(!maxBlock64.lo) {
-		printDeviceError(4, "Suspicious maximum block number '0'\n");
-
+	if(!maxBlock32) {
+		printDeviceError(4, "Illegal maximum block number 0\n");
 		return;
 	}
 
 	*blockSize = capacity10[1];
-	sprintf(maxBlockString, "%lu", maxBlock64.lo);
-	sprintf(capacityString, "%lu", capacity64.lo);
+	sprintf(maxBlockString, "%lu", maxBlock32);
+	sprintf(capacityString, "%lu", capacity32);
 
 	print("      Maximum block number: %s\n", maxBlockString);
 	print("      Block size: %lu\n", *blockSize);
@@ -682,6 +666,8 @@ testReadCapacity(UWORD lun, ULONG *blockSize)
 
 	maxBlock64.hi = 0;
 	maxBlock64.lo = 0;
+	capacity64.hi = 0;
+	capacity64.lo = 0;
 
 	cmd.Cmd = (void *)ReadCapacity16;
 	cmd.CmdLen = (UWORD)sizeof(ReadCapacity16);
@@ -700,12 +686,19 @@ testReadCapacity(UWORD lun, ULONG *blockSize)
 		if(!capacity64.lo) {
 			capacity64.hi++;
 		}
+		capacityKnown = true;
 
-		ratio = (UWORD)(capacity16[3] >> 16) & 0x0f;
+		if((maxBlock64.hi ? 0xffffffffL : maxBlock64.lo) != maxBlock32) {
+			printDeviceError(6, "Maximum block number mismatch between READ CAPACITY (10) and (16)\n");
+		}
+		if(capacity16[2] != *blockSize) {
+			printDeviceError(6, "Block size mismatch between READ CAPACITY (10) and (16)\n");
+		}
+
+	  ratio = (UWORD)(capacity16[3] >> 16) & 0x0f;
 
 		if(!maxBlock64.hi && !maxBlock64.lo) {
-			printDeviceError(6, "Illegal maximum block number '0'\n");
-
+			printDeviceError(6, "Illegal maximum block number 0\n");
 			return;
 		}
 
@@ -720,9 +713,18 @@ testReadCapacity(UWORD lun, ULONG *blockSize)
 			print("      Logical sectors per physical sector: Unknown (1 or more)\n");
 		}
 		else {
-			print("      Logical sectors per physical sector: %d\n",
-				1 << ratio);
+			print("      Logical sectors per physical sector: %lu\n", 1UL << ratio);
 		}
+	}
+
+	if(!*blockSize || *blockSize > 4096) {
+		return;
+	}
+
+	if(!capacityKnown) {
+		printDeviceError(6, "READ CAPACITY (10) reports $FFFFFFFF but "
+			"READ CAPACITY (16) failed\n");
+		return;
 	}
 
 	cmd.Buffer = buffer;
@@ -734,10 +736,10 @@ testReadCapacity(UWORD lun, ULONG *blockSize)
 		cmd.Cmd = (void *)Read10;
 		cmd.CmdLen = (UWORD)sizeof(Read10);
 
-		Read10[2] = (maxBlock64.lo >> 24) & 0xff;
-		Read10[3] = (maxBlock64.lo >> 16) & 0xff;
-		Read10[4] = (maxBlock64.lo >> 8) & 0xff;
-		Read10[5] = maxBlock64.lo & 0xff;
+		Read10[2] = (maxBlock32 >> 24) & 0xff;
+		Read10[3] = (maxBlock32 >> 16) & 0xff;
+		Read10[4] = (maxBlock32 >> 8) & 0xff;
+		Read10[5] = maxBlock32 & 0xff;
 	}
 	else {
 		cmd.Cmd = (void *)Read16;
@@ -767,10 +769,10 @@ testReadCapacity(UWORD lun, ULONG *blockSize)
 		cmd.Cmd = (void *)Read10;
 		cmd.CmdLen = (UWORD)sizeof(Read10);
 
-		Read10[2] = (capacity64.lo >> 24) & 0xff;
-		Read10[3] = (capacity64.lo >> 16) & 0xff;
-		Read10[4] = (capacity64.lo >> 8) & 0xff;
-		Read10[5] = capacity64.lo & 0xff;
+		Read10[2] = (capacity32 >> 24) & 0xff;
+		Read10[3] = (capacity32 >> 16) & 0xff;
+		Read10[4] = (capacity32 >> 8) & 0xff;
+		Read10[5] = capacity32 & 0xff;
 	}
 	else {
 		cmd.Cmd = (void *)Read16;
@@ -785,8 +787,6 @@ testReadCapacity(UWORD lun, ULONG *blockSize)
 		Read16[8] = (capacity64.lo >> 8) & 0xff;
 		Read16[9] = capacity64.lo & 0xff;
 	}
-
-	memset(&localSenseData, 0, sizeof(SENSE_DATA));
 
 	status = callInWithLun(&cmd, lun);
 	if(status != 2 || localSenseData.senseKey != 0x05 ||
@@ -834,7 +834,7 @@ testRead(UWORD lun, UWORD nonExistingLun, UWORD busNo, ULONG blockSize,
 	}
 
 	if(!status) {
-		print("    Reading block 0 with READ (6), using invalid transfer length\n");
+		print("    Reading block 0 with READ (6) with invalid transfer length\n");
 
 		cmd.Buffer = NULL;
 		cmd.TransferLen = 0xffffffffL;
@@ -855,11 +855,8 @@ testRead(UWORD lun, UWORD nonExistingLun, UWORD busNo, ULONG blockSize,
 		status = callInWithLun(&cmd, lun);
 		if(status) {
 			printStatus(status);
-
-			return;
 		}
-
-		if(ptrRoot) {
+		else if(ptrRoot) {
 			checkRoot(ptrRoot, ptr2, blockSize);
 		}
 		else {
@@ -876,7 +873,7 @@ testRead(UWORD lun, UWORD nonExistingLun, UWORD busNo, ULONG blockSize,
 		initBuffer(ptr3);
 
 		status = execute(lun, "      READ (12)", true);
-		if(!status) {
+		if(!status && ptrRoot) {
 			checkRoot(ptrRoot, ptr3, blockSize);
 		}
 
@@ -890,7 +887,7 @@ testRead(UWORD lun, UWORD nonExistingLun, UWORD busNo, ULONG blockSize,
 		initBuffer(ptr3);
 
 		status = execute(lun, "      READ (16)", true);
-		if(!status) {
+		if(!status && ptrRoot) {
 			checkRoot(ptrRoot, ptr3, blockSize);
 
 			if(busNo == 2) {
@@ -928,6 +925,10 @@ testRead(UWORD lun, UWORD nonExistingLun, UWORD busNo, ULONG blockSize,
 		cmd.CmdLen = (UWORD)sizeof(Read10);
 
 		print("    Trying to read block 0 to odd address with READ (10)\n");
+	}
+	else {
+		printDeviceError(4, "Neither READ (6) nor READ (10) are supported\n");
+		return;
 	}
 
 	cmd.Buffer = ptrOdd;
@@ -1005,8 +1006,6 @@ testRead(UWORD lun, UWORD nonExistingLun, UWORD busNo, ULONG blockSize,
 		cmd.TransferLen = blockSize;
 		initBuffer(ptr3);
 
-		memset(&localSenseData, 0, sizeof(SENSE_DATA));
-
 		status = callInWithLun(&cmd, nonExistingLun);
 		if(status != 2 || localSenseData.senseKey != 0x05 ||
 			localSenseData.addSenseCode != 0x25) {
@@ -1073,41 +1072,33 @@ testReadLong(UWORD lun)
 	cmd.Buffer = NULL;
 	cmd.TransferLen = 0;
 
-	memset(&localSenseData, 0, sizeof(SENSE_DATA));
+	if(!execute(lun, "      READ LONG (10)", true)) {
+		print("    Reading 512 bytes of sector 0 with READ LONG (10)\n");
 
-	if(execute(lun, "      READ LONG (10)", true)) {
-		return;
-	}
+		cmd.Buffer = buffer;
+		cmd.TransferLen = 512;
+		ReadLong10[7] = 2;
+		ReadLong10[8] = 0;
 
-	print("    Reading 512 bytes of sector 0 with READ LONG (10)\n");
-
-	cmd.Buffer = buffer;
-	cmd.TransferLen = 512;
-	ReadLong10[7] = 2;
-	ReadLong10[8] = 0;
-
-	memset(&localSenseData, 0, sizeof(SENSE_DATA));
-
-	status = callInWithLun(&cmd, lun);
-	if(status) {
-		print("      Request has been rejected\n");
-		printSenseData();
-	}
+		status = callInWithLun(&cmd, lun);
+		if(status) {
+			print("      Request has been rejected\n");
+			printSenseData();
+		}
 
 
-	print("    Reading 516 bytes of sector 0 with READ LONG (10)\n");
+		print("    Reading 516 bytes of sector 0 with READ LONG (10)\n");
 
-	cmd.Buffer = buffer;
-	cmd.TransferLen = 516;
-	ReadLong10[7] = 2;
-	ReadLong10[8] = 4;
+		cmd.Buffer = buffer;
+		cmd.TransferLen = 516;
+		ReadLong10[7] = 2;
+		ReadLong10[8] = 4;
 
-	memset(&localSenseData, 0, sizeof(SENSE_DATA));
-
-	status = callInWithLun(&cmd, lun);
-	if(status) {
-		print("      Request has been rejected\n");
-		printSenseData();
+		status = callInWithLun(&cmd, lun);
+		if(status) {
+			print("      Request has been rejected\n");
+			printSenseData();
+		}
 	}
 
 
@@ -1118,40 +1109,32 @@ testReadLong(UWORD lun)
 	cmd.Buffer = NULL;
 	cmd.TransferLen = 0;
 
-	memset(&localSenseData, 0, sizeof(SENSE_DATA));
+	if(!execute(lun, "      READ LONG (16)", true)) {
+		print("    Reading 512 bytes of sector 0 with READ LONG (16)\n");
 
-	if(execute(lun, "      READ LONG (16)", true)) {
-		return;
-	}
+		cmd.Buffer = buffer;
+		cmd.TransferLen = 512;
+		ReadLong16[12] = 2;
+		ReadLong16[13] = 0;
 
-	print("    Reading 512 bytes of sector 0 with READ LONG (16)\n");
+		status = callInWithLun(&cmd, lun);
+		if(status) {
+			print("      Request has been rejected\n");
+			printSenseData();
+		}
 
-	cmd.Buffer = buffer;
-	cmd.TransferLen = 512;
-	ReadLong16[12] = 2;
-	ReadLong16[13] = 0;
+		print("    Reading 516 bytes of sector 0 with READ LONG (16)\n");
 
-	memset(&localSenseData, 0, sizeof(SENSE_DATA));
+		cmd.Buffer = buffer;
+		cmd.TransferLen = 516;
+		ReadLong16[12] = 2;
+		ReadLong16[13] = 4;
 
-	status = callInWithLun(&cmd, lun);
-	if(status) {
-		print("      Request has been rejected\n");
-		printSenseData();
-	}
-
-	print("    Reading 516 bytes of sector 0 with READ LONG (16)\n");
-
-	cmd.Buffer = buffer;
-	cmd.TransferLen = 516;
-	ReadLong16[12] = 2;
-	ReadLong16[13] = 4;
-
-	memset(&localSenseData, 0, sizeof(SENSE_DATA));
-
-	status = callInWithLun(&cmd, lun);
-	if(status) {
-		print("      Request has been rejected\n");
-		printSenseData();
+		status = callInWithLun(&cmd, lun);
+		if(status) {
+			print("      Request has been rejected\n");
+			printSenseData();
+		}
 	}
 }
 
@@ -1168,8 +1151,11 @@ testModeSense(UWORD lun)
 
 	UBYTE buffer6[256];
 	UBYTE buffer10[2048];
-	bool hasModeSense6 = true;
 	bool requiresModeSense10 = false;
+	LONG first6 = 4;
+	LONG first10 = 8;
+	LONG pageLen6 = -1;
+	LONG pageLen10 = -1;
 	int size;
 	LONG status;
 
@@ -1181,26 +1167,50 @@ testModeSense(UWORD lun)
 	cmd.Buffer = buffer6;
 	cmd.Cmd = (void *)ModeSense6;
 	cmd.CmdLen = (UWORD)sizeof(ModeSense6);
-	cmd.TransferLen = sizeof(buffer6);
+	cmd.TransferLen = ModeSense6[4];
+
+	memset(buffer6, 0, sizeof(buffer6));
 
 	status = execute(lun, "      MODE SENSE (6)", false);
 	if(status) {
 		if(localSenseData.senseKey != 0x05 || (
 			localSenseData.addSenseCode != 0x20 && localSenseData.addSenseCode != 0x24)) {
 			printStatus(status);
-			hasModeSense6 = false;
 		}
-		else if(localSenseData.senseKey == 0x05 && localSenseData.addSenseCode == 0x24) {
+		else if(localSenseData.addSenseCode == 0x24) {
 			requiresModeSense10 = true;
 			print("      Using MODE SENSE (10) is required (too many data bytes)\n");
 		}
 	}
 	else {
+		LONG total6;
+
 		size = buffer6[0];
 
 		print("      Received %d data bytes\n", size);
 
-		printPages(buffer6, size, 4);
+		total6 = (LONG)size + 1;
+		if(total6 > (LONG)ModeSense6[4]) {
+			total6 = (LONG)ModeSense6[4];
+		}
+
+		checkBlockDescriptorLength(buffer6[3]);
+
+		first6 = 4 + (LONG)buffer6[3];
+		if(first6 > total6 && buffer6[3]) {
+			printDeviceError(6, "Block descriptor length %u exceeds the received data\n",
+				(UWORD)buffer6[3]);
+			first6 = total6;
+		}
+		else {
+			printPages(buffer6, size, (int)first6);
+		}
+
+		if(first6 > total6) {
+			first6 = total6;
+		}
+
+		pageLen6 = total6 - first6;
 	}
 
 	if(*cmd.Handle & cAllCmds) {
@@ -1211,16 +1221,47 @@ testModeSense(UWORD lun)
 		cmd.CmdLen = (UWORD)sizeof(ModeSense10);
 		cmd.TransferLen = sizeof(buffer10);
 
+		memset(buffer10, 0, sizeof(buffer10));
+
 		if(!execute(lun, "      MODE SENSE (10)", true)) {
-			size = (buffer10[0] << 8) + buffer10[1];
+			LONG total10;
+			UWORD blockDescriptorLength10;
+
+			size = (buffer10[0] << 8) | buffer10[1];
+
+			total10 = (LONG)(((UWORD)buffer10[0] << 8) | buffer10[1]) + 2;
+			if(total10 > sizeof(buffer10)) {
+				total10 = sizeof(buffer10);
+			}
+
+			blockDescriptorLength10 = ((UWORD)buffer10[6] << 8) | buffer10[7];
+			checkBlockDescriptorLength(blockDescriptorLength10);
+
+			first10 = 8 + (LONG)blockDescriptorLength10;
+			if(first10 > total10) {
+				if(blockDescriptorLength10) {
+					printDeviceError(6, "Block descriptor length %u exceeds the received data\n",
+						blockDescriptorLength10);
+				}
+
+				first10 = total10;
+			}
+
+			pageLen10 = total10 - first10;
 
 			print("      Received %d data bytes\n", size);
 
-			if(size < 8 ||
-				(hasModeSense6 && !requiresModeSense10 &&
-					memcmp(buffer6 + 4, buffer10 + 8, size - 8))) {
-				printDeviceError(6, "MODE SENSE (6) and MODE SENSE (10) page data differ\n");
-				printPages(buffer10, size, 8);
+			if(total10 < 8) {
+				printDeviceError(6, "MODE SENSE (10) response with %ld byte(s) is too short\n",
+					total10);
+				}
+				else if(pageLen6 < 0) {
+					printPages(buffer10, (int)total10 - 1, (int)first10);
+				}
+				else if(pageLen6 != pageLen10 ||
+					memcmp(buffer6 + first6, buffer10 + first10, pageLen10)) {
+					printDeviceError(6, "MODE SENSE (6) and MODE SENSE (10) page data differ\n");
+					printPages(buffer10, (int)total10 - 1, (int)first10);
 			}
 			else {
 				print("      MODE SENSE (6) and MODE SENSE (10) page data are identical\n");
@@ -1269,7 +1310,7 @@ testModeSelect(UWORD lun)
 ULONG
 testReportLuns()
 {
-	UBYTE ReportLuns[] = { 0xa0, 0, 0, 0, 0, 0, 0, 0, 0x01, 0x08, 0, 0 };
+	UBYTE ReportLuns[] = { 0xa0, 0, 0, 0, 0, 0, 0, 0, 0x04, 0x20, 0, 0 };
 
 	ULONG luns;
 	ULONG lunVector = 0;
@@ -1288,8 +1329,6 @@ testReportLuns()
 	cmd.CmdLen = (UWORD)sizeof(ReportLuns);
 	cmd.Buffer = buffer;
 	cmd.TransferLen = sizeof(buffer);
-
-	memset(&localSenseData, 0, sizeof(SENSE_DATA));
 
 	hasReportLuns = execute(0, "    REPORT LUNS", true) == 0;
 	if(!hasReportLuns) {
@@ -1335,7 +1374,6 @@ testReadFormatCapacities(UWORD lun)
 	LONG status;
 	UBYTE capacityData[254];
 	CAPACITY_LIST *capacityList = (CAPACITY_LIST *)capacityData;
-	ULONG *formattableData = (ULONG *)&capacityData[12];
 
 	if(!(*cmd.Handle & cAllCmds)) {
 		return;
@@ -1349,34 +1387,42 @@ testReadFormatCapacities(UWORD lun)
 	cmd.Buffer = capacityData;
 	cmd.TransferLen = sizeof(capacityData);
 
-	memset(&localSenseData, 0, sizeof(SENSE_DATA));
+	memset(capacityData, 0, sizeof(capacityData));
 
 	status = execute(lun, "    READ FORMAT CAPACITIES", true);
 	if(!status) {
 		int i;
 
 		int length = capacityList->length;
-		if(length < 8) {
+		if(length < 8 || length % 8) {
 			printDeviceError(4, "Invalid format capacities list length: %d\n", length);
 			return;
 		}
 
-		if(length > 254) {
-			length = 254;
+		if(length > 250) {
+			length = 250;
 		}
 		length -= 8;
 
-		print("    Current blocks: %ld\n", capacityList->currentBlocks);
-		print("    Current block size: %d\n", capacityList->currentBlockSize);
-		print("    Descriptor type: $%02X\n", capacityList->descriptorType);
+		print("    Current blocks: %lu\n", capacityList->currentBlocks);
+		print("    Current block size: %lu\n",
+			((ULONG)capacityList->currentBlockSize[0] << 16) |
+			((ULONG)capacityList->currentBlockSize[1] << 8) |
+			(ULONG)capacityList->currentBlockSize[2]);
+		print("    Descriptor type: $%02X\n", capacityList->descriptorType & 0x03);
 
 		for(i = 0; i < length / 8; i++) {
+			const UBYTE *d = &capacityData[12 + 8 * i];
+			const UBYTE formatType = d[4] >> 2;
+			const ULONG blocks = ((ULONG)d[0] << 24) | ((ULONG)d[1] << 16) |
+				((ULONG)d[2] << 8) | d[3];
+			const ULONG parameter = ((ULONG)d[5] << 16) | ((ULONG)d[6] << 8) | d[7];
+
 			print("    Formattable capacity descriptor %d:\n", i + 1);
-			print("      Formattable blocks: %ld\n", formattableData[2 * i] &
-				0x03ffffffL);
-			print("      Formattable block size: %ld\n",
-				formattableData[2 * i + 1]);
-			print("      Format type: $%02X\n", formattableData[2 * i] >> 30);
+			print("      Formattable blocks: %lu\n", blocks);
+			print(formatType ? "      Type dependent parameter: %lu\n" :
+				"      Formattable block size: %lu\n", parameter);
+			print("      Format type: $%02X\n", formatType);
 		}
 	}
 }
@@ -1385,10 +1431,10 @@ testReadFormatCapacities(UWORD lun)
 void
 testGetConfiguration(UWORD lun)
 {
-	UBYTE GetConfiguration[] = { 0x46, 2, 0, 0, 0, 0, 0, 0, 254, 0 };
+	UBYTE GetConfiguration[] = { 0x46, 2, 0, 0, 0, 0, 0, 1, 4, 0 };
 
 	LONG status;
-	UBYTE profileData[254];
+	UBYTE profileData[260];
 
 	if(!(*cmd.Handle & cAllCmds)) {
 		return;
@@ -1401,8 +1447,6 @@ testGetConfiguration(UWORD lun)
 	cmd.CmdLen = (UWORD)sizeof(GetConfiguration);
 	cmd.Buffer = profileData;
 	cmd.TransferLen = sizeof(profileData);
-
-	memset(&localSenseData, 0, sizeof(SENSE_DATA));
 
 	status = execute(lun, "    GET CONFIGURATION", true);
 	if(!status) {
@@ -1464,6 +1508,7 @@ testSenseBuffer(UWORD lun)
 
 	print("    Testing SCSI Driver sense buffer handling\n");
 
+	/* No automatic REQUEST SENSE */
 	cmd.SenseBuffer = NULL;
 
 	if(callInWithLun(&cmd, lun) != status) {
@@ -1471,28 +1516,25 @@ testSenseBuffer(UWORD lun)
 	}
 	else {
 		UBYTE RequestSense[] = { 0x03, 0, 0, 0, sizeof(SENSE_DATA), 0 };
+		const int senseKey = localSenseData.senseKey;
+		const int addSenseCode = localSenseData.addSenseCode;
+		const int addSenseCodeQualifier = localSenseData.addSenseCodeQualifier;
 		SENSE_DATA localData;
 
 		cmd.Cmd = (void *)RequestSense;
 		cmd.CmdLen = (UWORD)sizeof(RequestSense);
 		cmd.Buffer = (BYTE *)&localData;
 		cmd.TransferLen = sizeof(SENSE_DATA);
-		cmd.SenseBuffer = NULL;
-
-		memset(&localData, 0, sizeof(SENSE_DATA));
 
 		status = callInWithLun(&cmd, lun);
 		if(status) {
 			printStatusError(status);
 			print("      Sense Key $%02X, ASC $%02X, ASCQ $%02X\n",
-				localSenseData.senseKey, localSenseData.addSenseCode,
-				localSenseData.addSenseCodeQualifier);
+				senseKey, addSenseCode, addSenseCodeQualifier);
 		}
-		else {
-			if(localData.senseKey != localSenseData.senseKey ||
-				localData.addSenseCode != localSenseData.addSenseCode) {
-				printDriverError(6, "Sense data have not been preserved\n");
-			}
+		else if(localData.senseKey != senseKey ||
+			localData.addSenseCode != addSenseCode) {
+			printDriverError(6, "Sense data have not been preserved\n");
 		}
 	}
 
@@ -1569,7 +1611,7 @@ printPages(UBYTE *buf, int size, int minSize)
 	}
 
 	i = minSize;
-	while(i + 1 < size) {
+	while(i + 1 <= size) {
 		int page = buf[i] & 0x3f;
 
 		if(i > minSize) {
@@ -1647,7 +1689,7 @@ printPages(UBYTE *buf, int size, int minSize)
 	}
 
 	if(pageOffsets[0] != -1) {
-		printPage0(buf, pageOffsets[0], size - pageOffsets[0] - 1);
+		printPage0(buf, pageOffsets[0], size - pageOffsets[0]);
 	}
 }
 
@@ -1657,7 +1699,7 @@ printPageHeader(UBYTE *buf, int offset, const char *name, int expected)
 {
 	const int size = buf[offset + 1];
 
-	print("        Page %d: %s page (current, %s)\n", buf[offset] & 0x7f, name,
+	print("        Page %d: %s page (current, %s)\n", buf[offset] & 0x3f, name,
 		buf[offset] & 0x80 ? "savable" : "not savable");
 
 	printRawData(buf, offset, size + 2, "          ");
@@ -1726,7 +1768,7 @@ printPage2(UBYTE *buf, int offset)
 	print("          Maximum burst size: %d\n",
 		(buf[offset + 10] << 8) + buf[offset + 11]);
 	print("          Data transfer disconnect control (DTDC): %d\n",
-		buf[offset + 12] & 0x03);
+		buf[offset + 12] & 0x07);
 }
 
 
@@ -1781,7 +1823,7 @@ printPage4(UBYTE *buf, int offset)
 			+ buf[offset + 11]);
 	print("          Drive step rate: %d\n",
 		(buf[offset + 12] << 8) + buf[offset + 13]);
-	print("          Landing zone cylinder %d\n",
+	print("          Landing zone cylinder: %d\n",
 		(buf[offset + 14] << 16) + (buf[offset + 15] << 8)
 			+ buf[offset + 16]);
 	print("          Rotational offset: %d\n", buf[offset + 18]);
@@ -1809,7 +1851,7 @@ printPage5(UBYTE *buf, int offset)
 		(buf[offset + 12] << 8) + buf[offset + 13]);
 	print("            Drive step rate: %d/100 us\n",
 		(buf[offset + 14] << 8) + buf[offset + 15]);
-	print("            Drive step pulse with: %d ms\n", buf[offset + 16]);
+	print("            Drive step pulse width: %d ms\n", buf[offset + 16]);
 	print("            Head settle delay: %d/100 us\n",
 		(buf[offset + 17] << 8) + buf[offset + 18]);
 	print("            Motor on delay: %d/10 seconds\n", buf[offset + 19]);
@@ -1871,7 +1913,7 @@ printPage8(UBYTE *buf, int offset)
 		(buf[offset + 4] << 8) + buf[offset + 5]);
 	print("          Minimum pre-fetch: %d\n",
 		(buf[offset + 6] << 8) + buf[offset + 7]);
-	print("          Maxium pre-fetch: %d\n",
+	print("          Maximum pre-fetch: %d\n",
 		(buf[offset + 8] << 8) + buf[offset + 9]);
 	print("          Maximum pre-fetch ceiling: %d\n",
 		(buf[offset + 10] << 8) + buf[offset + 11]);
@@ -1964,7 +2006,7 @@ printPage16(UBYTE *buf, int offset)
 	print("          Active format: %d\n", buf[offset + 2] & 0x1f);
 	print("          Active partition: %d\n", buf[offset + 3]);
 	print("          Write buffer full ratio: %d\n", buf[offset + 4]);
-	print("          Read buffer full ratio: %d\n", buf[offset + 5]);
+	print("          Read buffer empty ratio: %d\n", buf[offset + 5]);
 	print("          Write delay time: %u\n",
 		(buf[offset + 6] << 8) + buf[offset + 7]);
 	print("          Data buffer recovery (DBR): %d\n",
@@ -1976,7 +2018,7 @@ printPage16(UBYTE *buf, int offset)
 	print("          Automatic velocity control (AVC): %d\n",
 		(buf[offset + 8] & 0x10) >> 4);
 	print("          Stop on consecutive filemarks (SOCF): %d\n",
-		(buf[offset + 8] & 0x0c) >> 3);
+		(buf[offset + 8] & 0x0c) >> 2);
 	print("          Recover buffer order (RBO): %d\n",
 		(buf[offset + 8] & 0x02) >> 1);
 	print("          Report early-warning (REW): %d\n", buf[offset + 8] & 0x01);
@@ -1986,7 +2028,7 @@ printPage16(UBYTE *buf, int offset)
 		(buf[offset + 10] & 0xe0) >> 5);
 	print("          Enable EOD generation (EEG): %d\n",
 		(buf[offset + 10] & 0x10) >> 4);
-	print("          Synnchronize at early-warning (SEW): %d\n",
+	print("          Synchronize at early-warning (SEW): %d\n",
 		(buf[offset + 10] & 0x08) >> 3);
 	print("          Buffer size at early-warning: %u\n",
 		(buf[offset + 11] << 16) + (buf[offset + 12] << 8) + buf[offset + 13]);
@@ -2014,7 +2056,7 @@ printPages17_20(UBYTE *buf, int offset, int index)
 		(buf[offset + 4] & 0x18) >> 3);
 	print("          Medium format recognition: %d\n", buf[offset + 5]);
 
-	if(buf[offset + 1] >= 10) {
+	if(buf[offset + 1] >= 8) {
 		print("          Approximate partition size in PSUM units: %d\n",
 			(buf[offset + 8] << 8) + buf[offset + 9]);
 	}
@@ -2143,6 +2185,10 @@ callInWithLun(tpSCSICmd c, UWORD l)
 		c->Flags = (l << 8) | 0x40;
 	}
 
+	if(cmd.SenseBuffer) {
+		memset(cmd.SenseBuffer, 0, sizeof(SENSE_DATA));
+	}
+
 	return scsiCall->In(c);
 }
 
@@ -2151,9 +2197,15 @@ LONG
 execute(UWORD lun, const char *msg, bool reportError)
 {
 	LONG status = callInWithLun(&cmd, lun);
-	if(status == 2 || status == 4) {
+	if(status == 2) {
 		if(localSenseData.errorClass && localSenseData.senseKey == 0x05 &&
 			localSenseData.addSenseCode == 0x20) {
+			print(msg);
+			print(" is not supported by device\n");
+		}
+		/* Special case: Command $9E with service action */
+		else if(localSenseData.errorClass && localSenseData.senseKey == 0x05 &&
+			localSenseData.addSenseCode == 0x24 && ((UBYTE *)(cmd.Cmd))[0] == 0x9e) {
 			print(msg);
 			print(" is not supported by device\n");
 		}
@@ -2173,11 +2225,19 @@ execute(UWORD lun, const char *msg, bool reportError)
 		print("      Device/driver reported status code %ld", status);
 
 		printApiError(status);
-
-		print("\n");
 	}
 
 	return status;
+}
+
+
+void
+checkBlockDescriptorLength(UWORD length)
+{
+	if(length && scsiLevel >= 2) {
+		printDeviceError(6, "Block descriptor length is %u although DBD is set\n",
+			length);
+	}
 }
 
 
@@ -2230,7 +2290,6 @@ print(const char *msg, ...)
 	va_start(args, msg);
 	vsprintf(s, msg, args);
 	va_end(args);
-	assert(strlen(s) < sizeof(s));
 
 	logMsg(s);
 }
@@ -2278,6 +2337,8 @@ printApiError(LONG status)
 	else if(status == PARITYERROR) {
 		print(" (PARITYERROR)");
 	}
+
+	print("\n");
 }
 
 
@@ -2319,6 +2380,7 @@ printStatusError(LONG status)
 	}
 	else {
 		printApiError(status);
+		return;
 	}
 
 	print("\n");
