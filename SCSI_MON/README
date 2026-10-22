@@ -1,6 +1,4 @@
-SCSI_MON helps with debugging software using the SCSI Driver implemented
-by CBHD and HDDRIVER and the PCI SCSI driver for the Milan. (HDDRIVER
-also provides an integrated SCSI Driver for IDE, ATAPI and SATA devices.)
+SCSI_MON helps with debugging software using the SCSI Driver.
 SCSI_MON requires TOS 1.02 or newer.
 
 SCSI_MON records all SCSI Driver calls of programs launched after
@@ -9,9 +7,9 @@ the SYS_MON software by Karsten Isakovic, which has to be launched before
 SCSI_MON.
 When launched with the option "--con" the console is used as output device.
 With "--aux" the serial port and with "--prt" the parallel port is used.
-When passing one of these options SYS_MON is not required. When using
-an Atari emulation using one of these options may be required, because
-otherwise SYS_MON's output mechanism might not work.
+When passing one of these options, SYS_MON is not required. With an Atari
+emulation, one of these options may be required, because otherwise
+SYS_MON's output mechanism may not work.
 
 If a SCSI Driver with target interface is installed, e.g. HDDRIVER, and
 SCSI_MON is launched after any other software using the target interface,
@@ -22,10 +20,8 @@ SYS_MON does not display these commands.
 
 -----
 
-SCSI_MON erleichtert das Debuggen von Software, die den von CBHD und
-HDDRIVER implementierten SCSI-Treiber sowie den PCI SCSI-Treiber fÅr den
-Milan benutzt. (HDDRIVER besitzt einen integrierten SCSI-Treiber auch fÅr
-IDE-, ATAPI- und SATA-GerÑte.) SCSI_MON setzt TOS 1.02 oder neuer voraus.
+SCSI_MON erleichtert das Debuggen von Software, die den SCSI-Treiber benutzt.
+SCSI_MON setzt TOS 1.02 oder neuer voraus.
 
 SCSI_MON schneidet alle Aufrufe des SCSI-Treibers von Programmen mit, die
 nach SCSI_MON gestartet wurden. Ohne Optionen gestartet erfolgt die Ausgabe
@@ -35,9 +31,9 @@ Wird SCSI_MON mit der Option "--con" gestartet, erfolgt die Ausgabe der
 Daten auf der Konsole. Mit der Option "--aux" gestartet, erfolgt die
 Ausgabe Åber die serielle Schnittstelle, mit "--prt" wird die parallele
 Schnittstelle benutzt. Bei Verwendung dieser Optionen ist SYS_MON nicht
-erforderlich. Beim Verwenden in einer Atari-Emulation mag die Angabe
-einer dieser Optionen jedoch notwendig sein, weil sonst SYS_MONs
-Ausgabe-Mechanismus mîglicherweise nicht funktioniert. 
+erforderlich. Mit einer Atari-Emulation kann eine dieser Optionen jedoch
+erforderlich sein, weil sonst SYS_MONs Ausgabe-Mechanismus mîglicherweise
+nicht funktioniert. 
 
 Falls ein SCSI-Treiber mit Target-Interface installiert ist (HDDRIVER ab
 Version 7.8) und SCSI_MON als letztes Programm gestartet wird, das das
@@ -48,4 +44,4 @@ wÑhrend der Zeit, in der SCSI-Kommandos vom Target empfangen werden, nicht
 aktiv sein darf. Andernfalls zeigt SCSI_MON diese Kommandos nicht an.
 
 
-  Uwe.Seimet@seimet.de, 2025-10-23
+  Uwe.Seimet@seimet.de, 2026-10-22

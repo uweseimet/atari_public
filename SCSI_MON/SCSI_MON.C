@@ -1,7 +1,7 @@
 /****************************/
-/* SCSI_MON 1.52            */
+/* SCSI_MON 1.60            */
 /*                          */
-/* (C) 1999-2025 Uwe Seimet */
+/* (C) 1999-2026 Uwe Seimet */
 /****************************/
 
 
@@ -142,8 +142,8 @@ main(WORD argc, const char *argv[])
 
 	memset(handlerInfo, 0, sizeof(handlerInfo));
 
-	printf("\n\x1b\x70SCSI_MON V1.50\x1b\x71");
-	printf("\n½ 1999-2023 Uwe Seimet\n");
+	printf("\n\x1b\x70SCSI_MON V1.60\x1b\x71");
+	printf("\n½ 1999-2026 Uwe Seimet\n");
 
 	Ptermres(_PgmSize, 0);
 
@@ -187,7 +187,10 @@ In(tpSCSICmd parms)
 		sprintf(str, "-> %ld", res);
 		sysprintf(str);
 	}
-	prbuffer(parms, false);
+
+	if(!res) {
+		prbuffer(parms, false);
+	}
 
 	return res;
 }
@@ -241,20 +244,34 @@ InquireSCSI(WORD what, tBusInfo *info)
 
 		sprintf(str, "-> BusIds %%%s  BusName \"%s\"  BusNo %d  Features",
 			s, info->BusName, info->BusNo);
-		if(!(info->Features & 0x3f)) {
+		if(!(info->Features & 0x7f)) {
 			char s[8];
 
 			sprintf(s, " %d", info->Features);
 			strcat(str, s);
 		}
-		if(info->Features & 0x01) strcat(str, " cArbit");
-		if(info->Features & 0x02) strcat(str, " cAllCmds");
-		if(info->Features & 0x04) strcat(str, " cTargCtrl");
-		if(info->Features & 0x08) strcat(str, " cTarget");
-		if(info->Features & 0x10) strcat(str, " cCanDisconnect");
-		if(info->Features & 0x20) strcat(str, " cScatterGather");
-		if(info->Features & 0x400) strcat(str, " 32 LUNs");
-		sprintf(s, "  MaxLen %ld", info->MaxLen);
+		if(info->Features & 0x01) {
+			strcat(str, " cArbit");
+		}
+		if(info->Features & 0x02) {
+			strcat(str, " cAllCmds");
+		}
+		if(info->Features & 0x04) {
+			strcat(str, " cTargCtrl");
+		}
+		if(info->Features & 0x08) {
+			strcat(str, " cTarget");
+		}
+		if(info->Features & 0x10) {
+			strcat(str, " cCanDisconnect");
+		}
+		if(info->Features & 0x20) {
+			strcat(str, " cScatterGather");
+		}
+		if(info->Features & 0x40) {
+			strcat(str, " 32 LUNs");
+		}
+		sprintf(s, "  MaxLen %lu", info->MaxLen);
 		strcat(str, s);
 		sysprintf(str);
 	}
@@ -278,7 +295,7 @@ InquireBus(WORD what, WORD busno, tDevInfo *info)
 		prerr(res);
 	}
 	else {
-		sprintf(str, "-> SCSIId { %ld, %ld }", info->SCSIId.hi, info->SCSIId.lo);
+		sprintf(str, "-> SCSIId { %lu, %lu }", info->SCSIId.hi, info->SCSIId.lo);
 		sysprintf(str);
 	}
 
@@ -292,7 +309,7 @@ CheckDev(WORD busno, const DLONG *id, char *name, UWORD *features)
 	LONG res;
 	char str[256];
 
-	sprintf(str, "CheckDev    BusNo %d  SCSIId { %ld, %ld }", busno,
+	sprintf(str, "CheckDev    BusNo %d  SCSIId { %lu, %lu }", busno,
 		id->hi, id->lo);
 	sysprintf(str);
 
@@ -303,19 +320,33 @@ CheckDev(WORD busno, const DLONG *id, char *name, UWORD *features)
 	}
 	else {
 		sprintf(str, "-> %ld  Name \"%s\"  Features", res, name);
-		if(!(*features & 0x3f)) {
+		if(!(*features & 0x7f)) {
 			char s[8];
 
 			sprintf(s, " %d", *features);
 			strcat(str, s);
 		}
-		if(*features & 0x01) strcat(str, " cArbit");
-		if(*features & 0x02) strcat(str, " cAllCmds");
-		if(*features & 0x04) strcat(str, " cTargCtrl");
-		if(*features & 0x08) strcat(str, " cTarget");
-		if(*features & 0x10) strcat(str, " cCanDisconnect");
-		if(*features & 0x20) strcat(str, " cScatterGather");
-		if(*features & 0x40) strcat(str, " 32 LUNs");
+		if(*features & 0x01) {
+			strcat(str, " cArbit");
+		}
+		if(*features & 0x02) {
+			strcat(str, " cAllCmds");
+		}
+		if(*features & 0x04) {
+			strcat(str, " cTargCtrl");
+		}
+		if(*features & 0x08) {
+			strcat(str, " cTarget");
+		}
+		if(*features & 0x10) {
+			strcat(str, " cCanDisconnect");
+		}
+		if(*features & 0x20) {
+			strcat(str, " cScatterGather");
+		}
+		if(*features & 0x40) {
+			strcat(str, " 32 LUNs");
+		}
 
 		sysprintf(str);
 	}
@@ -341,7 +372,7 @@ Open(WORD busno, const DLONG *id, ULONG *maxlen)
 	LONG res;
 	char str[256];
 
-	sprintf(str, "Open    BusNo %d  SCSIId { %ld, %ld }", busno,
+	sprintf(str, "Open    BusNo %d  SCSIId { %lu, %lu }", busno,
 		id->hi, id->lo);
 	sysprintf(str);
 
@@ -355,19 +386,32 @@ Open(WORD busno, const DLONG *id, ULONG *maxlen)
 		char s[32];
 
 		sprintf(str, "-> Handle $%p  Features", handle);
-		if(!(*handle & 0x3f)) {
-
+		if(!(*handle & 0x7f)) {
 			sprintf(s, " %d", *handle);
 			strcat(str, s);
 		}
-		if(*handle & 0x01) strcat(str, " cArbit");
-		if(*handle & 0x02) strcat(str, " cAllCmds");
-		if(*handle & 0x04) strcat(str, " cTargCtrl");
-		if(*handle & 0x08) strcat(str, " cTarget");
-		if(*handle & 0x10) strcat(str, " cCanDisconnect");
-		if(*handle & 0x20) strcat(str, " cScatterGather");
-		if(*handle & 0x40) strcat(str, " 32 LUNs");
-		sprintf(s, "  MaxLen %ld", *maxlen);
+		if(*handle & 0x01) {
+			strcat(str, " cArbit");
+		}
+		if(*handle & 0x02) {
+			strcat(str, " cAllCmds");
+		}
+		if(*handle & 0x04) {
+			strcat(str, " cTargCtrl");
+		}
+		if(*handle & 0x08) {
+			strcat(str, " cTarget");
+		}
+		if(*handle & 0x10) {
+			strcat(str, " cCanDisconnect");
+		}
+		if(*handle & 0x20) {
+			strcat(str, " cScatterGather");
+		}
+		if(*handle & 0x40) {
+			strcat(str, " 32 LUNs");
+		}
+		sprintf(s, "  MaxLen %lu", *maxlen);
 		strcat(str, s);
 		sysprintf(str);
 	}
@@ -393,23 +437,23 @@ Close(tHandle handle)
 
 
 LONG cdecl
-Error(tHandle handle, WORD rwflag, WORD errno)
+Error(tHandle handle, WORD rwflag, WORD err)
 {
 	LONG res;
 	char str[256];
 
 	if(rwflag) {
 		sprintf(str, "Error    Handle $%p  rwflag cErrWrite  ErrNo", handle);
-		if(!(errno & 0x03)) {
+		if(!(err & 0x03)) {
 			char s[8];
 
-			sprintf(s, " $%04X", errno);
+			sprintf(s, " $%04X", err);
 			strcat(str, s);
 		}
-		if(errno & 0x01) {
+		if(err & 0x01) {
 			strcat(str, " cErrMediach");
 		}
-		if(errno & 0x02) {
+		if(err & 0x02) {
 			strcat(str, " cErrReset");
 		}
 	}
@@ -418,7 +462,7 @@ Error(tHandle handle, WORD rwflag, WORD errno)
 	}
 	sysprintf(str);
 
-	res = oldScsiCall.Error(handle, rwflag, errno);
+	res = oldScsiCall.Error(handle, rwflag, err);
 	sprintf(str, "-> %ld ", res);
 	if(res & 0x01) {
 		strcat(str, " cErrMediach");
@@ -530,17 +574,26 @@ TCmd(WORD bus, BYTE *cmd)
 	if(!len) {
 		int c = ((UBYTE *)cmd)[0];
 		switch(c >> 5) {
-			case 0:		len = 6;
-								break;
-			case 4:		len = 16;
-								break;
-			case 5:		len = 12;
-								break;
+			case 0:
+				len = 6;
+				break;
+
+			case 4:
+				len = 16;
+				break;
+
+			case 5:
+				len = 12;
+				break;
+
 			case 1:
-			case 2:		len = 10;
-								break;
-			default:	len = 12;
-								break;
+			case 2:
+				len = 10;
+				break;
+
+			default:
+				len = 12;
+				break;
 		}
 	}
 
@@ -552,8 +605,12 @@ TCmd(WORD bus, BYTE *cmd)
 		for(i = 0; i < len; i++) {
 			char s[8];
 
-			if(!i) sprintf(s, "%02X", cmd[i] & 0xff);
-			else sprintf(s, ":%02X", cmd[i] & 0xff);
+			if(!i) {
+				sprintf(s, "%02X", cmd[i] & 0xff);
+			}
+			else {
+				sprintf(s, ":%02X", cmd[i] & 0xff);
+			}
 			strcat(str, s);
 		}
 		sysprintf(str);
@@ -564,8 +621,11 @@ TCmd(WORD bus, BYTE *cmd)
 	handlerInfo[bus].handler = NULL;
 	handlerInfo[bus].len = 0;
 
-	if(handler) return handler->TCmd(bus, cmd);		
-	else return false;
+	if(handler) {
+		return handler->TCmd(bus, cmd);		
+	}
+	
+	return false;
 }
 
 
@@ -580,12 +640,16 @@ TCmdLen(WORD bus, UWORD cmd)
 
 	handler = targetHandler.next;
 	while(handler) {
-		if(handler->TCmdLen)
+		if(handler->TCmdLen) {
 			handlerInfo[bus].len = handler->TCmdLen(bus, cmd);
+		}
+
 		if(handlerInfo[bus].len) {
 			handlerInfo[bus].handler = handler;
 			break;
 		}
+
+		handler = handler->next;
 	}
 
 	if(handlerInfo[bus].len) {
@@ -669,13 +733,19 @@ sysprintf(const char *s)
 		size_t len;
 	  out channel;
 
-		if(con) channel = conout;
-		else if(aux) channel = auxout;
-		else channel = prtout;
+		if(con) {
+			channel = conout;
+		}
+		else if(aux) {
+			channel = auxout;
+		}
+		else {
+			channel = prtout;
+		}
 
 		len = strlen(s);
 		for(i = 0; i < len; i++) {
-			channel(s[i]);
+			channel((UBYTE)s[i]);
 		}
 
 		channel(0x0d);
@@ -695,45 +765,59 @@ prres(tpSCSICmd parms, LONG res)
 		case SELECTERROR:
 			strcat(str, "SELECTERROR");
 			break;
+
 		case STATUSERROR:
 			strcat(str, "STATUSERROR");
 			break;
+
 		case PHASEERROR:
 			strcat(str, "PHASEERROR");
 			break;
+
 		case BSYERROR:
 			strcat(str, "BSYERROR");
 			break;
+
 		case BUSERROR:
 			strcat(str, "BUSERROR");
 			break;
+
 		case TRANSERROR:
 			strcat(str, "TRANSERROR");
 			break;
+
 		case FREEERROR:
 			strcat(str, "FREEERROR");
 			break;
+
 		case TIMEOUTERROR:
 			strcat(str, "TIMEOUTERROR");
 			break;
+
 		case DATATOOLONG:
 			strcat(str, "DATATOOLONG");
 			break;
+
 		case LINKERROR:
 			strcat(str, "LINKERROR");
 			break;
+
 		case TIMEOUTARBIT:
 			strcat(str, "TIMEOUTARBIT");
 			break;
+
 		case PENDINGERROR:
 			strcat(str, "PENDINGERROR");
 			break;
+
 		case PARITYERROR:
 			strcat(str, "PARITYERROR");
 			break;
+
 		case 0x00:
 			strcat(str, "GOOD");
 			break;
+
 		case 0x02:
 			if(parms->SenseBuffer) {
 				char s[64];
@@ -746,33 +830,43 @@ prres(tpSCSICmd parms, LONG res)
 			else
 				strcat(str, "CHECK CONDITION");
 			break;
+
 		case 0x04:
 			strcat(str, "CONDITION MET");
 			break;
+
 		case 0x08:
 			strcat(str, "BUSY");
 			break;
+
 		case 0x10:
 			strcat(str, "INTERMEDIATE");
 			break;
+
 		case 0x14:
 			strcat(str, "INTERMEDIATE - CONDITION MET");
 			break;
+
 		case 0x18:
 			strcat(str, "RESERVATION CONFLICT");
 			break;
+
 		case 0x22:
 			strcat(str, "COMMAND TERMINATED");
 			break;
+
 		case 0x28:
 			strcat(str, "TASK SET FULL");
 			break;
+
 		case 0x30:
 			strcat(str, "ACA ACTIVE");
 			break;
+
 		case 0x40:
 			strcat(str, "TASK ABORTED");
 			break;
+
 		default:
 			sprintf(str, "-> %ld", res);
 			break;
@@ -793,21 +887,27 @@ prerr(LONG res)
 		case ERROR:
 			strcat(str, "ERROR");
 			break;
+
 		case EDRVNR:
 			strcat(str, "EDRVNR");
 			break;
+
 		case EUNDEV:
 			strcat(str, "EUNDEV");
 			break;
+
 		case EACCDN:
 			strcat(str, "EACCDN");
 			break;
+
 		case ENHNDL:
 			strcat(str, "ENHNDL");
 			break;
+
 		case EINVHNDL:
 			strcat(str, "EINVHNDL");
 			break;
+
 		default:
 			sprintf(str, "-> %ld", res);
 			break;
@@ -830,8 +930,12 @@ prparms(tpSCSICmd parms, bool isOut)
 	for(i = 0; i < parms->CmdLen; i++) {
 		char s[8];
 
-		if(!i) sprintf(s, "%02X", parms->Cmd[i] & 0xff);
-		else sprintf(s, ":%02X", parms->Cmd[i] & 0xff);
+		if(!i) {
+			sprintf(s, "%02X", parms->Cmd[i] & 0xff);
+		}
+		else {
+			sprintf(s, ":%02X", parms->Cmd[i] & 0xff);
+		}
 		strcat(str, s);
 
 		if(i >= 16) {
@@ -841,7 +945,7 @@ prparms(tpSCSICmd parms, bool isOut)
 	}
 	sysprintf(str);		
 
-	sprintf(str, "  TransferLen %ld  Buffer $%p", parms->TransferLen,
+	sprintf(str, "  TransferLen %lu  Buffer $%p", parms->TransferLen,
 		parms->Buffer);
 	sysprintf(str);
 
@@ -849,7 +953,7 @@ prparms(tpSCSICmd parms, bool isOut)
 		prbuffer(parms, isOut);
 	}
 
-	sprintf(str, "  SenseBuffer $%p  Timeout %ld", parms->SenseBuffer,
+	sprintf(str, "  SenseBuffer $%p  Timeout %lu", parms->SenseBuffer,
 		parms->Timeout);
 	sysprintf(str);
 
@@ -867,7 +971,7 @@ prparms(tpSCSICmd parms, bool isOut)
 void
 prbuffer(tpSCSICmd parms, bool isOut)
 {
-	int i;
+	ULONG i;
 	char str[256];
 
 	if(!parms->TransferLen) {
@@ -964,15 +1068,18 @@ getcookie(long cookie, ULONG *p_value)
 {
 	long *cookiejar = (long *)Supexec(cookieptr);
 
-	if(!cookiejar) return 0;
+	if(!cookiejar) {
+		return 0;
+	}
 
 	do {
 		if(cookiejar[0] == cookie) {
-			if(p_value) *p_value = cookiejar[1];
+			*p_value = cookiejar[1];
 			return 1;
 		}
-		else
+		else {
 			cookiejar = &(cookiejar[2]);
+		}
 	} while (cookiejar[-2]);
 
 	return 0;
