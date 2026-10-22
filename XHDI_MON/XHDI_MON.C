@@ -1,7 +1,7 @@
 /****************************/
-/* XHDI_MON 1.21            */
+/* XHDI_MON 1.30            */
 /*                          */
-/* (C) 1999-2017 Uwe Seimet */
+/* (C) 1999-2026 Uwe Seimet */
 /****************************/
 
 
@@ -9,16 +9,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <tos.h>
+#include <atarierr.h>
 #include <portab.h>
-
-
-#define ERROR -1
-#define EDRVNR -2
-#define EWRPRO -13
-#define E_CHNG -14
-#define EINVFN -32
-#define EACCDN -36
-#define EDRIVE -46
 
 
 typedef int bool;
@@ -36,7 +28,7 @@ typedef LONG cdecl (*cookieVal)(UWORD opcode,...);
 extern LONG cdecl dispatch(UWORD opcode, ...);
 LONG result(LONG);
 void prres(LONG);
-void prflags(ULONG);
+void prflags(char *, ULONG);
 void prbpb(BPB *);
 void sysprintf(const char *);
 static int setcookie(long, ULONG, ULONG *);
@@ -118,8 +110,8 @@ main(WORD argc, const char *argv[])
 		return;
 	}
 
-	printf("\n\x1b\x70XHDI_MON V1.21\x1b\x71");
-	printf("\n½ 1999-2017 Uwe Seimet\n");
+	printf("\n\x1b\x70XHDI_MON V1.30\x1b\x71");
+	printf("\n½ 1999-2026 Uwe Seimet\n");
 
 	Ptermres(_PgmSize, 0);
 }
@@ -143,24 +135,26 @@ LONG
 cdecl XHInqTarget(UWORD major, UWORD minor, ULONG *block_size,
 	ULONG *device_flags, char *product_name)
 {
-	char s[32];
-	char str[256];
+	char s[64];
+	char str[512];
 	LONG res;
 
-	sprintf(str, "XHInqTarget    major %d  minor %d", major, minor);
+	sprintf(str, "XHInqTarget    major %u  minor %u", major, minor);
 	sysprintf(str);
 	res = xhdi(1, major, minor, block_size, device_flags, product_name);
-	if(res) prres(res);
+	if(res) {
+		prres(res);
+	}
 	else {
 		sprintf(str, "-> 0");
 
 		if(block_size) {
-			sprintf(s, "  block_size %ld", *block_size);
+			sprintf(s, "  block_size %lu", *block_size);
 			strcat(str, s);
 		}
 
 		if(device_flags) {
-			prflags(*device_flags);
+			prflags(str, *device_flags);
 		}
 
 		if(product_name) {
@@ -179,8 +173,8 @@ cdecl XHReserve(UWORD major, UWORD minor, UWORD do_reserve, UWORD key)
 {
 	char str[256];
 
-	sprintf(str, "XHReserve    major %d  minor %d  do_reserve %d"
-		"  key  %d", major, minor, do_reserve, key);
+	sprintf(str, "XHReserve    major %u  minor %u  do_reserve %u"
+		"  key %u", major, minor, do_reserve, key);
 	sysprintf(str);
 	return result(xhdi(2, major, minor, do_reserve, key));
 }
@@ -190,8 +184,8 @@ cdecl XHLock(UWORD major, UWORD minor, UWORD do_lock, UWORD key)
 {
 	char str[256];
 
-	sprintf(str, "XHLock    major %d  minor %d  do_lock %d"
-		"  key %d", major, minor, do_lock, key);
+	sprintf(str, "XHLock    major %u  minor %u  do_lock %u"
+		"  key %u", major, minor, do_lock, key);
 	sysprintf(str);
 	return result(xhdi(3, major, minor, do_lock, key));
 }
@@ -201,8 +195,8 @@ cdecl XHStop(UWORD major, UWORD minor, UWORD do_stop, UWORD key)
 {
 	char str[256];
 
-	sprintf(str, "XHStop    major %d  minor %d  do_stop %d"
-		"  key %d", major, minor, do_stop, key);
+	sprintf(str, "XHStop    major %u  minor %u  do_stop %u"
+		"  key %u", major, minor, do_stop, key);
 	sysprintf(str);
 	return result(xhdi(4, major, minor, do_stop, key));
 }
@@ -212,8 +206,8 @@ cdecl XHEject(UWORD major, UWORD minor, UWORD do_eject, UWORD key)
 {
 	char str[256];
 
-	sprintf(str, "XHEject    major %d  minor %d  do_eject %d"
-		"  key %d", major, minor, do_eject, key);
+	sprintf(str, "XHEject    major %u  minor %u  do_eject %u"
+		"  key %u", major, minor, do_eject, key);
 	sysprintf(str);
 	return result(xhdi(5, major, minor, do_eject, key));
 }
@@ -232,8 +226,12 @@ cdecl XHDrvMap()
 		if(ret & (1L << i)) {
 			char s[2];
 
-			if(i < 26) sprintf(s, "%c", i + 'A');
-			else sprintf(s, "%c", i - 26 + '0');
+			if(i < 26) {
+				sprintf(s, "%c", i + 'A');
+			}
+			else {
+				sprintf(s, "%c", i - 26 + '1');
+			}
 
 			strcat(str, s);
 		}
@@ -251,25 +249,27 @@ cdecl XHInqDev(UWORD bios_device, UWORD *major, UWORD *minor,
 	LONG res;
 	char str[256];
 
-	sprintf(str, "XHInqDev    bios_device %d", bios_device);
+	sprintf(str, "XHInqDev    bios_device %u", bios_device);
 	sysprintf(str);
 	res = xhdi(7, bios_device, major, minor, start_sector, bpb);
-	if(res && res != EDRVNR) prres(res);
+	if(res && res != EDRVNR) {
+		prres(res);
+	}
 	else {
 		sprintf(str, res != EDRVNR ? "-> 0" : "-> EDRVNR");
 
 		if(major) {
-			sprintf(s, "  major %d", *major);
+			sprintf(s, "  major %u", *major);
 			strcat(str, s);
 		}
 
 		if(minor) {
-			sprintf(s, "  minor %d", *minor);
+			sprintf(s, "  minor %u", *minor);
 			strcat(str, s);
 		}
 
 		if(start_sector && res != EDRVNR) {
-			sprintf(s, "  start_sector %ld", *start_sector);
+			sprintf(s, "  start_sector %lu", *start_sector);
 			strcat(str, s);
 		}
 		if(bpb && res != EDRVNR) {
@@ -279,7 +279,9 @@ cdecl XHInqDev(UWORD bios_device, UWORD *major, UWORD *minor,
 
 		sysprintf(str);
 
-		if(res != EDRVNR) prbpb(bpb);
+		if(res != EDRVNR) {
+			prbpb(bpb);
+		}
 	}
 
 	return res;
@@ -293,13 +295,13 @@ cdecl XHInqDriver(UWORD bios_device, char *name, char *version,
 	LONG res;
 	char str[256];
 
-	sprintf(str, "XHInqDriver    bios_device %d", bios_device);
+	sprintf(str, "XHInqDriver    bios_device %u", bios_device);
 	sysprintf(str);
 	res = xhdi(8, bios_device, name, version, company, ahdi_version,
 		maxIPL);
 	prres(res);
 	if(!res) {
-		str[0] = 0;
+		*str = 0;
 
 		if(name) {
 			sprintf(s, "  name '%s'", name);
@@ -317,16 +319,18 @@ cdecl XHInqDriver(UWORD bios_device, char *name, char *version,
 		}
 
 		if(ahdi_version) {
-			sprintf(s, "  ahdi_version '%s'", ahdi_version);
+			sprintf(s, "  ahdi_version %u", *ahdi_version);
 			strcat(str, s);
 		}
 
 		if(maxIPL) {
-			sprintf(s, "  maxIPL %d", maxIPL);
+			sprintf(s, "  maxIPL %u", *maxIPL);
 			strcat(str, s);
 		}
 
-		if(strlen(str)) sysprintf(str);
+		if(*str) {
+			sysprintf(str);
+		}
 	}
 
 	return res;
@@ -349,8 +353,8 @@ cdecl XHReadWrite(UWORD major, UWORD minor, UWORD rwflag, ULONG recno,
 {
 	char str[256];
 
-	sprintf(str, "XHReadWrite    major %d  minor %d  rwflag %d  "
-		"recno %ld  count %d  buf $%p", major, minor, rwflag, recno, count, buf);
+	sprintf(str, "XHReadWrite    major %u  minor %u  rwflag %u  "
+		"recno %lu  count %u  buf $%p", major, minor, rwflag, recno, count, buf);
 	sysprintf(str);
 	return result(xhdi(10, major, minor, rwflag, recno, count, buf));
 }
@@ -359,26 +363,28 @@ LONG cdecl
 XHInqTarget2(UWORD major, UWORD minor, ULONG *block_size,
 	ULONG *device_flags, char *product_name, UWORD stringlen)
 {
-	char s[32];
+	char s[64];
 	LONG res;
-	char str[256];
+	char str[512];
 
-	sprintf(str, "XHInqTarget2    major %d  minor %d  stringlen %d",
+	sprintf(str, "XHInqTarget2    major %u  minor %u  stringlen %u",
 	major, minor, stringlen);
 	sysprintf(str);
 	res = xhdi(11, major,minor, block_size,device_flags, product_name,
 		stringlen);
-	if(res) prres(res);
+	if(res) {
+		prres(res);
+	}
 	else {
 		sprintf(str, "-> 0");
 
 		if(block_size) {
-			sprintf(s, "  block_size %ld", *block_size);
+			sprintf(s, "  block_size %lu", *block_size);
 			strcat(str, s);
 		}
 
 		if(device_flags) {
-			prflags(*device_flags);
+			prflags(str, *device_flags);
 		}
 
 		if(product_name) {
@@ -400,42 +406,59 @@ cdecl XHInqDev2(UWORD bios_device, UWORD *major, UWORD *minor,
 	LONG res;
 	char str[256];
 
-	sprintf(str, "XHInqDev2    bios_device %d", bios_device);
+	sprintf(str, "XHInqDev2    bios_device %u", bios_device);
 	sysprintf(str);
 	res = xhdi(12, bios_device, major, minor, start_sector, bpb, blocks,
 		partid);
-	if(res && res != EDRVNR) prres(res);
+	if(res && res != EDRVNR) {
+		prres(res);
+	}
 	else {
 		sprintf(str, res != EDRVNR ? "-> 0" : "-> EDRVNR");
 
 		if(major) {
-			sprintf(s, "  major %d", *major);
+			sprintf(s, "  major %u", *major);
 			strcat(str, s);
 		}
 
 		if(minor) {
-			sprintf(s, "  minor %d", *minor);
+			sprintf(s, "  minor %u", *minor);
 			strcat(str, s);
 		}
 
-		if(start_sector && res != EDRVNR) {
-			sprintf(s, "  start_sector %ld", *start_sector);
+		if(start_sector) {
+			sprintf(s, "  start_sector %lu", *start_sector);
 			strcat(str, s);
 		}
 
-		if(bpb && res != EDRVNR) {
-			sprintf(s, "  bpb $%p", bpb);
-			strcat(str, s);
-		}
+		if(res != EDRVNR) {
+			if(bpb) {
+				sprintf(s, "  bpb $%p", bpb);
+				strcat(str, s);
+			}
 
-		if(partid && res != EDRVNR) {
-			sprintf(s, "  partid '%s'", partid);
-			strcat(str, s);
+			if(blocks) {
+				sprintf(s, "  blocks %lu", *blocks);
+				strcat(str, s);
+			}
+
+			if(partid) {
+				*s = 0;
+				if(partid[0]) {
+					sprintf(s, "  partid '%s'", partid);
+				}
+				else if(partid[1] == 'D') {
+					sprintf(s, "  partid $%02X", (UBYTE)partid[2]);
+				}
+				strcat(str, s);
+			}
 		}
 
 		sysprintf(str);
 
-		if(res != EDRVNR) prbpb(bpb);
+		if(res != EDRVNR) {
+			prbpb(bpb);
+		}
 	}
 
 	return res;
@@ -446,13 +469,16 @@ cdecl XHDriverSpecial(ULONG key1, ULONG key2, UWORD subopcode, void *data)
 {
 	char str[256];
 
-	if(key1 == (ULONG)'USHD' && (key2 == 0x13497800L || key2 == 0x2690454L))
-		sprintf(str, "XHDriverSpecial    [HDDRIVER]  subopcode %d"
+	if(key1 == (ULONG)'USHD' && (key2 == 0x13497800L || key2 == 0x2690454L)) {
+		sprintf(str, "XHDriverSpecial    [HDDRIVER]  subopcode %u"
 			"  data $%p", subopcode, data);
-	else
-		sprintf(str, "XHDriverSpecial    key1 %ld  key2 %ld  subopcode %d"
+	}
+	else {
+		sprintf(str, "XHDriverSpecial    key1 %lu  key2 %lu  subopcode %u"
 			"  data $%p", key1, key2, subopcode, data);
+	}
 	sysprintf(str);
+
 	return result(xhdi(13, key1, key2, subopcode, data));
 }
 
@@ -463,24 +489,26 @@ cdecl XHGetCapacity(UWORD major, UWORD minor, ULONG *blocks, ULONG *bs)
 	LONG res;
 	char str[256];
 
-	sprintf(str, "XHGetCapacity    major %d  minor %d", major,minor);
+	sprintf(str, "XHGetCapacity    major %u  minor %u", major, minor);
 	sysprintf(str);
 	res = xhdi(14, major, minor, blocks, bs);
 	prres(res);
 	if(!res) {
-		str[0] = 0;
+		*str = 0;
 
 		if(blocks) {
-			sprintf(s, "  blocks %ld", *blocks);
+			sprintf(s, "  blocks %lu", *blocks);
 			strcat(str, s);
 		}
 
 		if(bs) {
-			sprintf(s, "  blocksize %ld", *bs);
+			sprintf(s, "  blocksize %lu", *bs);
 			strcat(str, s);
 		}
 
-		sysprintf(str);
+		if(*str)  {
+			sysprintf(str);
+		}
 	}
 
 	return res;
@@ -491,7 +519,7 @@ cdecl XHMediumChanged(UWORD major, UWORD minor)
 {
 	char str[256];
 
-	sprintf(str, "XHMediumChanged    major %d  minor %d", major, minor);
+	sprintf(str, "XHMediumChanged    major %u  minor %u", major, minor);
 	sysprintf(str);
 	return result(xhdi(15, major, minor));
 }
@@ -501,7 +529,7 @@ cdecl XHMiNTInfo(UWORD opcode, void *data)
 {
 	char str[256];
 
-	sprintf(str, "XHMiNTInfo    opcode %d  data $%p", opcode, data);
+	sprintf(str, "XHMiNTInfo    opcode %u  data $%p", opcode, data);
 	sysprintf(str);
 	return result(xhdi(16, opcode, data));
 }
@@ -509,7 +537,7 @@ cdecl XHMiNTInfo(UWORD opcode, void *data)
 LONG
 cdecl XHDOSLimits(UWORD which, ULONG limit)
 {
-	char s[16];
+	char s[24];
 	LONG res;
 	char str[256];
 
@@ -519,59 +547,76 @@ cdecl XHDOSLimits(UWORD which, ULONG limit)
 		case 0:
 			strcat(str, "XH_DL_SECSIZ");
 			break;
+
 		case 1:
 		 	strcat(str, "XH_DL_MINFAT");
 			break;
+
 		case 2:
 			strcat(str, "XH_DL_MAXFAT");
 			break;
+
 		case 3:
 			strcat(str, "XH_DL_MINSPC");
 			break;
+
 		case 4:
 			strcat(str, "XH_DL_MAXSPC");
 			break;
+
 		case 5:
 			strcat(str, "XH_DL_CLUSTS");
 			break;
+
 		case 6:
 			strcat(str, "XH_DL_MAXSEC");
 			break;
+
 		case 7:
 			strcat(str, "XH_DL_DRIVES");
 			break;
+
 		case 8:
 			strcat(str, "XH_DL_CLSIZB");
 			break;
+
 		case 9:
 			strcat(str, "XH_DL_RDLEN");
 			break;
+
 		case 12:
 			strcat(str, "XH_DL_CLUSTS12");
 			break;
+
 		case 13:
 			strcat(str, "XH_DL_CLUSTS32");
 			break;
+
 		case 14:
 			strcat(str, "XH_DL_BFLAGS");
 			break;
+
 		default:
 			{
-				sprintf(s, "%d", which);
+				sprintf(s, "%u", which);
 				strcat(str, s);
 			}
 			break;
 	}
 
-	sprintf(s, "  limit %ld", limit);
+	sprintf(s, "  limit %lu", limit);
 	strcat(str, s);
 
 	sysprintf(str);
 
 	res = xhdi(17, which, limit);
-
-	sprintf(str, "-> %ld", res);
-	sysprintf(str);
+	if(res < 0 && res >= -32768L) {
+		prres(res);
+	}
+	else {
+		sprintf(str, "-> %lu", res);
+		sysprintf(str);
+	}
 
 	return res;
 }
@@ -583,13 +628,16 @@ cdecl XHLastAccess(UWORD major, UWORD minor, ULONG *ms)
 	LONG res;
 	char str[256];
 
-	sprintf(str, "XHLastAccess    major %d  minor %d", major, minor);
+	sprintf(str, "XHLastAccess    major %u  minor %u", major, minor);
 	sysprintf(str);
 	res = xhdi(18, major, minor, ms);
 	prres(res);
-	sprintf(s, "  ms %ld", res, ms);
-	strcat(str, s);
-	sysprintf(str);
+	if(!res && ms) {
+		str[0] = 0;
+		sprintf(s, "  ms %lu", *ms);
+		strcat(str, s);
+		sysprintf(str);
+	}
 
 	return res;
 }
@@ -599,7 +647,7 @@ cdecl XHReaccess(UWORD major, UWORD minor)
 {
 	char str[256];
 
-	sprintf(str, "XHReaccess    major %d  minor %d", major, minor);
+	sprintf(str, "XHReaccess    major %u  minor %u", major, minor);
 	sysprintf(str);
 	return result(xhdi(19, major, minor));
 }
@@ -615,13 +663,19 @@ sysprintf(const char* s)
 		size_t len;
 	  out channel;
 
-		if(con) channel = conout;
-		else if(aux) channel = auxout;
-		else channel = prtout;
+		if(con) {
+			channel = conout;
+		}
+		else if(aux) {
+			channel = auxout;
+		}
+		else {
+			channel = prtout;
+		}
 
 		len = strlen(s);
 		for(i = 0; i < len; i++) {
-			channel(s[i]);
+			channel((UBYTE)s[i]);
 		}
 
 		channel(0x0d);
@@ -645,55 +699,83 @@ prres(LONG res)
 
 	strcpy(str, "-> ");
 
-	switch((WORD)res) {
-		case ERROR:
-			strcat(str, "ERROR");
-			break;
-		case EDRVNR:
-			strcat(str, "EDRVNR");
-			break;
-		case EWRPRO:
-			strcat(str, "EWRPRO");
-			break;
-		case E_CHNG:
-			strcat(str, "E_CHNG");
-			break;
-		case EINVFN:
-			strcat(str, "EINVFN");
-			break;
-		case EACCDN:
-			strcat(str, "EACCDN");
-			break;
-		case EDRIVE:
-			strcat(str, "EDRIVE");
-			break;
-		default:
-			sprintf(str, "-> %ld", res);
-			break;
+	if(res > 0 || res < -32768L) {
+		sprintf(str, "-> %ld", res);
+	}
+	else {
+		switch((WORD)res) {
+			case ERROR:
+				strcat(str, "ERROR");
+				break;
+	
+			case EDRVNR:
+				strcat(str, "EDRVNR");
+				break;
+	
+			case EWRPRO:
+				strcat(str, "EWRPRO");
+				break;
+	
+			case E_CHNG:
+				strcat(str, "E_CHNG");
+				break;
+	
+			case EINVFN:
+				strcat(str, "EINVFN");
+				break;
+	
+			case EACCDN:
+				strcat(str, "EACCDN");
+				break;
+	
+			case EDRIVE:
+				strcat(str, "EDRIVE");
+				break;
+
+			case EUNDEV:
+				strcat(str, "EUNDEV");
+				break;
+	
+			default:
+				sprintf(str, "-> %ld", res);
+				break;
+		}
 	}
 
 	sysprintf(str);
 }
 
 void
-prflags(ULONG flags)
+prflags(char *str, ULONG flags)
 {
-	char str[256];
-
 	strcat(str, "  device_flags");
+
 	if(flags & 0xe000000fL) {
-		if(flags & 0x01) strcat(str, "  XH_TARGET_STOPPABLE");
-		if(flags & 0x02) strcat(str, "  XH_TARGET_REMOVABLE");
-		if(flags & 0x04) strcat(str, "  XH_TARGET_LOCKABLE");
-		if(flags & 0x08) strcat(str, "  XH_TARGET_EJECTABLE");
-		if(flags & 0x20000000L) strcat(str, "  XH_TARGET_LOCKED");
-		if(flags & 0x40000000L) strcat(str, "  XH_TARGET_STOPPED");
-		if(flags & 0x80000000L) strcat(str, "  XH_TARGET_RESERVED");
+		if(flags & 0x01) {
+			strcat(str, "  XH_TARGET_STOPPABLE");
+		}
+		if(flags & 0x02) {
+			strcat(str, "  XH_TARGET_REMOVABLE");
+		}
+		if(flags & 0x04) {
+			strcat(str, "  XH_TARGET_LOCKABLE");
+		}
+		if(flags & 0x08) {
+			strcat(str, "  XH_TARGET_EJECTABLE");
+		}
+		if(flags & 0x20000000L) {
+			strcat(str, "  XH_TARGET_LOCKED");
+		}
+		if(flags & 0x40000000L) {
+			strcat(str, "  XH_TARGET_STOPPED");
+		}
+		if(flags & 0x80000000L) {
+			strcat(str, "  XH_TARGET_RESERVED");
+		}
 	}
 	else {
-		char s[16];
-
-		sprintf(s, "  %ld", flags);
+		char s[12];
+		sprintf(s, "  %lu", flags);
 		strcat(str, s);
 	}
 }
@@ -727,12 +809,16 @@ setcookie(long cookie, ULONG newValue, ULONG *oldValue)
 {
 	long *cookiejar = (long *)Supexec(cookieptr);
 
-	if(!cookiejar) return 0;
+	if(!cookiejar) {
+		return 0;
+	}
 
 	do {
 		if(cookiejar[0] == cookie) {
 			*oldValue = (ULONG)cookiejar[1];
-			if(newValue) cookiejar[1] = newValue;
+			if(newValue) {
+				cookiejar[1] = newValue;
+			}
 			return 1;
 		}
 		else
