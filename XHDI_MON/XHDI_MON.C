@@ -319,7 +319,7 @@ cdecl XHInqDriver(UWORD bios_device, char *name, char *version,
 		}
 
 		if(ahdi_version) {
-			sprintf(s, "  ahdi_version %u", *ahdi_version);
+			sprintf(s, "  ahdi_version $%04X", *ahdi_version);
 			strcat(str, s);
 		}
 

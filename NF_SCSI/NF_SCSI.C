@@ -1,7 +1,7 @@
 /******************************************/
 /* SCSI Driver for Hatari and ARAnyM 1.23 */
 /*                                        */
-/* (C) 2016-2025 Uwe Seimet               */
+/* (C) 2016-2026 Uwe Seimet               */
 /******************************************/
 
 #define VERSION "1.23"
@@ -135,7 +135,7 @@ main(WORD argc, const char *argv[])
 	interfaceVersion = (UWORD)nfCall(id | SCSI_INTERFACE_VERSION);
 	if(interfaceVersion != INTERFACE_VERSION) {
 		printf("\nSCSI Driver interface version mismatch,\n"
-			"native version is %d.%02d, local version is %d.%02d\n"
+			"native version is %u.%02u, local version is %u.%02u\n"
 			"SCSI Driver for Hatari and ARAnyM not installed\n",
 			interfaceVersion >> 8, interfaceVersion & 0xff,
 			INTERFACE_VERSION >> 8, INTERFACE_VERSION & 0xff);
@@ -145,7 +145,7 @@ main(WORD argc, const char *argv[])
 	if(argc > 1) {
 		busA = atoi(argv[1]);
 		if(busA > 30) {
-			printf("\nIllegal first bus ID %d, maximum is 30\n"
+			printf("\nIllegal first bus ID %u, maximum is 30\n"
 			"SCSI Driver for Hatari and ARAnyM not installed\n", busA);
 			return terminate();
 		}
@@ -176,7 +176,7 @@ main(WORD argc, const char *argv[])
 
 	printf("\n\x1b\x70SCSI Driver for Hatari and ARAnyM V" VERSION
 		"\x1b\x71\n");
-	printf("½ 2016-2025 Uwe Seimet\n");
+	printf("½ 2016-2026 Uwe Seimet\n");
 
 	Ptermres(_PgmSize, 0);
 
@@ -254,7 +254,7 @@ LONG cdecl
 InquireSCSI(WORD what, tBusInfo *info)
 {
 	if(!what) {
-		info->Private.BusIds = 0L;
+		memset(&info->Private, 0, (UWORD)sizeof(info->Private));
 	}
 
 	info->BusNo = info->Private.BusIds & (1L << busA) ? busB : busA;
